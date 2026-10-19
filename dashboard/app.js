@@ -554,9 +554,11 @@
       else drawBodegas();
     } finally {
       fillMarks();
+      NZ.slides();
     }
   }
   dash.onData(draw);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => NZ.slides());
 
   // open the place named in the link
   const hash = decodeURIComponent(location.hash.slice(1));

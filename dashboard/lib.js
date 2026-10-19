@@ -269,6 +269,31 @@
       .on('mouseleave', () => { tip.hide(); rule.style('opacity', 0); dots.selectAll('circle').remove(); });
   };
 
+  // ---- iOS-style sliding pill for segmented controls and tabs
+  NZ.slide = (box) => {
+    const tabs = box.classList.contains('nz-tabs');
+    const sel = box.querySelector(tabs ? '[aria-selected="true"]' : '[aria-pressed="true"]');
+    let pill = box.querySelector(':scope > .nz-slide');
+    if (!pill) {
+      pill = NZ.el('span', 'nz-slide' + (tabs ? ' nz-slide-ink' : ''));
+      pill.setAttribute('aria-hidden', 'true');
+      box.prepend(pill);
+    }
+    if (!sel || !sel.offsetWidth) return;
+    const x = sel.offsetLeft, y = sel.offsetTop, w = sel.offsetWidth, h = sel.offsetHeight;
+    const first = !pill.classList.contains('nz-on');
+    if (first) pill.style.transition = 'none';
+    pill.style.width = w + 'px';
+    pill.style.height = h + 'px';
+    pill.style.transform = `translate(${x}px, ${tabs ? y + h - 2 : y}px)`;
+    if (first) {
+      void pill.offsetWidth;
+      pill.style.transition = '';
+      pill.classList.add('nz-on');
+    }
+  };
+  NZ.slides = () => document.querySelectorAll('.nz-seg, .nz-tabs').forEach((b) => NZ.slide(b));
+
   // ---- legend
   NZ.legend = (el, items) => {
     el.replaceChildren();

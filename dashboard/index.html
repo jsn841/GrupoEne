@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400&display=swap" rel="stylesheet">
-<script src="vendor/d3.min.js?v=2026-10-19f"></script>
+<script src="vendor/d3.min.js?v=2026-10-19g"></script>
 <script>
 try { var t = localStorage.getItem('nz-theme'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
 </script>
@@ -80,12 +80,19 @@ html, body { margin: 0; background: var(--color-bg); color: var(--color-fg); }
 @media (prefers-reduced-motion: no-preference) { .nz-live-dot { animation: nzpulse 2s var(--cds-ease-out) infinite; } }
 @keyframes nzpulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-ok) 60%, transparent); } 100% { box-shadow: 0 0 0 .5rem transparent; } }
 .nz-mock { display: inline-block; font-size: var(--cds-font-size-caption); color: var(--color-warn); border: 1px solid currentColor; border-radius: var(--cds-radius); padding: 0 var(--cds-pad-xs); margin-left: var(--cds-gap-xs); vertical-align: middle; }
-.nz-tabs { display: flex; gap: var(--cds-gap-xs); border-bottom: 1px solid var(--color-border-line); margin-bottom: var(--cds-gap-lg); overflow-x: auto; scrollbar-width: none; }
-.nz-tab { appearance: none; background: none; border: 0; border-bottom: 2px solid transparent; color: var(--color-fg-muted); font: inherit; font-size: var(--cds-font-size-body); padding: var(--cds-pad-sm) var(--cds-pad-md); cursor: pointer; white-space: nowrap; }
-.nz-tab[aria-selected="true"] { color: var(--color-fg); border-bottom-color: var(--color-fg); font-weight: var(--cds-font-weight-medium); }
-.nz-seg { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 2px; border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); background: var(--color-panel); }
-.nz-seg button { appearance: none; border: 0; background: none; font: inherit; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); padding: var(--cds-pad-xs) var(--cds-pad-sm); border-radius: var(--cds-radius); cursor: pointer; }
-.nz-seg button[aria-pressed="true"] { background: var(--color-bg); color: var(--color-fg); box-shadow: 0 0 0 1px var(--color-border-line); }
+.nz-tabs { position: relative; display: flex; gap: var(--cds-gap-xs); border-bottom: 1px solid var(--color-border-line); margin-bottom: var(--cds-gap-lg); overflow-x: auto; scrollbar-width: none; }
+.nz-tab { position: relative; z-index: 1; appearance: none; background: none; border: 0; color: var(--color-fg-muted); font: inherit; font-size: var(--cds-font-size-body); padding: var(--cds-pad-sm) var(--cds-pad-md); cursor: pointer; white-space: nowrap; transition: color .2s; -webkit-tap-highlight-color: transparent; }
+.nz-tab[aria-selected="true"] { color: var(--color-fg); font-weight: var(--cds-font-weight-medium); }
+.nz-seg { position: relative; display: inline-flex; flex-wrap: wrap; gap: 0; padding: 2px; border-radius: 9px; background: color-mix(in srgb, var(--color-fg) 9%, transparent); max-width: 100%; }
+.nz-seg button { position: relative; z-index: 1; appearance: none; border: 0; background: none; font: inherit; font-size: var(--cds-font-size-caption); font-weight: var(--cds-font-weight-medium); color: var(--color-fg-muted); padding: 6px 14px; border-radius: 7px; cursor: pointer; white-space: nowrap; transition: color .2s; -webkit-tap-highlight-color: transparent; }
+.nz-seg button[aria-pressed="true"] { color: var(--color-fg); }
+.nz-seg button:not([aria-pressed="true"]):hover { color: var(--color-fg); }
+.nz-slide { position: absolute; top: 0; left: 0; z-index: 0; pointer-events: none; border-radius: 7px; background: var(--color-panel); box-shadow: 0 3px 8px rgba(0,0,0,.12), 0 3px 1px rgba(0,0,0,.04), 0 0 0 .5px rgba(0,0,0,.06); transition: transform .3s cubic-bezier(.3,.7,.4,1), width .3s cubic-bezier(.3,.7,.4,1), height .3s cubic-bezier(.3,.7,.4,1); opacity: 0; }
+.nz-slide.nz-on { opacity: 1; }
+.nz-slide.nz-slide-ink { height: 2px !important; border-radius: 2px; background: var(--color-fg); box-shadow: none; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .nz-slide:not(.nz-slide-ink) { background: color-mix(in srgb, var(--color-fg) 24%, var(--color-panel)); box-shadow: 0 3px 8px rgba(0,0,0,.35); } }
+:root[data-theme="dark"] .nz-slide:not(.nz-slide-ink) { background: color-mix(in srgb, var(--color-fg) 24%, var(--color-panel)); box-shadow: 0 3px 8px rgba(0,0,0,.35); }
+@media (prefers-reduced-motion: reduce) { .nz-slide { transition: none; } }
 .nz-bar-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--cds-gap-sm); margin-bottom: var(--cds-gap-md); }
 .nz-h2 { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); margin: var(--cds-gap-xl) 0 var(--cds-gap-sm); scroll-margin-top: 1rem; }
 .nz-h2:first-child { margin-top: 0; }
@@ -151,7 +158,10 @@ table.nz-t { width: 100%; border-collapse: collapse; font-size: var(--cds-font-s
 .nz-mini-b { display: block; height: 100%; border-radius: 3px; }
 .nz-controls { display: flex; flex-wrap: wrap; gap: var(--cds-gap-sm); align-items: center; margin-bottom: var(--cds-gap-sm); }
 .nz-controls label { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
-.nz-select, .nz-input { font: inherit; font-size: var(--cds-font-size-caption); color: var(--color-fg); background: var(--color-bg); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-xs) var(--cds-pad-sm); max-width: 100%; }
+.nz-select, .nz-input { font: inherit; font-size: var(--cds-font-size-caption); font-weight: var(--cds-font-weight-medium); color: var(--color-fg); background-color: color-mix(in srgb, var(--color-fg) 7%, transparent); border: 0; border-radius: 9px; padding: 7px 12px; max-width: 100%; -webkit-appearance: none; appearance: none; }
+.nz-select { padding-right: 30px; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238e8e93' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; }
+.nz-select option, .nz-select optgroup { color: initial; background: initial; }
+.nz-select:focus-visible, .nz-input:focus-visible { outline: 2px solid #0a84ff; outline-offset: 1px; }
 .nz-count { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin-left: auto; }
 .nz-heat-wrap { overflow: auto; max-height: 30rem; }
 table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(--cds-font-size-caption); }
@@ -528,9 +538,9 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
 </div>
 
 </div>
-<script src="dash-shim.js?v=2026-10-19f"></script>
-<script src="lib.js?v=2026-10-19f"></script>
-<script src="app.js?v=2026-10-19f"></script>
-<script src="theme.js?v=2026-10-19f"></script>
+<script src="dash-shim.js?v=2026-10-19g"></script>
+<script src="lib.js?v=2026-10-19g"></script>
+<script src="app.js?v=2026-10-19g"></script>
+<script src="theme.js?v=2026-10-19g"></script>
 </body>
 </html>
