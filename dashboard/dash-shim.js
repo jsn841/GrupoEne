@@ -14,7 +14,7 @@
   const calcs = {};
   const listeners = [];
   let params = { ...DEFAULT_PARAMS };
-  const VERSION = '2026-10-19c';
+  const VERSION = '2026-10-19d';
   const errors = {};
   let loaded = false;
 
