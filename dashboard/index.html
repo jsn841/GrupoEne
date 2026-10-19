@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grupo Nozar · Ventas en directo (maqueta)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400&display=swap" rel="stylesheet">
+<script src="vendor/d3.min.js"></script>
+<style>
+:root {
+  --font-anthropic-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-anthropic-serif: "Source Serif 4", Georgia, serif;
+  --color-fg: #1f1e1c; --color-fg-muted: #6b6a66; --color-bg: #faf9f6; --color-panel: #ffffff; --color-border-line: #e4e1da;
+  --color-ok: #2f7d4f; --color-warn: #a66300; --color-bad: #b4372f;
+  --cds-font-size-caption: 12px; --cds-font-size-body: 14px; --cds-font-size-heading: 16px; --cds-font-size-title: 28px;
+  --cds-font-weight-medium: 500;
+  --cds-gap-xs: 4px; --cds-gap-sm: 8px; --cds-gap-md: 12px; --cds-gap-lg: 20px; --cds-gap-xl: 32px;
+  --cds-pad-xs: 4px; --cds-pad-sm: 8px; --cds-pad-md: 12px; --cds-pad-lg: 16px; --cds-pad-xl: 24px;
+  --cds-radius: 8px;
+  --cds-chart-grid: #ece9e2; --cds-chart-axis: #c9c5bb; --cds-chart-reference: #8a877f; --cds-chart-muted: #b9b5ab;
+  --cds-surface-popover: #ffffff; --cds-border: #dcd8cf; --cds-shadow-popover: 0 4px 16px rgba(0,0,0,.12); --cds-text-secondary: #6b6a66;
+  --cds-dur-slow: 300ms; --cds-ease-out: cubic-bezier(.2,.8,.2,1);
+  --c1: #2b6cb0; --c2: #c2652a; --c3: #2f8f6b; --c4: #8a5cc2; --c5: #c23f6a; --c6: #2a9db0; --c7: #9c8a2a; --c8: #5f6b7a;
+  --dash-gutter: clamp(12px, 3vw, 32px);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-fg: #ecebe7; --color-fg-muted: #a3a19b; --color-bg: #191917; --color-panel: #232321; --color-border-line: #3a3936;
+    --color-ok: #6cc391; --color-warn: #e0a95a; --color-bad: #ee7b72;
+    --cds-chart-grid: #33322f; --cds-chart-axis: #4c4b47; --cds-chart-reference: #8e8c86; --cds-chart-muted: #6d6b66;
+    --cds-surface-popover: #2c2c29; --cds-border: #45443f; --cds-shadow-popover: 0 4px 16px rgba(0,0,0,.5); --cds-text-secondary: #a3a19b;
+    --c1: #6aa6e8; --c2: #e8915a; --c3: #5cc49a; --c4: #b38ce6; --c5: #ec7aa0; --c6: #5cc7d8; --c7: #cdbb5c; --c8: #98a4b3;
+  }
+}
+html, body { margin: 0; background: var(--color-bg); color: var(--color-fg); }
+#dash-root { padding: var(--dash-gutter); }
+.dash-skeleton { color: transparent !important; background: color-mix(in srgb, var(--color-fg) 8%, transparent); border-radius: 4px; }
+.nz-chart.dash-skeleton { background: color-mix(in srgb, var(--color-fg) 4%, transparent); }
+</style>
+</head>
+<body>
+<div id="dash-root">
+<style>
+#dash-root { --dash-gutter: clamp(12px, 3vw, 32px); }
+.nz { font-family: var(--font-anthropic-sans); color: var(--color-fg); max-width: 1320px; margin-inline: auto; font-variant-numeric: tabular-nums; }
+.nz-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--cds-gap-md); margin-bottom: var(--cds-gap-md); }
+.nz-title { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); margin: 0; line-height: 1.15; }
+.nz-sub { color: var(--color-fg-muted); font-size: var(--cds-font-size-body); margin: var(--cds-gap-xs) 0 0; max-width: 62rem; }
+.nz-live { display: inline-flex; align-items: center; gap: var(--cds-gap-xs); font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); white-space: nowrap; }
+.nz-live-dot { width: .5rem; height: .5rem; border-radius: 50%; background: var(--color-ok); }
+@media (prefers-reduced-motion: no-preference) { .nz-live-dot { animation: nzpulse 2s var(--cds-ease-out) infinite; } }
+@keyframes nzpulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-ok) 60%, transparent); } 100% { box-shadow: 0 0 0 .5rem transparent; } }
+.nz-mock { display: inline-block; font-size: var(--cds-font-size-caption); color: var(--color-warn); border: 1px solid currentColor; border-radius: var(--cds-radius); padding: 0 var(--cds-pad-xs); margin-left: var(--cds-gap-xs); vertical-align: middle; }
+.nz-tabs { display: flex; gap: var(--cds-gap-xs); border-bottom: 1px solid var(--color-border-line); margin-bottom: var(--cds-gap-lg); overflow-x: auto; scrollbar-width: none; }
+.nz-tab { appearance: none; background: none; border: 0; border-bottom: 2px solid transparent; color: var(--color-fg-muted); font: inherit; font-size: var(--cds-font-size-body); padding: var(--cds-pad-sm) var(--cds-pad-md); cursor: pointer; white-space: nowrap; }
+.nz-tab[aria-selected="true"] { color: var(--color-fg); border-bottom-color: var(--color-fg); font-weight: var(--cds-font-weight-medium); }
+.nz-seg { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 2px; border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); background: var(--color-panel); }
+.nz-seg button { appearance: none; border: 0; background: none; font: inherit; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); padding: var(--cds-pad-xs) var(--cds-pad-sm); border-radius: var(--cds-radius); cursor: pointer; }
+.nz-seg button[aria-pressed="true"] { background: var(--color-bg); color: var(--color-fg); box-shadow: 0 0 0 1px var(--color-border-line); }
+.nz-bar-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--cds-gap-sm); margin-bottom: var(--cds-gap-md); }
+.nz-h2 { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); margin: var(--cds-gap-xl) 0 var(--cds-gap-sm); scroll-margin-top: 1rem; }
+.nz-h2:first-child { margin-top: 0; }
+.nz-h2 small { font-weight: 400; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); margin-left: var(--cds-gap-xs); }
+.nz-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr)); gap: var(--cds-gap-md); margin-bottom: var(--cds-gap-md); }
+.nz-tiles.nz-wide { grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); }
+.nz-tile { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-md) var(--cds-pad-lg); min-width: 0; }
+.nz-tile.nz-hero { border-color: var(--color-fg-muted); }
+.nz-tl { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin-bottom: var(--cds-gap-xs); }
+.nz-big { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 1.1em; }
+.nz-meta { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin-top: var(--cds-gap-xs); display: flex; flex-wrap: wrap; gap: 0 var(--cds-gap-sm); }
+.nz-good { color: var(--color-ok); }
+.nz-bad { color: var(--color-bad); }
+.nz-flat { color: var(--color-fg-muted); }
+.nz-grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr)); gap: var(--cds-gap-md); margin-bottom: var(--cds-gap-md); }
+.nz-grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); gap: var(--cds-gap-md); margin-bottom: var(--cds-gap-md); }
+.nz-card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); min-width: 0; }
+.nz-card h3 { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); margin: 0; }
+.nz-note { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin: 2px 0 var(--cds-gap-sm); }
+.nz-chart { position: relative; min-height: 220px; }
+.nz-chart.nz-tall { min-height: 300px; }
+.nz-chart.nz-short { min-height: 170px; }
+.nz-legend { display: flex; flex-wrap: wrap; gap: var(--cds-gap-xs) var(--cds-gap-md); font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin-bottom: var(--cds-gap-xs); }
+.nz-lg { display: inline-flex; align-items: center; gap: 6px; }
+.nz-sw { display: inline-block; width: .65rem; height: .65rem; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+.nz-lg .nz-sw { margin-right: 0; }
+.nz-svg { display: block; overflow: visible; }
+.nz-svg .nz-tick, .nz-svg text.nz-tick { fill: var(--color-fg-muted); font-size: var(--cds-font-size-caption); font-family: var(--font-anthropic-sans); }
+.nz-svg .nz-endlab { font-size: var(--cds-font-size-caption); font-family: var(--font-anthropic-sans); font-weight: var(--cds-font-weight-medium); }
+.nz-svg .nz-maplab { fill: var(--color-fg-muted); font-size: var(--cds-font-size-caption); font-family: var(--font-anthropic-sans); pointer-events: none; }
+.nz-grid { stroke: var(--cds-chart-grid); stroke-width: 1; }
+.nz-axis { stroke: var(--cds-chart-axis); stroke-width: 1; }
+.nz-rule { stroke: var(--cds-chart-reference); stroke-width: 1; }
+.nz-line { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.nz-land { fill: color-mix(in srgb, var(--color-fg) 6%, transparent); stroke: var(--cds-chart-axis); stroke-width: 1; }
+.nz-pin { stroke: var(--color-panel); stroke-width: 1.5; fill-opacity: .85; cursor: pointer; }
+.nz-pin-active { stroke: var(--color-fg); stroke-width: 2.5; }
+.nz-tip { position: absolute; z-index: 5; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); pointer-events: none; white-space: nowrap; max-width: 22rem; }
+.nz-tip-h { color: var(--cds-text-secondary); margin-bottom: 2px; }
+.nz-hbars { display: flex; flex-direction: column; gap: 6px; }
+.nz-hb { display: grid; grid-template-columns: minmax(6rem, 15rem) 1fr minmax(5.5rem, auto); gap: var(--cds-gap-sm); align-items: center; font-size: var(--cds-font-size-caption); border-radius: var(--cds-radius); padding: 2px 4px; }
+.nz-hb-l { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nz-hb-t { height: 14px; background: color-mix(in srgb, var(--color-fg) 5%, transparent); border-radius: 4px; overflow: hidden; }
+.nz-hb-b { height: 100%; border-radius: 4px; }
+.nz-hb-v { text-align: right; white-space: nowrap; }
+.nz-hb-s { margin-left: 6px; color: var(--color-fg-muted); }
+.nz-hb-s.nz-good { color: var(--color-ok); } .nz-hb-s.nz-bad { color: var(--color-bad); }
+.nz-click { cursor: pointer; }
+.nz-hb.nz-click:hover, tr.nz-click:hover td { background: color-mix(in srgb, var(--color-fg) 5%, transparent); }
+.nz-hb.nz-active, tr.nz-active td { background: color-mix(in srgb, var(--color-fg) 9%, transparent); }
+@media (max-width: 560px) { .nz-hb { grid-template-columns: 1fr auto; } .nz-hb-l { grid-column: 1 / -1; } .nz-hb-t { grid-column: 1; } }
+.nz-tablebox { max-height: 26rem; overflow: auto; border-top: 1px solid var(--color-border-line); }
+.nz-tablebox.nz-tall { max-height: 34rem; }
+table.nz-t { width: 100%; border-collapse: collapse; font-size: var(--cds-font-size-caption); }
+.nz-t th { position: sticky; top: 0; background: var(--color-panel); text-align: left; font-weight: var(--cds-font-weight-medium); color: var(--color-fg-muted); padding: var(--cds-pad-xs) var(--cds-pad-sm); border-bottom: 1px solid var(--color-border-line); white-space: nowrap; z-index: 1; }
+.nz-t td { padding: var(--cds-pad-xs) var(--cds-pad-sm); border-bottom: 1px solid color-mix(in srgb, var(--color-border-line) 60%, transparent); white-space: nowrap; }
+.nz-t .nz-num { text-align: right; }
+.nz-sortable { cursor: pointer; user-select: none; }
+.nz-sortable[aria-sort="ascending"]::after { content: " ↑"; } .nz-sortable[aria-sort="descending"]::after { content: " ↓"; }
+.nz-chip { display: inline-block; padding: 0 6px; border-radius: 999px; font-size: var(--cds-font-size-caption); border: 1px solid currentColor; line-height: 1.5; }
+.nz-mini { display: inline-flex; align-items: center; gap: 6px; }
+.nz-mini-t { display: inline-block; width: 4.5rem; height: 6px; border-radius: 3px; background: color-mix(in srgb, var(--color-fg) 8%, transparent); overflow: hidden; }
+.nz-mini-b { display: block; height: 100%; border-radius: 3px; }
+.nz-controls { display: flex; flex-wrap: wrap; gap: var(--cds-gap-sm); align-items: center; margin-bottom: var(--cds-gap-sm); }
+.nz-controls label { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.nz-select, .nz-input { font: inherit; font-size: var(--cds-font-size-caption); color: var(--color-fg); background: var(--color-bg); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-xs) var(--cds-pad-sm); max-width: 100%; }
+.nz-count { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin-left: auto; }
+.nz-heat-wrap { overflow: auto; max-height: 30rem; }
+table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(--cds-font-size-caption); }
+.nz-heat th { font-weight: 400; color: var(--color-fg-muted); white-space: nowrap; background: var(--color-panel); }
+.nz-heat thead th { position: sticky; top: 0; z-index: 1; padding: 2px 4px; writing-mode: vertical-rl; transform: rotate(180deg); text-align: left; height: 7.5rem; vertical-align: bottom; }
+.nz-heat thead th.nz-heat-corner { writing-mode: horizontal-tb; transform: none; left: 0; z-index: 2; }
+.nz-heat th.nz-heat-row { position: sticky; left: 0; text-align: left; padding-right: var(--cds-pad-sm); z-index: 1; }
+.nz-heat td { min-width: 2.6rem; height: 1.6rem; text-align: center; border-radius: 3px; padding: 0 3px; color: var(--color-fg); }
+.nz-heat td.nz-heat-strong { color: var(--color-bg); }
+.nz-empty { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); padding: var(--cds-pad-lg) 0; text-align: center; }
+.nz-failed { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: inherit; height: 100%; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+.nz-dot { width: .375rem; height: .375rem; border-radius: 50%; background: var(--color-bad); }
+.nz-pnav { display: flex; flex-wrap: wrap; gap: var(--cds-gap-sm) var(--cds-gap-md); font-size: var(--cds-font-size-caption); margin-bottom: var(--cds-gap-md); }
+.nz-pnav a { color: var(--color-fg-muted); text-decoration: none; border-bottom: 1px dotted currentColor; cursor: pointer; }
+.nz-feed td:first-child { color: var(--color-fg-muted); }
+.nz-foot { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin-top: var(--cds-gap-xl); border-top: 1px solid var(--color-border-line); padding-top: var(--cds-gap-sm); }
+[data-dash-source-state=empty] { color: transparent; }
+[data-dash-source-state=refreshing] { opacity: .5; transition: opacity var(--cds-dur-slow); }
+@media (prefers-reduced-motion: no-preference) { .nz-section:not([hidden]) { animation: nzfade var(--cds-dur-slow) var(--cds-ease-out); } }
+@keyframes nzfade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+</style>
+
+<div class="nz">
+  <header class="nz-head">
+    <div>
+      <h1 class="nz-title">Grupo Nozar · Ventas en directo <span class="nz-mock">Maqueta · datos simulados</span></h1>
+      <p class="nz-sub" id="takeaway">Hasta el 19 de octubre el grupo factura <b data-source="grupo_resumen" data-field="facturacion" data-where="negocio=Grupo" class="dash-skeleton">—</b>, <b data-source="grupo_resumen" data-field="variacion" data-where="negocio=Grupo" class="dash-skeleton">—</b> frente al mismo periodo de 2025, con un beneficio bruto de <b data-source="grupo_resumen" data-field="beneficio_bruto" data-where="negocio=Grupo" class="dash-skeleton">—</b>.</p>
+    </div>
+    <div class="nz-live"><span class="nz-live-dot"></span>En directo · último movimiento a las <span data-source="actividad_hoy" data-field="hora" data-row="0" class="dash-skeleton">—</span></div>
+  </header>
+
+  <nav class="nz-tabs" role="tablist" aria-label="Secciones">
+    <button class="nz-tab" role="tab" id="tab-inicio" data-tab="inicio" aria-selected="true">Inicio</button>
+    <button class="nz-tab" role="tab" id="tab-inmobiliario" data-tab="inmobiliario" aria-selected="false">Inmobiliario</button>
+    <button class="nz-tab" role="tab" id="tab-panticosa" data-tab="panticosa" aria-selected="false">Balneario de Panticosa</button>
+    <button class="nz-tab" role="tab" id="tab-bodegas" data-tab="bodegas" aria-selected="false">Bodegas</button>
+  </nav>
+
+  <!-- ================= INICIO ================= -->
+  <section class="nz-section" id="inicio" data-page="inicio">
+    <h2 class="nz-h2">Facturación del grupo <small>1 ene – 19 oct 2026 vs mismo periodo 2025</small></h2>
+    <div class="nz-tiles nz-wide" id="home-negocios">
+      <div class="nz-tile nz-hero"><div class="nz-tl">Grupo Nozar</div><div class="nz-big dash-skeleton" data-source="grupo_resumen" data-field="facturacion" data-where="negocio=Grupo">—</div><div class="nz-meta"><span class="dash-skeleton" data-source="grupo_resumen" data-field="variacion" data-where="negocio=Grupo">—</span><span>BB <span class="dash-skeleton" data-source="grupo_resumen" data-field="beneficio_bruto" data-where="negocio=Grupo">—</span> · margen <span class="dash-skeleton" data-source="grupo_resumen" data-field="margen" data-where="negocio=Grupo">—</span></span></div></div>
+      <div class="nz-tile"><div class="nz-tl">Inmobiliario</div><div class="nz-big dash-skeleton" data-source="grupo_resumen" data-field="facturacion" data-where="negocio=Inmobiliario">—</div><div class="nz-meta"><span class="dash-skeleton" data-source="grupo_resumen" data-field="variacion" data-where="negocio=Inmobiliario">—</span><span>BB <span class="dash-skeleton" data-source="grupo_resumen" data-field="beneficio_bruto" data-where="negocio=Inmobiliario">—</span> · margen <span class="dash-skeleton" data-source="grupo_resumen" data-field="margen" data-where="negocio=Inmobiliario">—</span></span></div></div>
+      <div class="nz-tile"><div class="nz-tl">Hotelero · Panticosa</div><div class="nz-big dash-skeleton" data-source="grupo_resumen" data-field="facturacion" data-where="negocio=Hotelero">—</div><div class="nz-meta"><span class="dash-skeleton" data-source="grupo_resumen" data-field="variacion" data-where="negocio=Hotelero">—</span><span>BB <span class="dash-skeleton" data-source="grupo_resumen" data-field="beneficio_bruto" data-where="negocio=Hotelero">—</span> · margen <span class="dash-skeleton" data-source="grupo_resumen" data-field="margen" data-where="negocio=Hotelero">—</span></span></div></div>
+      <div class="nz-tile"><div class="nz-tl">Bodegas</div><div class="nz-big dash-skeleton" data-source="grupo_resumen" data-field="facturacion" data-where="negocio=Bodegas">—</div><div class="nz-meta"><span class="dash-skeleton" data-source="grupo_resumen" data-field="variacion" data-where="negocio=Bodegas">—</span><span>BB <span class="dash-skeleton" data-source="grupo_resumen" data-field="beneficio_bruto" data-where="negocio=Bodegas">—</span> · margen <span class="dash-skeleton" data-source="grupo_resumen" data-field="margen" data-where="negocio=Bodegas">—</span></span></div></div>
+    </div>
+    <p class="nz-note">BB = beneficio bruto: ventas menos el coste directo de lo vendido (obra y suelo en viviendas; habitaciones, comida y bebida en el hotel; uva, elaboración y botella en el vino). En inmobiliario se factura al escriturar, por eso va a saltos.</p>
+
+    <h2 class="nz-h2">Pulso comercial</h2>
+    <div class="nz-tiles">
+      <div class="nz-tile"><div class="nz-tl">Viviendas vendidas o reservadas</div><div class="nz-big dash-skeleton" data-source="inmo_kpis" data-field="comercializadas" data-row="0">—</div><div class="nz-meta">de <span class="dash-skeleton" data-source="inmo_kpis" data-field="viviendas_en_curso" data-row="0">—</span> en promociones en curso</div></div>
+      <div class="nz-tile"><div class="nz-tl">Reservas de vivienda en octubre</div><div class="nz-big dash-skeleton" data-source="reservas_mes_total" data-field="reservas" data-where="mes=2026-10">—</div><div class="nz-meta">septiembre: <span class="dash-skeleton" data-source="reservas_mes_total" data-field="reservas" data-where="mes=2026-09">—</span></div></div>
+      <div class="nz-tile"><div class="nz-tl">Ocupación Panticosa (año)</div><div class="nz-big dash-skeleton" data-source="hotel_resumen" data-field="ocupacion" data-where="hotel=Total">—</div><div class="nz-meta">2025: <span class="dash-skeleton" data-source="hotel_resumen" data-field="ocupacion_ant" data-where="hotel=Total">—</span></div></div>
+      <div class="nz-tile"><div class="nz-tl">Botellas vendidas (año)</div><div class="nz-big dash-skeleton" data-source="vino_totales" data-field="botellas" data-row="0">—</div><div class="nz-meta">2025: <span class="dash-skeleton" data-source="vino_totales" data-field="botellas_ant" data-row="0">—</span></div></div>
+    </div>
+
+    <div class="nz-grid2">
+      <div class="nz-card" id="card-grupo-mes">
+        <h3>Facturación mensual por negocio</h3>
+        <p class="nz-note">Enero 2025 – octubre 2026 (octubre hasta el día 19). Cada negocio con su propia escala.</p>
+        <div data-source="grupo_mes" id="grupo-mes-wrap">
+          <div class="nz-tl">Inmobiliario (escrituras)</div><div class="nz-chart nz-short" id="ch-grupo-inm"></div>
+          <div class="nz-tl">Hotelero</div><div class="nz-chart nz-short" id="ch-grupo-hot"></div>
+          <div class="nz-tl">Bodegas</div><div class="nz-chart nz-short" id="ch-grupo-bod"></div>
+        </div>
+      </div>
+      <div class="nz-card" id="card-feed">
+        <h3>Últimos movimientos de hoy</h3>
+        <p class="nz-note">Cada venta, reserva o pedido según entra en el sistema.</p>
+        <div class="nz-tablebox nz-tall">
+          <table class="nz-t nz-feed" id="t-feed" data-source="actividad_hoy" data-row-key="id">
+            <thead><tr><th data-field="hora">Hora</th><th data-field="negocio">Negocio</th><th data-field="detalle">Movimiento</th><th data-field="importe">Importe</th></tr></thead>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= INMOBILIARIO ================= -->
+  <section class="nz-section" id="inmobiliario" data-page="inmobiliario" hidden>
+    <h2 class="nz-h2">Promociones entregadas <small>histórico desde 2016</small></h2>
+    <div class="nz-tiles">
+      <div class="nz-tile"><div class="nz-tl">Promociones entregadas</div><div class="nz-big dash-skeleton" data-source="inmo_kpis" data-field="promos_entregadas" data-row="0">—</div></div>
+      <div class="nz-tile"><div class="nz-tl">Viviendas escrituradas</div><div class="nz-big dash-skeleton" data-source="inmo_kpis" data-field="viviendas_entregadas" data-row="0">—</div></div>
+      <div class="nz-tile"><div class="nz-tl">Facturación escriturada</div><div class="nz-big dash-skeleton" data-source="inmo_kpis" data-field="facturacion_escriturada" data-row="0">—</div></div>
+    </div>
+    <h2 class="nz-h2">Promociones en curso</h2>
+    <div class="nz-tiles">
+      <div class="nz-tile"><div class="nz-tl">Promociones en curso</div><div class="nz-big dash-skeleton" data-source="inmo_kpis" data-field="promos_en_curso" data-row="0">—</div><div class="nz-meta"><span class="dash-skeleton" data-source="inmo_kpis" data-field="viviendas_en_curso" data-row="0">—</span>&nbsp;viviendas</div></div>
+      <div class="nz-tile"><div class="nz-tl">Vendidas (contrato)</div><div class="nz-big dash-skeleton" data-source="inmo_kpis" data-field="vendidas" data-row="0">—</div></div>
+      <div class="nz-tile"><div class="nz-tl">Reservadas</div><div class="nz-big dash-skeleton" data-source="inmo_kpis" data-field="reservadas" data-row="0">—</div></div>
+      <div class="nz-tile"><div class="nz-tl">Disponibles</div><div class="nz-big dash-skeleton" data-source="inmo_kpis" data-field="disponibles" data-row="0">—</div></div>
+      <div class="nz-tile"><div class="nz-tl">Ventas firmadas pendientes de escriturar</div><div class="nz-big dash-skeleton" data-source="inmo_kpis" data-field="cartera_pendiente" data-row="0">—</div></div>
+    </div>
+
+    <div class="nz-grid2">
+      <div class="nz-card" id="card-mapa">
+        <h3>Dónde están las promociones</h3>
+        <p class="nz-note">Tamaño según nº de viviendas. Pulsa un punto para ver sus viviendas.</p>
+        <div class="nz-legend" id="lg-mapa"></div>
+        <div class="nz-chart nz-tall" id="ch-mapa" data-source="promociones"></div>
+      </div>
+      <div class="nz-card" id="card-reservas">
+        <h3 id="h-reservas">Reservas nuevas por mes</h3>
+        <p class="nz-note" id="n-reservas">Todas las promociones en curso · enero 2025 – octubre 2026 (octubre hasta el día 19).</p>
+        <div class="nz-chart" id="ch-reservas" data-source="reservas_mes_total"></div>
+        <div class="nz-tl" style="margin-top:var(--cds-gap-md)" id="h-reservas-acum">Viviendas comercializadas acumuladas</div>
+        <div class="nz-chart nz-short" id="ch-reservas-acum" data-source="reservas_mes_total"></div>
+      </div>
+    </div>
+
+    <div class="nz-card" id="card-promos-curso" style="margin-bottom:var(--cds-gap-md)">
+      <h3>Promociones en curso: ventas, reservas y facturación</h3>
+      <p class="nz-note">Facturación = precio de las viviendas vendidas y reservadas. Pulsa una fila para ver el detalle por vivienda.</p>
+      <div class="nz-tablebox">
+        <table class="nz-t" id="t-promos-curso" data-source="promociones" data-row-key="id">
+          <thead><tr><th data-field="promocion">Promoción</th><th data-field="ciudad">Ciudad</th><th data-field="entrega">Entrega</th><th data-field="viviendas">Viviendas</th><th data-field="vendidas">Vendidas</th><th data-field="reservadas">Reservadas</th><th data-field="disponibles">Disponibles</th><th data-field="pct_comercializado">Comercializado</th><th data-field="facturacion">Facturación</th><th data-field="valor_disponible">Por vender</th><th data-field="precio_medio">Precio medio</th></tr></thead>
+        </table>
+      </div>
+    </div>
+
+    <div class="nz-card" id="card-vivs" style="margin-bottom:var(--cds-gap-md)">
+      <h3>Detalle por vivienda</h3>
+      <p class="nz-note" id="n-vivs">Precio y estado de cada vivienda de la promoción elegida.</p>
+      <div class="nz-controls">
+        <label for="sel-promo">Promoción</label>
+        <select class="nz-select" id="sel-promo" data-source="promociones"></select>
+        <select class="nz-select" id="sel-estado" aria-label="Estado"><option value="">Todos los estados</option><option>Vendida</option><option>Reservada</option><option>Disponible</option><option>Escriturada</option></select>
+        <input class="nz-input" id="q-viv" type="search" placeholder="Buscar vivienda…" aria-label="Buscar vivienda">
+        <span class="nz-count" id="c-vivs"></span>
+      </div>
+      <div class="nz-tiles" id="promo-tiles">
+        <div class="nz-tile"><div class="nz-tl">Viviendas</div><div class="nz-big dash-skeleton" id="pt-viv">—</div><div class="nz-meta" id="pt-loc"></div></div>
+        <div class="nz-tile"><div class="nz-tl">Vendidas · reservadas</div><div class="nz-big dash-skeleton"><span id="pt-ven">—</span> · <span id="pt-res">—</span></div><div class="nz-meta">disponibles: <span id="pt-dis">—</span></div></div>
+        <div class="nz-tile"><div class="nz-tl">Facturación</div><div class="nz-big dash-skeleton" id="pt-fac">—</div><div class="nz-meta">precio medio <span id="pt-pm">—</span></div></div>
+      </div>
+      <div class="nz-tl">Reservas por mes de esta promoción</div>
+      <div class="nz-chart nz-short" id="ch-promo-res" data-source="reservas_mes"></div>
+      <div class="nz-tablebox nz-tall" style="margin-top:var(--cds-gap-md)">
+        <table class="nz-t" id="t-vivs" data-source="viviendas" data-row-key="id">
+          <thead><tr><th data-field="vivienda">Vivienda</th><th data-field="tipologia">Tipología</th><th data-field="dormitorios">Dorm.</th><th data-field="m2">m²</th><th data-field="precio">Precio</th><th data-field="estado">Estado</th><th data-field="fecha_reserva">Fecha de reserva</th></tr></thead>
+        </table>
+      </div>
+    </div>
+
+    <div class="nz-card" id="card-promos-entregadas">
+      <h3>Promociones entregadas y vendidas</h3>
+      <p class="nz-note">Todas al 100&nbsp;% vendidas y escrituradas. Facturación = suma de los precios de escritura.</p>
+      <div class="nz-tablebox">
+        <table class="nz-t" id="t-promos-entregadas" data-source="promociones" data-row-key="id">
+          <thead><tr><th data-field="promocion">Promoción</th><th data-field="zona">Zona</th><th data-field="ciudad">Ciudad</th><th data-field="entrega">Entrega</th><th data-field="viviendas">Viviendas</th><th data-field="facturacion_escriturada">Facturación</th><th data-field="precio_medio">Precio medio</th></tr></thead>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PANTICOSA ================= -->
+  <section class="nz-section" id="panticosa" data-page="panticosa" hidden>
+    <div class="nz-bar-row">
+      <div class="nz-seg" id="seg-hotel" role="group" aria-label="Hotel">
+        <button data-v="Total">Todo el balneario</button><button data-v="Gran Hotel">Gran Hotel</button><button data-v="Hotel Continental">Hotel Continental</button>
+      </div>
+      <span class="nz-note" style="margin:0">1 ene – 19 oct 2026 vs mismo periodo 2025</span>
+    </div>
+    <div class="nz-tiles" id="hotel-tiles">
+      <div class="nz-tile"><div class="nz-tl">Facturación</div><div class="nz-big dash-skeleton" data-k="facturacion">—</div><div class="nz-meta"><span data-d="facturacion">—</span><span>2025: <span data-k="facturacion_ant">—</span></span></div></div>
+      <div class="nz-tile"><div class="nz-tl">Beneficio bruto</div><div class="nz-big dash-skeleton" data-k="beneficio_bruto">—</div><div class="nz-meta"><span data-d="beneficio_bruto">—</span><span>2025: <span data-k="beneficio_bruto_ant">—</span></span></div></div>
+      <div class="nz-tile"><div class="nz-tl">Ocupación</div><div class="nz-big dash-skeleton" data-k="ocupacion">—</div><div class="nz-meta"><span>2025: <span data-k="ocupacion_ant">—</span></span></div></div>
+      <div class="nz-tile"><div class="nz-tl">Precio medio por noche</div><div class="nz-big dash-skeleton" data-k="adr">—</div><div class="nz-meta"><span>2025: <span data-k="adr_ant">—</span></span></div></div>
+      <div class="nz-tile"><div class="nz-tl">Ingreso por habitación disponible</div><div class="nz-big dash-skeleton" data-k="revpar">—</div><div class="nz-meta"><span>2025: <span data-k="revpar_ant">—</span></span></div></div>
+      <div class="nz-tile"><div class="nz-tl">Personas alojadas</div><div class="nz-big dash-skeleton" data-k="huespedes">—</div><div class="nz-meta"><span>2025: <span data-k="huespedes_ant">—</span></span><span><span data-k="noches_vendidas">—</span> noches</span></div></div>
+    </div>
+    <p class="nz-note">Habitaciones: <span data-source="hotel_resumen" data-field="habitaciones" data-where="hotel=Gran Hotel">—</span> en el Gran Hotel y <span data-source="hotel_resumen" data-field="habitaciones" data-where="hotel=Hotel Continental">—</span> en el Hotel Continental. El precio medio por noche es lo cobrado por habitación ocupada; el ingreso por habitación disponible reparte ese cobro entre todas las habitaciones, ocupadas o no.</p>
+
+    <div class="nz-grid2">
+      <div class="nz-card" id="card-ocupacion">
+        <h3>Ocupación por mes</h3>
+        <p class="nz-note">Porcentaje de habitaciones ocupadas. 2026 llega hasta el 19 de octubre.</p>
+        <div class="nz-chart" id="ch-ocupacion" data-source="hotel_mes_total"></div>
+      </div>
+      <div class="nz-card" id="card-huespedes">
+        <h3>Personas alojadas por mes</h3>
+        <p class="nz-note">En color, 2026; en gris, 2025. Octubre de 2026 hasta el día 19.</p>
+        <div class="nz-chart" id="ch-huespedes" data-source="hotel_mes_total"></div>
+      </div>
+      <div class="nz-card" id="card-ingresos-aloj">
+        <h3>Ingresos de alojamiento por mes</h3>
+        <p class="nz-note">Solo habitaciones; restauración y spa van abajo.</p>
+        <div class="nz-chart" id="ch-ingresos-aloj" data-source="hotel_mes_total"></div>
+      </div>
+      <div class="nz-card" id="card-reservas-hotel">
+        <h3>Reservas ya cerradas para los próximos meses</h3>
+        <p class="nz-note">Noches reservadas a hoy frente a las que había el mismo día del año pasado. Todo el balneario.</p>
+        <div class="nz-legend" id="lg-otb"></div>
+        <div class="nz-chart" id="ch-otb" data-source="hotel_reservas_futuras"></div>
+      </div>
+    </div>
+    <div class="nz-card" id="card-pickup" style="margin-bottom:var(--cds-gap-md)">
+      <h3>Reservas nuevas por semana</h3>
+      <p class="nz-note">Reservas creadas cada semana, para cualquier fecha de estancia. La última semana va por el lunes–hoy.</p>
+      <div class="nz-chart nz-short" id="ch-pickup" data-source="hotel_pickup"></div>
+    </div>
+
+    <h2 class="nz-h2" id="h-puntos">Restaurantes, bares y spas <small>1 ene – 19 oct 2026</small></h2>
+    <div class="nz-grid2">
+      <div class="nz-card" id="card-puntos">
+        <h3>Ingresos por punto de venta</h3>
+        <p class="nz-note">Variación frente al mismo periodo de 2025. Pulsa uno para ver su evolución.</p>
+        <div class="nz-chart" id="ch-puntos" data-source="hotel_puntos_resumen"></div>
+      </div>
+      <div class="nz-card" id="card-punto-mes">
+        <h3 id="h-punto-mes">Ingresos por mes</h3>
+        <p class="nz-note">Octubre de 2026 hasta el día 19.</p>
+        <div class="nz-chart" id="ch-punto-mes" data-source="hotel_puntos_mes"></div>
+      </div>
+    </div>
+    <div class="nz-card">
+      <h3>Resultados por punto de venta</h3>
+      <p class="nz-note">Coste directo = producto vendido y personal del punto. Margen = beneficio bruto sobre ingresos.</p>
+      <div class="nz-tablebox">
+        <table class="nz-t" id="t-puntos" data-source="hotel_puntos_resumen" data-row-key="punto">
+          <thead><tr><th data-field="punto">Punto de venta</th><th data-field="tipo">Tipo</th><th data-field="ubicacion">Ubicación</th><th data-field="ingresos">Ingresos</th><th data-field="ingresos_ant">2025</th><th data-field="variacion">Var.</th><th data-field="coste_directo">Coste directo</th><th data-field="beneficio_bruto">Beneficio bruto</th><th data-field="margen">Margen</th></tr></thead>
+        </table>
+      </div>
+    </div>
+
+    <h2 class="nz-h2" id="h-productos">Lo más vendido de las cartas <small>1 ene – 19 oct 2026</small></h2>
+    <div class="nz-grid2">
+      <div class="nz-card" id="card-top-balneario">
+        <h3>Los 12 productos que más facturan</h3>
+        <p class="nz-note">Todo el balneario: restaurantes, bares y spas. Entre paréntesis, dónde se vende.</p>
+        <div class="nz-chart nz-tall" id="ch-top-balneario" data-source="hotel_productos"></div>
+      </div>
+      <div class="nz-card" id="card-top-masajes">
+        <h3>Masajes y tratamientos más vendidos</h3>
+        <p class="nz-note">Número de servicios en los dos spas (sin contar los circuitos termales). A la derecha, lo que facturan.</p>
+        <div class="nz-chart nz-tall" id="ch-top-masajes" data-source="hotel_productos"></div>
+      </div>
+    </div>
+    <div class="nz-card" id="card-carta">
+      <h3 id="h-carta">Ventas de la carta por punto de venta</h3>
+      <p class="nz-note">Cada plato, bebida o servicio con su precio, unidades vendidas frente a 2025 e ingresos. «Origen del precio» dice si sale de la carta publicada o es una estimación.</p>
+      <div class="nz-controls">
+        <label for="sel-punto">Punto de venta</label>
+        <select class="nz-select" id="sel-punto" data-source="hotel_puntos_resumen"></select>
+        <span class="nz-count" id="c-carta"></span>
+      </div>
+      <div class="nz-tablebox nz-tall">
+        <table class="nz-t" id="t-carta" data-source="hotel_productos" data-row-key="id">
+          <thead><tr><th data-field="ranking">#</th><th data-field="producto">Producto o servicio</th><th data-field="categoria">Sección</th><th data-field="precio">Precio</th><th data-field="unidades">Unidades</th><th data-field="unidades_ant">2025</th><th data-field="variacion">Var.</th><th data-field="ingresos">Ingresos</th><th data-field="precio_fuente">Origen del precio</th></tr></thead>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= BODEGAS ================= -->
+  <section class="nz-section" id="bodegas" data-page="bodegas" hidden>
+    <div class="nz-bar-row">
+      <div class="nz-seg" id="seg-bodega" role="group" aria-label="Bodega">
+        <button data-v="Enate">Enate</button><button data-v="Laus">Laus</button><button data-v="Las Moradas de San Martín">Las Moradas de San Martín</button>
+      </div>
+      <span class="nz-note" style="margin:0">1 ene – 19 oct 2026 vs mismo periodo 2025</span>
+    </div>
+    <nav class="nz-pnav" aria-label="Apartados de la bodega">
+      <a data-go="b-resumen">Resumen</a><a data-go="b-referencias">Referencias</a><a data-go="b-provincias">Ventas por provincia</a><a data-go="b-export">Exportación</a><a data-go="b-canales">Online, visitas y tienda</a>
+    </nav>
+
+    <h2 class="nz-h2" id="b-resumen">Resumen</h2>
+    <div class="nz-tiles" id="vino-tiles">
+      <div class="nz-tile"><div class="nz-tl">Facturación</div><div class="nz-big dash-skeleton" data-k="facturacion">—</div><div class="nz-meta"><span data-d="variacion">—</span><span>2025: <span data-k="facturacion_ant">—</span></span></div></div>
+      <div class="nz-tile"><div class="nz-tl">Beneficio bruto</div><div class="nz-big dash-skeleton" data-k="beneficio_bruto">—</div><div class="nz-meta"><span>margen <span data-k="margen">—</span></span><span>2025: <span data-k="beneficio_bruto_ant">—</span></span></div></div>
+      <div class="nz-tile"><div class="nz-tl">Botellas vendidas</div><div class="nz-big dash-skeleton" data-k="botellas">—</div><div class="nz-meta"><span>2025: <span data-k="botellas_ant">—</span></span></div></div>
+      <div class="nz-tile"><div class="nz-tl">Exportación</div><div class="nz-big dash-skeleton" data-k="facturacion_export">—</div><div class="nz-meta"><span><span data-k="pct_export">—</span> de la facturación</span></div></div>
+      <div class="nz-tile"><div class="nz-tl">Venta directa</div><div class="nz-big dash-skeleton" data-k="facturacion_directa">—</div><div class="nz-meta">online, visitas y tienda</div></div>
+    </div>
+    <div class="nz-grid2">
+      <div class="nz-card" id="card-vino-anual">
+        <h3>Facturación y beneficio bruto por año</h3>
+        <p class="nz-note">2026 hasta el 19 de octubre.</p>
+        <div class="nz-legend" id="lg-vino-anual"></div>
+        <div class="nz-chart" id="ch-vino-anual" data-source="vino_anual"></div>
+      </div>
+      <div class="nz-card" id="card-vino-mes">
+        <h3>Facturación por mes, comparada con años anteriores</h3>
+        <p class="nz-note">Octubre de 2026 hasta el día 19.</p>
+        <div class="nz-chart" id="ch-vino-mes" data-source="vino_mes"></div>
+      </div>
+    </div>
+
+    <h2 class="nz-h2" id="b-referencias">Ventas por referencia</h2>
+    <div class="nz-grid2">
+      <div class="nz-card" id="card-refs">
+        <h3>Facturación por referencia</h3>
+        <p class="nz-note">España y exportación juntas. Variación frente a 2025. Pulsa una para filtrar las provincias.</p>
+        <div class="nz-chart" id="ch-refs" data-source="vino_referencias"></div>
+      </div>
+      <div class="nz-card" id="card-refs-t">
+        <h3>Todas las referencias</h3>
+        <p class="nz-note">PVP = precio de venta al público de referencia.</p>
+        <div class="nz-tablebox">
+          <table class="nz-t" id="t-refs" data-source="vino_referencias" data-row-key="referencia">
+            <thead><tr><th data-field="referencia">Referencia</th><th data-field="tipo">Tipo</th><th data-field="pvp">PVP</th><th data-field="botellas">Botellas</th><th data-field="botellas_ant">2025</th><th data-field="facturacion">Facturación</th><th data-field="variacion">Var.</th><th data-field="beneficio_bruto">Beneficio bruto</th><th data-field="margen">Margen</th></tr></thead>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="nz-h2" id="b-provincias">Ventas en España por provincia</h2>
+    <div class="nz-grid2">
+      <div class="nz-card" id="card-prov">
+        <h3 id="h-prov">Facturación por provincia</h3>
+        <div class="nz-controls"><label for="sel-ref">Referencia</label><select class="nz-select" id="sel-ref" data-source="vino_referencias"></select></div>
+        <div class="nz-chart nz-tall" id="ch-prov" data-source="vino_provincias vino_provincia_referencia"></div>
+      </div>
+      <div class="nz-card" id="card-prov-heat">
+        <h3>Botellas por referencia y provincia</h3>
+        <p class="nz-note">Cuanto más intenso, más botellas.</p>
+        <div class="nz-chart nz-tall" id="ch-prov-heat" data-source="vino_provincia_referencia"></div>
+      </div>
+    </div>
+
+    <h2 class="nz-h2" id="b-export">Exportación</h2>
+    <div class="nz-grid2">
+      <div class="nz-card" id="card-paises">
+        <h3>Facturación por país</h3>
+        <p class="nz-note">Variación frente a 2025. Pulsa un país para ver sus referencias.</p>
+        <div class="nz-chart nz-tall" id="ch-paises" data-source="vino_paises"></div>
+      </div>
+      <div class="nz-card" id="card-pais-refs">
+        <h3 id="h-pais-refs">Referencias por país</h3>
+        <div class="nz-controls"><label for="sel-pais">País</label><select class="nz-select" id="sel-pais" data-source="vino_paises"></select></div>
+        <div class="nz-tablebox">
+          <table class="nz-t" id="t-pais-refs" data-source="vino_export_referencia" data-row-key="id">
+            <thead><tr><th data-field="referencia">Referencia</th><th data-field="botellas">Botellas</th><th data-field="botellas_ant">2025</th><th data-field="facturacion">Facturación</th><th data-field="facturacion_ant">2025</th></tr></thead>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="nz-card" id="card-exp-heat" style="margin-bottom:var(--cds-gap-md)">
+      <h3>Botellas exportadas por referencia y país</h3>
+      <div class="nz-chart" id="ch-exp-heat" data-source="vino_export_referencia"></div>
+    </div>
+
+    <h2 class="nz-h2" id="b-canales">Venta online, visitas a la bodega y tienda</h2>
+    <div class="nz-tiles nz-wide" id="canal-tiles"></div>
+    <div class="nz-grid3">
+      <div class="nz-card" id="card-canal-online"><h3>Tienda online</h3><p class="nz-note">Facturación por mes.</p><div class="nz-chart nz-short" id="ch-canal-online" data-source="vino_canales_mes"></div></div>
+      <div class="nz-card" id="card-canal-visitas"><h3>Visitas a la bodega</h3><p class="nz-note">Personas por mes.</p><div class="nz-chart nz-short" id="ch-canal-visitas" data-source="vino_canales_mes"></div></div>
+      <div class="nz-card" id="card-canal-tienda"><h3>Tienda de la bodega</h3><p class="nz-note">Facturación por mes.</p><div class="nz-chart nz-short" id="ch-canal-tienda" data-source="vino_canales_mes"></div></div>
+    </div>
+  </section>
+
+  <p class="nz-foot">Maqueta: todas las cifras son simuladas y solo sirven para enseñar cómo se vería el panel. Los nombres de promociones, ubicaciones, número de viviendas y referencias de vino salen de las webs de Nozar, Enate, Laus y Las Moradas y de prensa; algunas promociones y referencias de Laus son aproximadas. En producción, cada fuente se conectaría al CRM de ventas, al sistema de reservas del hotel y al ERP de las bodegas.</p>
+</div>
+
+</div>
+<script src="dash-shim.js"></script>
+<script src="lib.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
