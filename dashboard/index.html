@@ -175,6 +175,23 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
     </div>
     <p class="nz-note">BB = beneficio bruto: ventas menos el coste directo de lo vendido (obra y suelo en viviendas; habitaciones, comida y bebida en el hotel; uva, elaboración y botella en el vino). En inmobiliario se factura al escriturar, por eso va a saltos.</p>
 
+    <div class="nz-card" id="card-home-inmo" style="margin-bottom:var(--cds-gap-md)">
+      <div class="nz-bar-row" style="margin-bottom:var(--cds-gap-xs)">
+        <h3 id="h-home-inmo">Inmobiliario por mes</h3>
+        <div class="nz-seg" id="seg-inmo" role="group" aria-label="Qué mostrar">
+          <button data-v="escriturado">Facturación escriturada</button><button data-v="reservas">Viviendas reservadas</button><button data-v="comprometido">Facturación comprometida</button>
+        </div>
+      </div>
+      <p class="nz-note" id="n-home-inmo"></p>
+      <div class="nz-tiles" id="home-inmo-tiles">
+        <div class="nz-tile"><div class="nz-tl">2026 hasta el 19 oct</div><div class="nz-big dash-skeleton" id="hi-26">—</div></div>
+        <div class="nz-tile"><div class="nz-tl">Mismo periodo de 2025</div><div class="nz-big dash-skeleton" id="hi-25">—</div></div>
+        <div class="nz-tile"><div class="nz-tl">Variación</div><div class="nz-big dash-skeleton" id="hi-var">—</div></div>
+      </div>
+      <div class="nz-legend" id="lg-home-inmo"></div>
+      <div class="nz-chart" id="ch-home-inmo" data-source="inmo_mes"></div>
+    </div>
+
     <h2 class="nz-h2">Pulso comercial</h2>
     <div class="nz-tiles">
       <div class="nz-tile"><div class="nz-tl">Viviendas vendidas o reservadas</div><div class="nz-big dash-skeleton" data-source="inmo_kpis" data-field="comercializadas" data-row="0">—</div><div class="nz-meta">de <span class="dash-skeleton" data-source="inmo_kpis" data-field="viviendas_en_curso" data-row="0">—</span> en promociones en curso</div></div>
@@ -185,10 +202,9 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
 
     <div class="nz-grid2">
       <div class="nz-card" id="card-grupo-mes">
-        <h3>Facturación mensual por negocio</h3>
-        <p class="nz-note">Enero 2025 – octubre 2026 (octubre hasta el día 19). Cada negocio con su propia escala.</p>
+        <h3>Facturación mensual del hotel y las bodegas</h3>
+        <p class="nz-note">Enero 2025 – octubre 2026 (octubre hasta el día 19). Cada negocio con su propia escala; el inmobiliario está arriba.</p>
         <div data-source="grupo_mes" id="grupo-mes-wrap">
-          <div class="nz-tl">Inmobiliario (escrituras)</div><div class="nz-chart nz-short" id="ch-grupo-inm"></div>
           <div class="nz-tl">Hotelero</div><div class="nz-chart nz-short" id="ch-grupo-hot"></div>
           <div class="nz-tl">Bodegas</div><div class="nz-chart nz-short" id="ch-grupo-bod"></div>
         </div>

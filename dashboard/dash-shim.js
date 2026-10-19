@@ -8,7 +8,7 @@
     'vino_canales_mes', 'vino_canales_resumen', 'vino_resumen', 'vino_anual', 'vino_mes',
     'grupo_mes', 'grupo_resumen', 'actividad_hoy',
   ];
-  const DEFAULT_PARAMS = { promo: 'avda-america', hotel: 'Total', punto: 'Termas de Tiberio', bodega: 'Enate', ref: null, pais: null };
+  const DEFAULT_PARAMS = { inmo_vista: 'escriturado', promo: 'avda-america', hotel: 'Total', punto: 'Termas de Tiberio', bodega: 'Enate', ref: null, pais: null };
 
   const store = {};
   const calcs = {};

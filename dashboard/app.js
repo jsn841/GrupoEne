@@ -28,6 +28,41 @@
       }];
     },
   });
+  dash.calc('inmo_mes', {
+    title: 'Inmobiliario por mes',
+    description: 'Por mes: facturación escriturada (escrituras de promociones entregadas), viviendas reservadas y precio de esas reservas, en todas las promociones.',
+    inputs: ['viviendas', 'grupo_mes'],
+    fn: (viviendas, grupo_mes) => {
+      const by = new Map();
+      grupo_mes.filter((r) => r.negocio === 'Inmobiliario').forEach((r) => by.set(r.mes, { mes: r.mes, escriturado: r.facturacion, reservas: 0, comprometido: 0 }));
+      viviendas.forEach((v) => {
+        if (!v.fecha_reserva) return;
+        const row = by.get(v.fecha_reserva.slice(0, 7));
+        if (!row) return;
+        row.reservas += 1;
+        row.comprometido += v.precio;
+      });
+      return [...by.values()].sort((a, b) => (a.mes < b.mes ? -1 : 1));
+    },
+  });
+  dash.calc('inmo_mes_totales', {
+    title: 'Inmobiliario en lo que va de año',
+    description: 'Facturación escriturada, viviendas reservadas y facturación comprometida del 1 ene al 19 oct de 2026 y del mismo periodo de 2025, con su variación. Las escrituras de octubre cuentan el mes entero.',
+    inputs: ['viviendas', 'grupo_mes'],
+    fn: (viviendas, grupo_mes) => {
+      const esc = (y) => grupo_mes.filter((r) => r.negocio === 'Inmobiliario' && r.mes.startsWith(y) && r.mes <= y + '-10').reduce((t, r) => t + r.facturacion, 0);
+      const res = (y) => viviendas.filter((v) => v.fecha_reserva && v.fecha_reserva >= y + '-01-01' && v.fecha_reserva <= y + '-10-19');
+      const r26 = res('2026'), r25 = res('2025');
+      const sum = (a) => a.reduce((t, v) => t + v.precio, 0);
+      const o = {
+        escriturado_2026: esc('2026'), escriturado_2025: esc('2025'),
+        reservas_2026: r26.length, reservas_2025: r25.length,
+        comprometido_2026: sum(r26), comprometido_2025: sum(r25),
+      };
+      ['escriturado', 'reservas', 'comprometido'].forEach((k) => { o['var_' + k] = o[k + '_2025'] ? o[k + '_2026'] / o[k + '_2025'] - 1 : null; });
+      return [o];
+    },
+  });
   dash.calc('vino_totales', {
     title: 'Botellas de las tres bodegas',
     description: 'Botellas vendidas por Enate, Laus y Las Moradas sumadas, este año y el mismo periodo de 2025.',
@@ -73,7 +108,7 @@
     if (['margen', 'ocupacion', 'ocupacion_ant', 'pct_export', 'pct_comercializado'].includes(f)) return (v) => NZ.pct(v);
     if (['adr', 'adr_ant', 'revpar', 'revpar_ant', 'ticket_medio'].includes(f)) return NZ.eur1;
     if (f === 'precio_medio' || f === 'precio') return NZ.eur;
-    if (/facturacion|beneficio|cartera|ingresos|valor|coste|importe/.test(f)) return NZ.eurC;
+    if (/facturacion|beneficio|cartera|ingresos|valor|coste|importe|escriturado|comprometido/.test(f)) return NZ.eurC;
     if (TEXT.includes(f)) return (v) => (v == null ? '—' : String(v));
     return NZ.int;
   };
@@ -145,6 +180,7 @@
   $('#sel-promo').addEventListener('change', (e) => setP({ promo: e.target.value }));
   $('#sel-estado').addEventListener('change', () => draw());
   $('#q-viv').addEventListener('input', () => draw());
+  $$('#seg-inmo button').forEach((b) => b.addEventListener('click', () => setP({ inmo_vista: b.dataset.v })));
   $('#sel-punto').addEventListener('change', (e) => setP({ punto: e.target.value }));
   $('#sel-ref').addEventListener('change', (e) => setP({ ref: e.target.value || null }));
   $('#sel-pais').addEventListener('change', (e) => setP({ pais: e.target.value || null }));
@@ -152,7 +188,32 @@
   // ---------- INICIO ----------
   function drawInicio() {
     const gm = ok('grupo_mes');
-    const boxes = [['Inmobiliario', '#ch-grupo-inm', 0], ['Hotelero', '#ch-grupo-hot', 1], ['Bodegas', '#ch-grupo-bod', 2]];
+    // real-estate widget with three views
+    const vista = P().inmo_vista || 'escriturado';
+    const V = {
+      escriturado: { t: 'Facturación escriturada por mes', n: 'Lo que se factura al firmar la escritura y entregar las llaves. Va a saltos: cada promoción entregada se factura de golpe.', fmt: NZ.eurC, tip: NZ.eur },
+      reservas: { t: 'Viviendas reservadas por mes', n: 'Viviendas que se reservan cada mes, sumando todas las promociones.', fmt: NZ.int, tip: (v) => NZ.int(v) + ' viviendas' },
+      comprometido: { t: 'Facturación comprometida por reservas', n: 'Precio de las viviendas reservadas cada mes: dinero ya comprometido que se facturará cuando se escriture.', fmt: NZ.eurC, tip: NZ.eur },
+    }[vista];
+    $$('#seg-inmo button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === vista)));
+    $('#h-home-inmo').textContent = V.t;
+    $('#n-home-inmo').textContent = V.n + ' 2026 llega hasta el 19 de octubre.';
+    NZ.mark($('#hi-26'), 'inmo_mes_totales', vista + '_2026');
+    NZ.mark($('#hi-25'), 'inmo_mes_totales', vista + '_2025');
+    NZ.mark($('#hi-var'), 'inmo_mes_totales', 'var_' + vista);
+    ['#hi-26', '#hi-25', '#hi-var'].forEach((s) => $(s).setAttribute('data-row', '0'));
+    const im = ok('inmo_mes');
+    if (im) {
+      const meses = d3.range(1, 13);
+      const ser = (y, name, color) => {
+        const m = new Map(im.filter((r) => r.mes.startsWith(y)).map((r) => [+r.mes.slice(5), r[vista]]));
+        return { name, color, values: meses.map((k) => (m.has(k) ? m.get(k) : null)) };
+      };
+      NZ.legend($('#lg-home-inmo'), [{ name: '2025', color: MUTED }, { name: '2026', color: C()[0] }]);
+      NZ.cols($('#ch-home-inmo'), meses, [ser('2025', '2025', MUTED), ser('2026', '2026', C()[0])],
+        { fmtY: V.fmt, fmtTip: V.tip, xLabel: (m) => NZ.MESES[m - 1], tipTitle: (m) => NZ.MESES[m - 1] + (m === 10 ? ' (2026 hasta el 19)' : '') });
+    } else failed($('#ch-home-inmo'), 'viviendas', 'grupo_mes');
+    const boxes = [['Hotelero', '#ch-grupo-hot', 1], ['Bodegas', '#ch-grupo-bod', 2]];
     if (gm) {
       const meses = [...new Set(gm.map((r) => r.mes))].sort();
       boxes.forEach(([neg, sel, ci]) => {
