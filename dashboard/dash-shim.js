@@ -14,11 +14,14 @@
   const calcs = {};
   const listeners = [];
   let params = { ...DEFAULT_PARAMS };
+  const VERSION = '2026-10-19c';
+  const errors = {};
   let loaded = false;
-  let failed = null;
 
   const runCalcs = () => {
     Object.entries(calcs).forEach(([id, c]) => {
+      const bad = c.inputs.filter((i) => !(i in store));
+      if (bad.length) { errors[id] = 'falta ' + bad.join(', '); return; }
       try {
         store[id] = c.fn(...c.inputs.map((i) => store[i]));
       } catch (e) {
@@ -33,7 +36,7 @@
   window.dash = {
     colors: ['var(--c1)', 'var(--c2)', 'var(--c3)', 'var(--c4)', 'var(--c5)', 'var(--c6)', 'var(--c7)', 'var(--c8)'],
     data(id) {
-      if (failed) return { status: 'error', data: [], message: failed };
+      if (errors[id]) return { status: 'error', data: [], message: errors[id] };
       if (!loaded) return { status: 'loading', data: [] };
       if (!(id in store)) return { status: 'missing', data: [] };
       const d = store[id];
@@ -49,12 +52,31 @@
     refresh() {},
   };
 
-  Promise.all(DATASETS.map((id) => fetch('data/' + id + '.json').then((r) => {
-    if (!r.ok) throw new Error(id + ': HTTP ' + r.status);
-    return r.json();
-  }).then((rows) => { store[id] = rows; })))
-    .then(() => { loaded = true; runCalcs(); fire(); })
-    .catch((e) => { failed = String(e); console.error(e); fire(); });
+  const showErrors = () => {
+    const ids = Object.keys(errors);
+    if (!ids.length) return;
+    const root = document.getElementById('dash-root');
+    let box = document.getElementById('nz-load-error');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'nz-load-error';
+      box.setAttribute('role', 'alert');
+      box.style.cssText = 'margin:0 auto 12px;max-width:1320px;padding:10px 14px;border:1px solid var(--color-bad);border-radius:8px;color:var(--color-bad);font:13px var(--font-anthropic-sans)';
+      root.prepend(box);
+    }
+    box.textContent = 'No se han podido cargar ' + ids.length + ' fuentes de datos (' + ids.join(', ') + '). Recarga la página; si sigue igual, ábrela de nuevo dentro de un par de minutos.';
+  };
+  // Load every source on its own: one failing file no longer blanks the whole page.
+  Promise.allSettled(DATASETS.map((id) => fetch('data/' + id + '.json?v=' + VERSION, { cache: 'no-cache' })
+    .then((r) => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then((rows) => { store[id] = rows; })
+    .catch((e) => { errors[id] = String(e.message || e); console.error(id, e); })))
+    .then(() => {
+      loaded = true;
+      runCalcs();
+      fire();
+      showErrors();
+    });
 
   let w = window.innerWidth;
   window.addEventListener('resize', () => {
