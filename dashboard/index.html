@@ -8,7 +8,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400&display=swap" rel="stylesheet">
-<script src="vendor/d3.min.js?v=2026-10-19d"></script>
+<script src="vendor/d3.min.js?v=2026-10-19e"></script>
+<script>
+try { var t = localStorage.getItem('nz-theme'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
 <style>
 :root {
   --font-anthropic-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -27,7 +30,7 @@
   --dash-gutter: clamp(12px, 3vw, 32px);
 }
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --color-fg: #ecebe7; --color-fg-muted: #a3a19b; --color-bg: #191917; --color-panel: #232321; --color-border-line: #3a3936;
     --color-ok: #6cc391; --color-warn: #e0a95a; --color-bad: #ee7b72;
     --cds-chart-grid: #33322f; --cds-chart-axis: #4c4b47; --cds-chart-reference: #8e8c86; --cds-chart-muted: #6d6b66;
@@ -35,10 +38,21 @@
     --c1: #6aa6e8; --c2: #e8915a; --c3: #5cc49a; --c4: #b38ce6; --c5: #ec7aa0; --c6: #5cc7d8; --c7: #cdbb5c; --c8: #98a4b3;
   }
 }
+:root[data-theme="dark"] {
+    --color-fg: #ecebe7; --color-fg-muted: #a3a19b; --color-bg: #191917; --color-panel: #232321; --color-border-line: #3a3936;
+    --color-ok: #6cc391; --color-warn: #e0a95a; --color-bad: #ee7b72;
+    --cds-chart-grid: #33322f; --cds-chart-axis: #4c4b47; --cds-chart-reference: #8e8c86; --cds-chart-muted: #6d6b66;
+    --cds-surface-popover: #2c2c29; --cds-border: #45443f; --cds-shadow-popover: 0 4px 16px rgba(0,0,0,.5); --cds-text-secondary: #a3a19b;
+    --c1: #6aa6e8; --c2: #e8915a; --c3: #5cc49a; --c4: #b38ce6; --c5: #ec7aa0; --c6: #5cc7d8; --c7: #cdbb5c; --c8: #98a4b3;
+}
 html, body { margin: 0; background: var(--color-bg); color: var(--color-fg); }
 #dash-root { padding: var(--dash-gutter); }
 .dash-skeleton { color: transparent !important; background: color-mix(in srgb, var(--color-fg) 8%, transparent); border-radius: 4px; }
 .nz-chart.dash-skeleton { background: color-mix(in srgb, var(--color-fg) 4%, transparent); }
+.nz-theme { appearance: none; display: inline-flex; align-items: center; gap: 6px; font: 12px var(--font-anthropic-sans); color: var(--color-fg); background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: 999px; padding: 4px 10px; cursor: pointer; }
+.nz-theme:hover { border-color: var(--color-fg-muted); }
+.nz-head-right { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+
 </style>
 </head>
 <body>
@@ -505,8 +519,9 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
 </div>
 
 </div>
-<script src="dash-shim.js?v=2026-10-19d"></script>
-<script src="lib.js?v=2026-10-19d"></script>
-<script src="app.js?v=2026-10-19d"></script>
+<script src="dash-shim.js?v=2026-10-19e"></script>
+<script src="lib.js?v=2026-10-19e"></script>
+<script src="app.js?v=2026-10-19e"></script>
+<script src="theme.js?v=2026-10-19e"></script>
 </body>
 </html>
