@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400&display=swap" rel="stylesheet">
-<script src="vendor/d3.min.js?v=2026-10-19e"></script>
+<script src="vendor/d3.min.js?v=2026-10-19f"></script>
 <script>
 try { var t = localStorage.getItem('nz-theme'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
 </script>
@@ -49,8 +49,17 @@ html, body { margin: 0; background: var(--color-bg); color: var(--color-fg); }
 #dash-root { padding: var(--dash-gutter); }
 .dash-skeleton { color: transparent !important; background: color-mix(in srgb, var(--color-fg) 8%, transparent); border-radius: 4px; }
 .nz-chart.dash-skeleton { background: color-mix(in srgb, var(--color-fg) 4%, transparent); }
-.nz-theme { appearance: none; display: inline-flex; align-items: center; gap: 6px; font: 12px var(--font-anthropic-sans); color: var(--color-fg); background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: 999px; padding: 4px 10px; cursor: pointer; }
-.nz-theme:hover { border-color: var(--color-fg-muted); }
+.nz-theme { appearance: none; display: inline-flex; align-items: center; gap: 8px; background: none; border: 0; padding: 0; cursor: pointer; font: 12px var(--font-anthropic-sans); color: var(--color-fg-muted); -webkit-tap-highlight-color: transparent; }
+.nz-theme .nz-ico { font-size: 14px; line-height: 1; transition: opacity .2s; }
+.nz-track { position: relative; width: 51px; height: 31px; border-radius: 999px; background: #e9e9eb; box-shadow: inset 0 0 0 1px rgba(0,0,0,.06); transition: background-color .25s ease; flex: none; }
+.nz-knob { position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 3px 8px rgba(0,0,0,.15), 0 1px 1px rgba(0,0,0,.16), 0 3px 1px rgba(0,0,0,.1); transition: transform .25s cubic-bezier(.3,.7,.4,1); }
+.nz-theme[aria-checked="true"] .nz-track { background: #34c759; }
+.nz-theme[aria-checked="true"] .nz-knob { transform: translateX(20px); }
+.nz-theme[aria-checked="true"] .nz-sun, .nz-theme[aria-checked="false"] .nz-moon { opacity: .35; }
+.nz-theme:focus-visible .nz-track { outline: 2px solid #0a84ff; outline-offset: 2px; }
+.nz-theme:active .nz-knob { width: 31px; }
+.nz-theme[aria-checked="true"]:active .nz-knob { transform: translateX(16px); }
+@media (prefers-reduced-motion: reduce) { .nz-track, .nz-knob { transition: none; } }
 .nz-head-right { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 
 </style>
@@ -519,9 +528,9 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
 </div>
 
 </div>
-<script src="dash-shim.js?v=2026-10-19e"></script>
-<script src="lib.js?v=2026-10-19e"></script>
-<script src="app.js?v=2026-10-19e"></script>
-<script src="theme.js?v=2026-10-19e"></script>
+<script src="dash-shim.js?v=2026-10-19f"></script>
+<script src="lib.js?v=2026-10-19f"></script>
+<script src="app.js?v=2026-10-19f"></script>
+<script src="theme.js?v=2026-10-19f"></script>
 </body>
 </html>

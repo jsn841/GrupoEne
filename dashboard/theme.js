@@ -1,18 +1,17 @@
-// Day / night switch. Remembers the choice in this browser; without one, follows the device setting.
+// Day / night switch (iOS-style). Remembers the choice in this browser; without one, follows the device setting.
 (function () {
   const root = document.documentElement;
-  const dark = () => root.getAttribute('data-theme') === 'dark' ||
+  const isDark = () => root.getAttribute('data-theme') === 'dark' ||
     (!root.getAttribute('data-theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
-  const btn = document.createElement('button');
-  btn.type = 'button';
-  btn.className = 'nz-theme';
-  const paint = () => {
-    const d = dark();
-    btn.textContent = d ? '☀️ Modo día' : '🌙 Modo noche';
-    btn.setAttribute('aria-label', d ? 'Cambiar a modo día' : 'Cambiar a modo noche');
-  };
-  btn.addEventListener('click', () => {
-    const next = dark() ? 'light' : 'dark';
+  const sw = document.createElement('button');
+  sw.type = 'button';
+  sw.className = 'nz-theme';
+  sw.setAttribute('role', 'switch');
+  sw.setAttribute('aria-label', 'Modo noche');
+  sw.innerHTML = '<span class="nz-ico nz-sun" aria-hidden="true">☀️</span><span class="nz-track"><span class="nz-knob"></span></span><span class="nz-ico nz-moon" aria-hidden="true">🌙</span>';
+  const paint = () => sw.setAttribute('aria-checked', String(isDark()));
+  sw.addEventListener('click', () => {
+    const next = isDark() ? 'light' : 'dark';
     root.setAttribute('data-theme', next);
     try { localStorage.setItem('nz-theme', next); } catch (e) {}
     paint();
@@ -22,6 +21,6 @@
   const wrap = document.createElement('div');
   wrap.className = 'nz-head-right';
   live.replaceWith(wrap);
-  wrap.append(live, btn);
+  wrap.append(live, sw);
   paint();
 })();
