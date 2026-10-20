@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400&display=swap" rel="stylesheet">
-<script src="vendor/d3.min.js?v=2026-10-19g"></script>
+<script src="vendor/d3.min.js?v=2026-10-20a"></script>
 <script>
 try { var t = localStorage.getItem('nz-theme'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
 </script>
@@ -354,7 +354,7 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
       <div class="nz-tile"><div class="nz-tl">Ingreso por habitación disponible</div><div class="nz-big dash-skeleton" data-k="revpar">—</div><div class="nz-meta"><span>2025: <span data-k="revpar_ant">—</span></span></div></div>
       <div class="nz-tile"><div class="nz-tl">Personas alojadas</div><div class="nz-big dash-skeleton" data-k="huespedes">—</div><div class="nz-meta"><span>2025: <span data-k="huespedes_ant">—</span></span><span><span data-k="noches_vendidas">—</span> noches</span></div></div>
     </div>
-    <p class="nz-note">Habitaciones: <span data-source="hotel_resumen" data-field="habitaciones" data-where="hotel=Gran Hotel">—</span> en el Gran Hotel y <span data-source="hotel_resumen" data-field="habitaciones" data-where="hotel=Hotel Continental">—</span> en el Hotel Continental. El precio medio por noche es lo cobrado por habitación ocupada; el ingreso por habitación disponible reparte ese cobro entre todas las habitaciones, ocupadas o no.</p>
+    <p class="nz-note">Habitaciones: <span data-source="hotel_resumen" data-field="habitaciones" data-where="hotel=Gran Hotel">—</span> en el Gran Hotel y <span data-source="hotel_resumen" data-field="habitaciones" data-where="hotel=Hotel Continental">—</span> en el Hotel Continental. El precio medio por noche es lo cobrado por habitación ocupada; el ingreso por habitación disponible reparte ese cobro entre todas las habitaciones, ocupadas o no. Cada hotel incluye sus propios restaurantes, bares y spa; las zonas comunes del balneario (Termas de Tiberio, La Fontana, Bar Qbo y El Embarcadero, <span data-source="hotel_resumen" data-field="ingresos_zonas_comunes" data-where="hotel=Total" class="dash-skeleton">—</span> este año) solo cuentan en «Todo el balneario».</p>
 
     <div class="nz-grid2">
       <div class="nz-card" id="card-ocupacion">
@@ -538,9 +538,9 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
 </div>
 
 </div>
-<script src="dash-shim.js?v=2026-10-19g"></script>
-<script src="lib.js?v=2026-10-19g"></script>
-<script src="app.js?v=2026-10-19g"></script>
-<script src="theme.js?v=2026-10-19g"></script>
+<script src="dash-shim.js?v=2026-10-20a"></script>
+<script src="lib.js?v=2026-10-20a"></script>
+<script src="app.js?v=2026-10-20a"></script>
+<script src="theme.js?v=2026-10-20a"></script>
 </body>
 </html>

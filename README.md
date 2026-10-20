@@ -13,7 +13,11 @@ Maqueta de un panel de ventas para los tres negocios del grupo:
 
 ### Cómo verlo
 
-Hace falta servir la carpeta `dashboard/` (el navegador no deja leer los datos abriendo el archivo directamente):
+**Publicado:** https://jsn841.github.io/GrupoEne/ (GitHub Pages desde la rama `main`, carpeta raíz; la portada redirige a `dashboard/`).
+
+Todas las páginas llevan `noindex`, para pedir a los buscadores que no las indexen. Ojo: el repositorio es público, así que su código y datos sí se pueden ver en GitHub.
+
+**En local** hace falta servir la carpeta `dashboard/` (el navegador no deja leer los datos abriendo el archivo con doble clic):
 
 ```bash
 cd dashboard
@@ -21,16 +25,20 @@ python3 -m http.server 8000
 # abrir http://localhost:8000
 ```
 
-También funciona con GitHub Pages apuntando a la carpeta `dashboard/`.
+La cabecera tiene un interruptor de modo día / noche que recuerda la elección en cada navegador; sin elección, sigue el ajuste del dispositivo.
 
 ### Estructura
 
 ```
+index.html          portada: redirige al panel
+.nojekyll           publica los archivos tal cual en GitHub Pages
 dashboard/
   index.html        página del panel
   app.js            lógica de cada pestaña
-  lib.js            gráficos, tablas, mapa y formatos
+  lib.js            gráficos, tablas, mapa, selectores y formatos
   dash-shim.js      carga los datos de data/ y gestiona filtros
+  theme.js          interruptor de modo día / noche
+  logo-nozar.png    logo de la cabecera
   vendor/d3.min.js  librería de gráficos (d3 v7, licencia ISC)
   data/*.json       datos simulados
 scripts/
@@ -38,7 +46,7 @@ scripts/
   generar_productos_hotel.py genera las ventas de las cartas del balneario
 ```
 
-Para regenerar los datos: `python3 scripts/generar_datos.py && python3 scripts/generar_productos_hotel.py`.
+Para regenerar los datos: `python3 scripts/generar_datos.py && python3 scripts/generar_productos_hotel.py` (en ese orden; salen siempre las mismas cifras). Si cambias los datos, sube el número de versión (`VERSION` en `dash-shim.js` y los `?v=` de los `index.html`) para que los navegadores no usen copias antiguas.
 
 ### Pasar a datos reales
 

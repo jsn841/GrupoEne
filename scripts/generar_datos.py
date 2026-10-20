@@ -161,17 +161,17 @@ for m in HMS:
             ingresos_alojamiento=r0(noches * adr), huespedes=huesp, parcial=(m == '2026-10')))
 dump('hotel_mes', hotel_mes)
 
-OUTLETS = [  # punto, tipo, hotel, gasto por huesped base, coste ratio, estacionalidad
- ('La Brasserie', 'Restaurante', 'Gran Hotel', 19, 0.62, None),
- ('Bar Lobby', 'Bar', 'Gran Hotel', 7, 0.42, None),
+OUTLETS = [  # punto, tipo, ubicación (según panticosa.com), gasto por huésped base, coste ratio, estacionalidad
+ ('La Brasserie', 'Restaurante', 'Hotel Continental', 19, 0.62, None),
+ ('Bar Lobby', 'Bar', 'Hotel Continental', 7, 0.42, None),
  ('Cafetería Gran Hotel', 'Cafetería', 'Gran Hotel', 5, 0.45, None),
- ('Restaurante del Lago', 'Restaurante', 'Resort', 9, 0.60, 'verano'),
- ('Restaurante La Fontana', 'Restaurante', 'Hotel Continental', 11, 0.61, None),
- ('Bar Qbo', 'Bar', 'Hotel Continental', 6, 0.44, None),
+ ('Restaurante del Lago', 'Restaurante', 'Gran Hotel', 20, 0.60, None),
+ ('Restaurante La Fontana', 'Restaurante', 'Zonas comunes', 7, 0.61, None),
+ ('Bar Qbo', 'Bar', 'Zonas comunes', 4, 0.44, None),
  ('Buffet Continental', 'Buffet', 'Hotel Continental', 15, 0.58, None),
- ('Bar El Embarcadero', 'Bar', 'Resort', 4, 0.43, 'verano'),
+ ('Bar El Embarcadero', 'Bar', 'Zonas comunes', 4, 0.43, 'verano'),
  ('Spa Gran Hotel', 'Spa', 'Gran Hotel', 21, 0.47, None),
- ('Termas de Tiberio', 'Spa', 'Resort', 24, 0.50, None),
+ ('Termas de Tiberio', 'Spa', 'Zonas comunes', 24, 0.50, None),
 ]
 SUMMER = [0.2, 0.2, 0.3, 0.5, 0.8, 1.6, 2.6, 2.8, 1.5, 0.7, 0.1, 0.2]
 puntos_mes = []
@@ -204,7 +204,7 @@ for h in list(HOT) + ['Total']:
         noches = ytd(hotel_mes, y, 'noches_vendidas', flt); disp = ytd(hotel_mes, y, 'habitaciones_disponibles', flt)
         ing = ytd(hotel_mes, y, 'ingresos_alojamiento', flt); hu = ytd(hotel_mes, y, 'huespedes', flt)
         if h == 'Total': pf = lambda r: True
-        elif h == 'Gran Hotel': pf = lambda r: r['ubicacion'] == 'Gran Hotel' or (r['ubicacion'] == 'Resort' and False)
+        elif h == 'Gran Hotel': pf = lambda r: r['ubicacion'] == 'Gran Hotel'
         else: pf = lambda r: r['ubicacion'] == 'Hotel Continental'
         fb = ytd(puntos_mes, y, 'ingresos', pf); fbbb = ytd(puntos_mes, y, 'beneficio_bruto', pf)
         d[y] = dict(noches=noches, disp=disp, ing=ing, hu=hu, fb=fb, total=ing + fb, bb=ing * (1 - ROOM_COST) + fbbb)
@@ -216,6 +216,9 @@ for h in list(HOT) + ['Total']:
         ingresos_alojamiento=r0(d[2026]['ing']), ingresos_puntos_venta=r0(d[2026]['fb']),
         facturacion=r0(d[2026]['total']), facturacion_ant=r0(d[2025]['total']),
         beneficio_bruto=r0(d[2026]['bb']), beneficio_bruto_ant=r0(d[2025]['bb'])))
+zc = r0(ytd(puntos_mes, 2026, 'ingresos', lambda r: r['ubicacion'] == 'Zonas comunes'))
+for h in hres:
+    h['ingresos_zonas_comunes'] = zc if h['hotel'] == 'Total' else 0
 dump('hotel_resumen', hres)
 
 pres = []
@@ -311,7 +314,7 @@ for b, refs in REFS.items():
 # normalize province & export rows per ref
 def finalize(rows, k26, k25, net, keys):
     out = []
-    for ref in set(r['referencia'] for r in rows):
+    for ref in sorted(set(r['referencia'] for r in rows)):
         rr = [r for r in rows if r['referencia'] == ref]
         s = sum(r['_w'] for r in rr)
         for r in rr:
