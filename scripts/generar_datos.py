@@ -464,3 +464,53 @@ for (neg, det, imp), t in zip(events, times):
     feed.append(dict(id=f"ev{t}", hora=f"{t // 60:02d}:{t % 60:02d}", negocio=neg, detalle=det, importe=imp))
 dump('actividad_hoy', feed)
 print('ytd grupo', gk)
+
+# ---------------- HOTEL: ORIGEN DE LOS HUÉSPEDES ----------------
+# Reparte las noches, huéspedes y la facturación de alojamiento de cada hotel por origen.
+# Usa su propio generador aleatorio para no alterar el resto de datos.
+rng = random.Random(2026)
+NAC = {'Aragón': 22, 'Cataluña': 18, 'Comunidad de Madrid': 17, 'Comunidad Valenciana': 11, 'País Vasco': 9, 'Navarra': 6,
+       'Andalucía': 4, 'Castilla y León': 3, 'La Rioja': 2, 'Región de Murcia': 1.5, 'Illes Balears': 1.5, 'Galicia': 1,
+       'Asturias': 1, 'Cantabria': 1, 'Castilla-La Mancha': 1, 'Extremadura': 0.5, 'Canarias': 0.5}
+INT = {'Francia': 45, 'Reino Unido': 9, 'Bélgica': 7, 'Países Bajos': 7, 'Alemania': 6, 'Portugal': 5, 'Italia': 4,
+       'Estados Unidos': 4, 'Suiza': 3, 'Irlanda': 2, 'México': 2, 'Resto del mundo': 6}
+# (cuota de huéspedes nacionales, estancia media relativa nacional/internacional, precio relativo internacional)
+PERFIL = {'Gran Hotel': (0.70, 1.0, 1.10), 'Hotel Continental': (0.82, 1.0, 1.04)}
+EST_INT = {'Francia': 0.85, 'Portugal': 1.0, 'Reino Unido': 1.25, 'Estados Unidos': 1.3, 'México': 1.3}
+
+def reparte(total, pesos):
+    t = sum(pesos); raw = [total * p / t for p in pesos]
+    out = [int(x) for x in raw]
+    rest = int(round(total)) - sum(out)
+    for i in sorted(range(len(raw)), key=lambda i: raw[i] - out[i], reverse=True)[:rest]: out[i] += 1
+    return out
+
+origen = []
+for h in HOT:
+    f = lambda r, h=h: r['hotel'] == h
+    tot = {y: dict(hu=r0(ytd(hotel_mes, y, 'huespedes', f)), no=r0(ytd(hotel_mes, y, 'noches_vendidas', f)), fa=r0(ytd(hotel_mes, y, 'ingresos_alojamiento', f))) for y in (2026, 2025)}
+    nac_share, _, int_price = PERFIL[h]
+    keys = [('Nacional', k, w * nac_share / sum(NAC.values())) for k, w in NAC.items()] + \
+           [('Internacional', k, w * (1 - nac_share) / sum(INT.values())) for k, w in INT.items()]
+    w_hu = [w * rng.uniform(0.8, 1.2) for _, _, w in keys]
+    w_no = [wh * (EST_INT.get(k, 1.0) if a == 'Internacional' else 1.0) * rng.uniform(0.92, 1.08) for (a, k, _), wh in zip(keys, w_hu)]
+    w_fa = [wn * (int_price if a == 'Internacional' else 1.0) * rng.uniform(0.95, 1.05) for (a, _, _), wn in zip(keys, w_no)]
+    g = [rng.uniform(-0.10, 0.20) if a == 'Internacional' else rng.uniform(-0.06, 0.12) for a, _, _ in keys]
+    hu6, no6, fa6 = reparte(tot[2026]['hu'], w_hu), reparte(tot[2026]['no'], w_no), reparte(tot[2026]['fa'], w_fa)
+    hu5 = reparte(tot[2025]['hu'], [x / (1 + gi) for x, gi in zip(w_hu, g)])
+    fa5 = reparte(tot[2025]['fa'], [x / (1 + gi) for x, gi in zip(w_fa, g)])
+    for i, (a, k, _) in enumerate(keys):
+        origen.append(dict(hotel=h, ambito=a, origen=k, huespedes=hu6[i], huespedes_ant=hu5[i], noches=no6[i],
+                           facturacion=fa6[i], facturacion_ant=fa5[i]))
+# total del balneario = suma de los dos hoteles
+for a, k in [(o['ambito'], o['origen']) for o in origen if o['hotel'] == 'Gran Hotel']:
+    rr = [o for o in origen if o['origen'] == k]
+    origen.append(dict(hotel='Total', ambito=a, origen=k, **{f: sum(o[f] for o in rr) for f in ('huespedes', 'huespedes_ant', 'noches', 'facturacion', 'facturacion_ant')}))
+for o in origen:
+    o['id'] = f"{o['hotel']}|{o['origen']}"
+    o['variacion'] = round(o['facturacion'] / o['facturacion_ant'] - 1, 3) if o['facturacion_ant'] else None
+    o['estancia_media'] = round(o['noches'] / o['huespedes'], 2) if o['huespedes'] else None
+    o['gasto_por_huesped'] = round(o['facturacion'] / o['huespedes'], 1) if o['huespedes'] else None
+    tot_h = sum(x['facturacion'] for x in origen if x['hotel'] == o['hotel'])
+    o['cuota'] = round(o['facturacion'] / tot_h, 4)
+dump('hotel_origen', origen)

@@ -63,6 +63,29 @@
       return [o];
     },
   });
+  dash.calc('hotel_origen_ambito', {
+    title: 'Huéspedes de España y del extranjero',
+    description: 'Facturación de alojamiento, huéspedes y su cambio frente a 2025, sumando por hotel los orígenes nacionales y los internacionales.',
+    inputs: ['hotel_origen'],
+    fn: (hotel_origen) => {
+      const by = new Map();
+      hotel_origen.forEach((o) => {
+        const k = o.hotel + '|' + o.ambito;
+        const t = by.get(k) || { id: k, hotel: o.hotel, ambito: o.ambito, facturacion: 0, facturacion_ant: 0, huespedes: 0 };
+        t.facturacion += o.facturacion;
+        t.facturacion_ant += o.facturacion_ant;
+        t.huespedes += o.huespedes;
+        by.set(k, t);
+      });
+      const rows = [...by.values()];
+      rows.forEach((r) => {
+        const tot = rows.filter((x) => x.hotel === r.hotel).reduce((s, x) => s + x.facturacion, 0);
+        r.cuota = r.facturacion / tot;
+        r.variacion = r.facturacion / r.facturacion_ant - 1;
+      });
+      return rows;
+    },
+  });
   dash.calc('vino_totales', {
     title: 'Botellas de las tres bodegas',
     description: 'Botellas vendidas por Enate, Laus y Las Moradas sumadas, este año y el mismo periodo de 2025.',
@@ -105,7 +128,8 @@
   const TEXT = ['hora', 'ciudad', 'zona', 'entrega', 'promocion', 'canal', 'unidad'];
   const fmtFor = (f) => {
     if (/^var/.test(f)) return null;
-    if (['margen', 'ocupacion', 'ocupacion_ant', 'pct_export', 'pct_comercializado'].includes(f)) return (v) => NZ.pct(v);
+    if (['margen', 'ocupacion', 'ocupacion_ant', 'pct_export', 'pct_comercializado', 'cuota'].includes(f)) return (v) => NZ.pct(v);
+    if (f === 'origen') return (v) => (v == null ? '—' : String(v));
     if (['adr', 'adr_ant', 'revpar', 'revpar_ant', 'ticket_medio'].includes(f)) return NZ.eur1;
     if (f === 'precio_medio' || f === 'precio') return NZ.eur;
     if (/facturacion|beneficio|cartera|ingresos|valor|coste|importe|escriturado|comprometido/.test(f)) return NZ.eurC;
@@ -349,6 +373,39 @@
       NZ.cols($('#ch-huespedes'), meses, hs.map((s) => ({ ...s, color: s.name === '2026' ? C()[0] : MUTED })), { fmtY: NZ.numC, fmtTip: NZ.int, xLabel: lab });
       NZ.lines($('#ch-ingresos-aloj'), meses, series('ingresos_alojamiento'), { fmtY: NZ.eurC, xLabel: lab });
     } else ['#ch-ocupacion', '#ch-huespedes', '#ch-ingresos-aloj'].forEach((s) => failed($(s), 'hotel_mes'));
+    // guests by origin
+    $('#s-origen').textContent = (h === 'Total' ? 'todo el balneario' : h) + ' · alojamiento · 1 ene – 19 oct 2026 vs mismo periodo 2025';
+    $$('#origen-tiles [data-k]').forEach((el) => NZ.mark(el, 'hotel_origen_ambito', el.dataset.k, NZ.where({ id: h + '|' + el.dataset.a })));
+    const ho = ok('hotel_origen');
+    if (ho) {
+      const rows = ho.filter((o) => o.hotel === h);
+      const top = rows.filter((o) => o.ambito === 'Internacional' && o.origen !== 'Resto del mundo').sort((a, b) => b.facturacion - a.facturacion)[0];
+      if (top) {
+        const w = NZ.where({ id: top.id });
+        NZ.mark($('#or-top'), 'hotel_origen', 'origen', w);
+        NZ.mark($('#or-top-f'), 'hotel_origen', 'facturacion', w);
+        NZ.mark($('#or-top-c'), 'hotel_origen', 'cuota', w);
+      }
+      const max = d3.max(rows, (o) => o.facturacion) || 1;
+      const spec = {
+        huespedes: { num: true, fmt: NZ.int }, noches: { num: true, fmt: NZ.int },
+        estancia_media: { num: true, fmt: (v) => (v == null ? '—' : v.toFixed(2).replace('.', ',')) },
+        facturacion: { num: true, render: (td, r) => {
+          const w = NZ.el('span', 'nz-mini');
+          const t = NZ.el('span', 'nz-mini-t');
+          const b = NZ.el('span', 'nz-mini-b');
+          b.style.width = (r.facturacion / max) * 100 + '%';
+          b.style.background = r.ambito === 'Nacional' ? C()[0] : C()[1];
+          t.appendChild(b);
+          w.append(t, NZ.el('span', 'nz-mini-v', NZ.eurC(r.facturacion)));
+          td.replaceChildren(w);
+        } },
+        cuota: { num: true, fmt: (v) => NZ.pct(v) },
+        variacion: { num: true, render: NZ.deltaRender('variacion') },
+      };
+      NZ.table($('#t-origen-nac'), ho, spec, { key: 'id', filter: (o) => o.hotel === h && o.ambito === 'Nacional', sortField: 'facturacion' });
+      NZ.table($('#t-origen-int'), ho, spec, { key: 'id', filter: (o) => o.hotel === h && o.ambito === 'Internacional', sortField: 'facturacion' });
+    }
     const otb = ok('hotel_reservas_futuras');
     if (otb) {
       NZ.legend($('#lg-otb'), [{ name: 'Reservado a hoy', color: C()[0] }, { name: 'Mismo día de 2025', color: MUTED }]);

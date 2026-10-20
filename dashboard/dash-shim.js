@@ -3,7 +3,7 @@
 (function () {
   const DATASETS = [
     'promociones', 'viviendas', 'reservas_mes', 'reservas_mes_total',
-    'hotel_mes', 'hotel_puntos_mes', 'hotel_resumen', 'hotel_puntos_resumen', 'hotel_reservas_futuras', 'hotel_pickup', 'hotel_productos',
+    'hotel_mes', 'hotel_puntos_mes', 'hotel_resumen', 'hotel_puntos_resumen', 'hotel_reservas_futuras', 'hotel_pickup', 'hotel_productos', 'hotel_origen',
     'vino_referencias', 'vino_provincia_referencia', 'vino_export_referencia', 'vino_provincias', 'vino_paises',
     'vino_canales_mes', 'vino_canales_resumen', 'vino_resumen', 'vino_anual', 'vino_mes',
     'grupo_mes', 'grupo_resumen', 'actividad_hoy',
@@ -14,7 +14,7 @@
   const calcs = {};
   const listeners = [];
   let params = { ...DEFAULT_PARAMS };
-  const VERSION = '2026-10-20a';
+  const VERSION = '2026-10-20b';
   const errors = {};
   let loaded = false;
 

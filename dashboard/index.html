@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400&display=swap" rel="stylesheet">
-<script src="vendor/d3.min.js?v=2026-10-20a"></script>
+<script src="vendor/d3.min.js?v=2026-10-20b"></script>
 <script>
 try { var t = localStorage.getItem('nz-theme'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
 </script>
@@ -156,6 +156,8 @@ table.nz-t { width: 100%; border-collapse: collapse; font-size: var(--cds-font-s
 .nz-mini { display: inline-flex; align-items: center; gap: 6px; }
 .nz-mini-t { display: inline-block; width: 4.5rem; height: 6px; border-radius: 3px; background: color-mix(in srgb, var(--color-fg) 8%, transparent); overflow: hidden; }
 .nz-mini-b { display: block; height: 100%; border-radius: 3px; }
+.nz-mini-v { display: inline-block; min-width: 4.4em; text-align: right; }
+@media (max-width: 560px) { .nz-mini-t { display: none; } .nz-mini-v { min-width: 0; } }
 .nz-controls { display: flex; flex-wrap: wrap; gap: var(--cds-gap-sm); align-items: center; margin-bottom: var(--cds-gap-sm); }
 .nz-controls label { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
 .nz-select, .nz-input { font: inherit; font-size: var(--cds-font-size-caption); font-weight: var(--cds-font-weight-medium); color: var(--color-fg); background-color: color-mix(in srgb, var(--color-fg) 7%, transparent); border: 0; border-radius: 9px; padding: 7px 12px; max-width: 100%; -webkit-appearance: none; appearance: none; }
@@ -385,6 +387,34 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
       <div class="nz-chart nz-short" id="ch-pickup" data-source="hotel_pickup"></div>
     </div>
 
+    <h2 class="nz-h2" id="h-origen">Facturación por origen de los huéspedes <small id="s-origen">alojamiento · 1 ene – 19 oct 2026 vs mismo periodo 2025</small></h2>
+    <div class="nz-tiles" id="origen-tiles">
+      <div class="nz-tile"><div class="nz-tl">Huéspedes de España</div><div class="nz-big dash-skeleton" data-k="facturacion" data-a="Nacional">—</div><div class="nz-meta"><span><span data-k="cuota" data-a="Nacional">—</span> del total</span><span data-k="variacion" data-a="Nacional">—</span><span><span data-k="huespedes" data-a="Nacional">—</span> huéspedes</span></div></div>
+      <div class="nz-tile"><div class="nz-tl">Huéspedes del extranjero</div><div class="nz-big dash-skeleton" data-k="facturacion" data-a="Internacional">—</div><div class="nz-meta"><span><span data-k="cuota" data-a="Internacional">—</span> del total</span><span data-k="variacion" data-a="Internacional">—</span><span><span data-k="huespedes" data-a="Internacional">—</span> huéspedes</span></div></div>
+      <div class="nz-tile"><div class="nz-tl">Primer mercado extranjero</div><div class="nz-big dash-skeleton" id="or-top">—</div><div class="nz-meta"><span id="or-top-f">—</span><span><span id="or-top-c">—</span> del total</span></div></div>
+    </div>
+    <p class="nz-note">Lo que pagan por las habitaciones según de dónde viene el huésped (comunidad autónoma de residencia o país). No incluye restaurantes ni spa. Estancia = noches que se queda de media cada huésped.</p>
+    <div class="nz-grid2">
+      <div class="nz-card" id="card-origen-nac">
+        <h3>España, por comunidad autónoma</h3>
+        <p class="nz-note">«% total» es sobre toda la facturación de alojamiento. Variación frente al mismo periodo de 2025.</p>
+        <div class="nz-tablebox">
+          <table class="nz-t" id="t-origen-nac" data-source="hotel_origen" data-row-key="id">
+            <thead><tr><th data-field="origen">Comunidad</th><th data-field="facturacion">Facturación</th><th data-field="cuota">% total</th><th data-field="variacion">Var.</th><th data-field="huespedes">Huéspedes</th><th data-field="estancia_media">Estancia</th></tr></thead>
+          </table>
+        </div>
+      </div>
+      <div class="nz-card" id="card-origen-int">
+        <h3>Extranjero, por país</h3>
+        <p class="nz-note">«% total» es sobre toda la facturación de alojamiento. Variación frente al mismo periodo de 2025.</p>
+        <div class="nz-tablebox">
+          <table class="nz-t" id="t-origen-int" data-source="hotel_origen" data-row-key="id">
+            <thead><tr><th data-field="origen">País</th><th data-field="facturacion">Facturación</th><th data-field="cuota">% total</th><th data-field="variacion">Var.</th><th data-field="huespedes">Huéspedes</th><th data-field="estancia_media">Estancia</th></tr></thead>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <h2 class="nz-h2" id="h-puntos">Restaurantes, bares y spas <small>1 ene – 19 oct 2026</small></h2>
     <div class="nz-grid2">
       <div class="nz-card" id="card-puntos">
@@ -538,9 +568,9 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
 </div>
 
 </div>
-<script src="dash-shim.js?v=2026-10-20a"></script>
-<script src="lib.js?v=2026-10-20a"></script>
-<script src="app.js?v=2026-10-20a"></script>
-<script src="theme.js?v=2026-10-20a"></script>
+<script src="dash-shim.js?v=2026-10-20b"></script>
+<script src="lib.js?v=2026-10-20b"></script>
+<script src="app.js?v=2026-10-20b"></script>
+<script src="theme.js?v=2026-10-20b"></script>
 </body>
 </html>
