@@ -20,7 +20,7 @@
     { id: 'iva', title: 'IVA y retenciones', note: 'El IVA no es un coste: se paga y se recupera, pero mueve la caja.' },
     { id: 'comercial', title: 'Comercialización y gastos de gestión', note: 'Comisión de venta y gastos de estructura de la empresa.' },
     { id: 'calendario', title: 'Momento de los pagos', note: 'Supuestos del modelo sobre cuándo se paga cada gasto. Normalmente no hace falta cambiarlos.' },
-    { id: 'rentabilidad', title: 'Cálculo de la rentabilidad', note: 'Supuesto para la VAN.' },
+    { id: 'rentabilidad', title: 'Cálculo de la rentabilidad', note: 'Margen mínimo exigido y tasa para la VAN.' },
   ];
 
   // Impuesto de actos jurídicos documentados (AJD), tipo general en escrituras notariales, por comunidad.
@@ -219,6 +219,8 @@
     { id: 'arq_cedula', label: 'Arquitecto: cédula de habitabilidad', type: 'pct', cell: 'CF!D93', def: 0.25, revisar: true, help: 'Parte que se paga con la licencia de primera ocupación.' },
   ]);
   add('rentabilidad', 'modelo', [
+    { id: 'margen_minimo', label: 'Margen mínimo para hacer la operación', type: 'pct', cell: null, def: 0.15, revisar: true,
+      help: 'Margen sobre ventas por debajo del cual no se hace la promoción. No cambia ningún cálculo: solo sirve para que el resumen diga si la operación lo supera. El 15 % es una referencia habitual; pon el que use la empresa.' },
     { id: 'tasa_van', label: 'Tasa de descuento para la VAN', type: 'pct', sup: 'B12', def: 0.05, revisar: true,
       help: 'Rentabilidad mínima que se pide al dinero, al año. La VAN (valor actual neto) dice cuánto vale hoy el beneficio futuro descontado a esta tasa: si sale positiva, la promoción rinde más que esa tasa. El Excel usaba un 5 % fijo.' },
   ]);

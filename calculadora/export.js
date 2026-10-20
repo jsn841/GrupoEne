@@ -89,6 +89,11 @@
       ['Presupuesto de ejecución material (PEM)', k.pem, 'eur'], ['Precio del suelo por m² edificable', k.precioSueloM2, 'eur'],
     ];
   }
+  function decision(res, values) {
+    const k = res.kpis, min = Number(values && values.margen_minimo) || 0;
+    const suelo = res.capitulos[0].importe, obra = res.capitulos[4].importe;
+    return { min, ok: k.margen >= min, suelo, obra, pesoSuelo: k.costes ? suelo / k.costes : 0, pesoObra: k.costes ? obra / k.costes : 0 };
+  }
   const dateRows = (k) => [['Compra del suelo (mes 1)', k.fechas.compra], ['Inicio de obra', k.fechas.inicioObra], ['Fin de obra', k.fechas.finObra], ['Entrega de llaves', k.fechas.llaves]];
 
   // ---------- Excel ----------
@@ -101,7 +106,12 @@
     const r = [[{ v: promo.nombre || 'Promoción', s: 't' }], [{ v: 'Calculado el ' + fmtDate(hoy) + ' con la calculadora de promociones (versión de prueba).', s: 'note' }], []];
     const pend = SCHEMA.fields.filter((f) => fieldState(f, promo, values) === 'revisar').length;
     if (pend) r.push([{ v: `Hay ${pend} datos con valores habituales sin revisar. Están marcados en la hoja «Datos de entrada».`, s: 'warn' }, { v: '', s: 'warn' }]), r.push([]);
-    r.push([H('Indicador'), HR('Valor')]);
+    const dec = decision(res, values);
+    r.push([H('Decisión'), HR('Valor')]);
+    r.push([{ v: 'Margen sobre ventas', s: 'b' }, { v: k.margen, s: 'pctb' }], ['Margen mínimo para hacer la operación', { v: dec.min, s: 'pct' }], ['Resultado', dec.ok ? 'Supera el margen mínimo' : k.margen < 0 ? { v: 'Pérdidas', s: 'warn' } : { v: 'Por debajo del margen mínimo', s: 'warn' }]);
+    r.push([], [H('Suelo y construcción'), HR('Importe'), HR('% de los costes')]);
+    r.push(['Coste del suelo', { v: dec.suelo, s: 'eur' }, { v: dec.pesoSuelo, s: 'pct' }], ['Coste de construcción', { v: dec.obra, s: 'eur' }, { v: dec.pesoObra, s: 'pct' }]);
+    r.push([], [H('Indicador'), HR('Valor')]);
     for (const [l, v, t] of summaryRows(res)) r.push([l, t ? { v, s: t } : v]);
     r.push([], [H('Fechas'), HR('')]);
     for (const [l, d] of dateRows(k)) r.push([l, { v: d, s: 'date' }]);
@@ -215,10 +225,26 @@
     const pend = SCHEMA.fields.filter((f) => fieldState(f, promo, values) === 'revisar');
     if (pend.length) { page.drawRectangle({ x: M, y: y - 6, width: W - 2 * M, height: 20, color: C.warnBg }); text(`Atención: ${pend.length} datos llevan un valor habitual sin revisar (lista al final del informe).`, M + 8, y, { size: 9, bold: true, color: rgb(0.45, 0.3, 0) }); y -= 28; }
     // fichas
-    const tiles = [['Ingresos', fmtEur(k.ingresos)], ['Costes', fmtEur(k.costes)], ['Resultado', fmtEur(k.resultado)], ['Margen s/ventas', fmtPct(k.margen, 2)], ['TIR del proyecto', fmtPct(k.tirOperativa, 2)], ['TIR con financiación', fmtPct(k.tirFinanciera, 2)], ['Saldo de caja más bajo', fmtEur(k.peorSaldo)], ['Resultado s/capital', fmtPct(k.rentCapital, 2)]];
+    // recuadro del margen: es lo que decide si la operación se hace
+    const dec = decision(res, values);
+    const tone = k.margen < 0 ? [rgb(0.99, 0.91, 0.9), rgb(0.71, 0.14, 0.09), 'Pérdidas: la operación no cubre sus costes'] : dec.ok ? [rgb(0.89, 0.96, 0.92), rgb(0.07, 0.48, 0.24), 'Supera el margen mínimo del ' + fmtPct(dec.min, 1)] : [rgb(1, 0.95, 0.84), rgb(0.54, 0.35, 0), 'Por debajo del margen mínimo del ' + fmtPct(dec.min, 1)];
+    const mbw = W - 2 * M, mbh = 74;
+    page.drawRectangle({ x: M, y: y - mbh + 10, width: mbw, height: mbh, color: tone[0], borderColor: tone[1], borderWidth: 1.2 });
+    text('Margen sobre ventas', M + 12, y - 6, { size: 9, bold: true, color: C.mute });
+    text(fmtPct(k.margen, 2), M + 12, y - 36, { size: 28, bold: true, color: k.margen < 0 ? C.neg : C.ink });
+    text(tone[2], W - M - 12, y - 8, { size: 10, bold: true, color: tone[1], right: true });
+    text(`Resultado de ${fmtEur(k.resultado)} sobre ${fmtEur(k.ingresos)} de ventas`, W - M - 12, y - 22, { size: 8.5, color: C.mute, right: true });
+    const gx0 = M + 200, gx1 = W - M - 12, gyy = y - 48, esc = Math.max(0.3, dec.min * 2, k.margen * 1.15), gp = (v) => gx0 + Math.max(0, Math.min(1, v / esc)) * (gx1 - gx0);
+    page.drawRectangle({ x: gx0, y: gyy, width: gx1 - gx0, height: 8, color: rgb(1, 1, 1), borderColor: C.line, borderWidth: 0.6 });
+    if (k.margen > 0) page.drawRectangle({ x: gx0, y: gyy, width: gp(k.margen) - gx0, height: 8, color: tone[1] });
+    page.drawLine({ start: { x: gp(dec.min), y: gyy - 3 }, end: { x: gp(dec.min), y: gyy + 11 }, thickness: 1.5, color: C.ink });
+    text('mínimo ' + fmtPct(dec.min, 0), gp(dec.min) + 3, gyy - 10, { size: 7, color: C.mute });
+    y -= mbh + 8;
+    const tiles = [['Coste del suelo', fmtEur(dec.suelo), fmtPct(dec.pesoSuelo, 1) + ' de los costes'], ['Coste de construcción', fmtEur(dec.obra), fmtPct(dec.pesoObra, 1) + ' de los costes'], ['Resultado', fmtEur(k.resultado), 'antes de impuestos'], ['Ingresos', fmtEur(k.ingresos), 'sin IVA'],
+      ['Costes totales', fmtEur(k.costes), 'sin IVA'], ['TIR del proyecto', fmtPct(k.tirOperativa, 2), 'sin financiación'], ['TIR con financiación', fmtPct(k.tirFinanciera, 2), ''], ['Saldo de caja más bajo', fmtEur(k.peorSaldo), 'mes ' + k.mesPeorSaldo]];
     const tw = (W - 2 * M - 3 * 8) / 4;
-    tiles.forEach(([l, v], i) => { const col = i % 4, row = Math.floor(i / 4); const x = M + col * (tw + 8), yy = y - row * 50; page.drawRectangle({ x, y: yy - 34, width: tw, height: 44, borderColor: C.line, borderWidth: 0.8 }); text(l, x + 8, yy - 2, { size: 7.5, color: C.mute }); text(v, x + 8, yy - 22, { size: 12.5, bold: true, color: /^-/.test(v) ? C.neg : C.ink, maxW: tw - 12 }); });
-    y -= 112;
+    tiles.forEach(([l, v, sub], i) => { const col = i % 4, row = Math.floor(i / 4); const x = M + col * (tw + 8), yy = y - row * 58; page.drawRectangle({ x, y: yy - 42, width: tw, height: 52, borderColor: i < 2 ? C.blue : C.line, borderWidth: i < 2 ? 1 : 0.8 }); text(l, x + 8, yy - 2, { size: 7.5, color: C.mute }); text(v, x + 8, yy - 21, { size: 12.5, bold: true, color: /^-/.test(v) ? C.neg : C.ink, maxW: tw - 12 }); if (sub) text(sub, x + 8, yy - 34, { size: 7.5, color: i < 2 ? C.blue : C.mute, bold: i < 2 }); });
+    y -= 128;
     h2('Fechas clave');
     table([{ w: 200, label: 'Hito' }, { w: 120, label: 'Fecha', right: true }], dateRows(k).map(([l, d]) => ({ cells: [l, fmtDate(d)] })));
     h2('Costes por capítulo');

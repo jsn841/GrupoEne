@@ -10,7 +10,7 @@
   const FIELDS = Object.fromEntries(SCHEMA.fields.map((f) => [f.id, f]));
   const SALES = FIELDS.plan_ventas.rows; // [key,label,row,unitsField]
   const LIBKEY = 'calcpromo.biblioteca.v1';
-  const VERSION = '2026-10-20';
+  const VERSION = '2026-10-20d';
 
   // ---------------- biblioteca ----------------
   let lib = null;
@@ -334,11 +334,33 @@
     const info = KPI_HELP[l];
     const box = h('div', { class: 'card kpi' + (o.hero ? ' hero' : '') });
     const tip = info ? h('div', { class: 'kinfo', hidden: true }, info) : null;
-    box.append(h('div', { class: 'l' }, l, info ? h('button', { class: 'ibtn', type: 'button', 'aria-label': '¿Qué es ' + l.toLowerCase() + '?', 'aria-expanded': 'false', onclick: (e) => { tip.hidden = !tip.hidden; e.currentTarget.setAttribute('aria-expanded', String(!tip.hidden)); } }, 'i') : null), h('div', { class: 'v ' + (o.neg ? 'neg' : '') }, v), s ? h('div', { class: 's' }, s) : null, tip);
+    box.append(...[h('div', { class: 'l' }, l, info ? h('button', { class: 'ibtn', type: 'button', 'aria-label': '¿Qué es ' + l.toLowerCase() + '?', 'aria-expanded': 'false', onclick: (e) => { tip.hidden = !tip.hidden; e.currentTarget.setAttribute('aria-expanded', String(!tip.hidden)); } }, 'i') : null), h('div', { class: 'v ' + (o.neg ? 'neg' : '') }, v), s ? h('div', { class: 's' }, s) : null,
+      o.bar !== undefined ? h('div', { class: 'kbar', title: fmtPct(o.bar, 1) + ' de los costes totales' }, h('i', { style: `width:${Math.max(0, Math.min(100, o.bar * 100))}%` })) : null, tip].filter(Boolean));
     return box;
   }
+  // El margen decide si la operación se hace: recuadro propio, comparado con el margen mínimo
+  function margenCard(k, v) {
+    const min = Number(v.margen_minimo) || 0, m = k.margen;
+    const estado = m < 0 ? ['bad', 'Pérdidas: la operación no cubre sus costes'] : m >= min ? ['ok', `Supera el margen mínimo del ${fmtPct(min, 1)}`] : ['warn', `Por debajo del margen mínimo del ${fmtPct(min, 1)}`];
+    const escala = Math.max(0.3, min * 2, m * 1.15), pos = (x) => Math.max(0, Math.min(100, (x / escala) * 100));
+    const tip = h('div', { class: 'kinfo', hidden: true }, KPI_HELP['Margen sobre ventas']);
+    return h('div', { class: 'card margen ' + estado[0] },
+      h('div', { class: 'm-top' },
+        h('div', {}, h('div', { class: 'l' }, 'Margen sobre ventas', h('button', { class: 'ibtn', type: 'button', 'aria-label': '¿Qué es el margen sobre ventas?', 'aria-expanded': 'false', onclick: (e) => { tip.hidden = !tip.hidden; e.currentTarget.setAttribute('aria-expanded', String(!tip.hidden)); } }, 'i')),
+          h('div', { class: 'm-v' + (m < 0 ? ' neg' : '') }, fmtPct(m, 2))),
+        h('div', { class: 'm-verdict' }, h('span', { class: 'chip ' + estado[0] }, estado[0] === 'ok' ? '✓ ' : '⚠ ', estado[1]),
+          h('div', { class: 'm-sub' }, `Resultado de ${fmtEur(k.resultado)} sobre ${fmtEur(k.ingresos)} de ventas`),
+          h('a', { class: 'm-edit', onclick: () => goField('margen_minimo') }, 'Cambiar el margen mínimo'))),
+      h('div', { class: 'm-gauge', role: 'img', 'aria-label': `Margen ${fmtPct(m, 1)}; mínimo ${fmtPct(min, 1)}` },
+        h('div', { class: 'm-track' }, h('i', { class: 'm-fill', style: `width:${pos(Math.max(0, m))}%` }), h('i', { class: 'm-min', style: `left:${pos(min)}%` })),
+        h('div', { class: 'm-scale' }, h('span', {}, '0 %'), h('span', { style: `left:${pos(min)}%` }, 'mínimo ' + fmtPct(min, 0)), h('span', { style: 'left:100%' }, fmtPct(escala, 0)))),
+      tip);
+  }
   const KPI_HELP = {
-    'Resultado (antes de impuestos)': 'Ingresos menos todos los costes, antes del impuesto de sociedades. El margen es el resultado dividido entre los ingresos: con un 15 %, de cada 100 € vendidos quedan 15 € de beneficio.',
+    'Margen sobre ventas': 'Resultado dividido entre los ingresos por ventas. Con un 15 %, de cada 100 € vendidos quedan 15 € de beneficio antes de impuestos. Es la cifra que decide si la operación se hace: se compara con el margen mínimo del grupo «Cálculo de la rentabilidad».',
+    'Coste del suelo': 'Precio del solar más los gastos de la compra (notaría, registro e intermediación), sin IVA. El porcentaje es su peso sobre los costes totales; el €/m² es lo que cuesta el suelo por cada metro que se puede construir (repercusión).',
+    'Coste de construcción': 'Lo que se paga a la constructora: obra por metro cuadrado, cocinas, demolición, urbanización, otros e imprevistos de obra, sin IVA. El porcentaje es su peso sobre los costes totales; el €/m² se calcula sobre todos los metros construidos (viviendas, zonas comunes, locales, sótanos y terrazas).',
+    'Resultado (antes de impuestos)': 'Ingresos menos todos los costes, antes del impuesto de sociedades.',
     'Ingresos por ventas': 'Lo que se cobra por vender todo (viviendas, plazas, trasteros y locales), sin IVA.',
     'Costes totales': 'Suma de los ocho capítulos de coste (suelo, impuestos, notaría y seguros, proyectos, obra, gastos financieros, comercialización y gestión), sin IVA.',
     'TIR del proyecto': 'Rentabilidad anual de la promoción sin contar los préstamos, como si todo se pagara con dinero propio. Sirve para comparar promociones entre sí. La VAN es cuánto vale hoy el beneficio, descontado a la tasa del grupo «Cálculo de la rentabilidad».',
@@ -361,10 +383,17 @@
     const wb = warnBox(); if (wb) el.append(wb);
     const pend = SCHEMA.fields.filter((f) => CALC.visible(f, v) && fieldState(f, p, v) === 'revisar').length;
     if (pend) el.append(h('div', { class: 'alert warn' }, h('b', {}, `${pend} datos llevan un valor habitual sin revisar`), 'Los resultados ya los tienen en cuenta. Están en amarillo en el formulario; ', h('a', { onclick: () => { ui.soloPend = true; document.body.dataset.view = 'datos'; syncView(); SCHEMA.groups.forEach((g) => { const d = $('#g-' + g.id); if ($('.gchips .chip.warn', d)) d.open = true; }); refreshStates(); form.scrollIntoView({ behavior: 'smooth' }); } }, 'ver solo los pendientes'), '.'));
+    el.append(margenCard(k, v));
+    const suelo = r.capitulos[0].importe, obra = r.capitulos[4].importe;
+    const supObra = (Number(v.sup_viviendas) || 0) * (1 + (Number(v.pct_sup_extra) || 0)) + (Number(v.sup_local) || 0) + (Number(v.sup_sotano1) || 0) + (Number(v.sup_sotano2) || 0) + (Number(v.sup_terrazas) || 0);
+    el.append(h('div', { class: 'kpis kpis-peso' },
+      kpi('Coste del suelo', fmtEur(suelo), h('span', {}, h('b', {}, fmtPct(k.costes ? suelo / k.costes : 0, 1)), ' de los costes · ' + fmtEur(k.precioSueloM2) + '/m² edificable'), { bar: k.costes ? suelo / k.costes : 0 }),
+      kpi('Coste de construcción', fmtEur(obra), h('span', {}, h('b', {}, fmtPct(k.costes ? obra / k.costes : 0, 1)), ' de los costes' + (supObra ? ' · ' + fmtEur(obra / supObra) + '/m² construido' : '')), { bar: k.costes ? obra / k.costes : 0 }),
+    ));
     el.append(h('div', { class: 'kpis' },
-      kpi('Resultado (antes de impuestos)', fmtEur(k.resultado), 'Margen sobre ventas: ' + fmtPct(k.margen, 2), { hero: true, neg: k.resultado < 0 }),
+      kpi('Resultado (antes de impuestos)', fmtEur(k.resultado), 'Ingresos menos costes', { neg: k.resultado < 0 }),
       kpi('Ingresos por ventas', fmtEur(k.ingresos), fmtNum(v.n_viviendas) + ' viviendas'),
-      kpi('Costes totales', fmtEur(k.costes), 'Obra: ' + fmtPct(k.costes ? r.capitulos[4].importe / k.costes : 0, 1) + ' del total'),
+      kpi('Costes totales', fmtEur(k.costes), 'Suma de los 8 capítulos'),
       kpi('TIR del proyecto', k.tirOperativa === null ? '—' : fmtPct(k.tirOperativa, 2), 'Sin financiación · VAN al ' + fmtPct(Number(v.tasa_van), 1) + ': ' + fmtMill(k.vanOperativo), { neg: k.tirOperativa < 0 }),
       kpi('TIR con financiación', k.tirFinanciera === null ? '—' : fmtPct(k.tirFinanciera, 2), 'VAN al ' + fmtPct(Number(v.tasa_van), 1) + ': ' + fmtMill(k.vanFinanciero), { neg: k.tirFinanciera < 0 }),
       kpi('Saldo de caja más bajo', fmtEur(k.peorSaldo), 'Mes ' + k.mesPeorSaldo + ' · ' + fmtMonthLong(k.fechaPeorSaldo), { neg: k.peorSaldo < 0 }),
@@ -498,13 +527,49 @@
   }
 
   // ---------------- exportar ----------------
-  const slug = (s) => (s || 'promocion').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50) || 'promocion';
+  const slug = (s) => (s || 'promocion').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60).replace(/-[^-]*$/, (m) => (m.length < 4 ? '' : m)) || 'promocion';
   function download(bytes, name, type) { const blob = new Blob([bytes], { type }); const a = h('a', { href: URL.createObjectURL(blob), download: name }); document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000); }
   const payload = () => ({ promo: promo(), values: ui.values, res: ui.res, check: ui.check });
-  $('#xlsxBtn').addEventListener('click', () => { if (!ui.res) return; try { download(EXPORT.toXlsx(payload()), slug(promo().nombre) + '.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'); toast('Excel descargado'); } catch (e) { toast('No se ha podido crear el Excel: ' + e.message); } });
   let pdfLib = null;
   function loadPdfLib() { if (window.PDFLib) return Promise.resolve(); if (pdfLib) return pdfLib; pdfLib = new Promise((ok, ko) => { const s = h('script', { src: 'vendor/pdf-lib.min.js' }); s.onload = ok; s.onerror = () => { pdfLib = null; ko(new Error('no se ha podido cargar el generador de PDF')); }; document.head.append(s); }); return pdfLib; }
-  $('#pdfBtn').addEventListener('click', async () => { if (!ui.res) return; const b = $('#pdfBtn'); b.disabled = true; try { await loadPdfLib(); download(await EXPORT.toPdf(payload()), slug(promo().nombre) + '.pdf', 'application/pdf'); toast('PDF descargado'); } catch (e) { toast('No se ha podido crear el PDF: ' + e.message); } b.disabled = false; });
+  // Descargas: «Nueva versión» o el diseño de las hojas Imprimir (1) e Imprimir (2) del Excel de siempre
+  let layoutP = null;
+  const loadLayout = () => layoutP || (layoutP = fetch('print_layouts.json?' + VERSION).then((r) => { if (!r.ok) throw new Error('no se ha podido cargar el diseño'); return r.json(); }).catch((e) => { layoutP = null; throw e; }));
+  const printWaits = {}; let printN = 0;
+  function printValues() {
+    return new Promise((ok, ko) => {
+      const id = 'p:' + ++printN; printWaits[id] = { ok, ko };
+      if (!bgWorker()) { delete printWaits[id]; ko(new Error('el navegador no permite calcular en segundo plano')); return; }
+      bgQueue.unshift({ id, data: promo().data, print: true }); bgPump();
+    });
+  }
+  const VER = { nueva: ['Nueva versión', 'nueva-version'], imp1: ['Imprimir (1)', 'imprimir-1'], imp2: ['Imprimir (2)', 'imprimir-2'] };
+  async function exportar(fmt, ver) {
+    if (!ui.res) return;
+    const btn = $('#' + fmt + 'Btn'); btn.disabled = true;
+    const name = slug(promo().nombre) + '-' + VER[ver][1] + '.' + fmt;
+    try {
+      if (fmt === 'pdf') await loadPdfLib();
+      if (ver === 'nueva') {
+        if (fmt === 'xlsx') download(EXPORT.toXlsx(payload()), name, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        else download(await EXPORT.toPdf(payload()), name, 'application/pdf');
+      } else {
+        toast('Preparando ' + VER[ver][0] + '…');
+        const [layout, res] = await Promise.all([loadLayout(), printValues()]);
+        const pl = { promo: promo(), res, layout };
+        if (fmt === 'xlsx') download(PRINTX.toXlsx(VER[ver][0], pl), name, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        else download(await PRINTX.toPdf(VER[ver][0], pl), name, 'application/pdf');
+      }
+      toast((fmt === 'pdf' ? 'PDF' : 'Excel') + ' «' + VER[ver][0] + '» descargado');
+    } catch (e) { toast('No se ha podido crear el archivo: ' + e.message); }
+    btn.disabled = false;
+  }
+  for (const fmt of ['xlsx', 'pdf']) {
+    const m = $('#' + fmt + 'Menu'), b = $('#' + fmt + 'Btn');
+    b.addEventListener('click', (e) => { e.stopPropagation(); $$('.menu.open').forEach((x) => x !== m && x.classList.remove('open')); m.classList.toggle('open'); b.setAttribute('aria-expanded', String(m.classList.contains('open'))); });
+    $$('.menu-list button', m).forEach((o) => o.addEventListener('click', () => { m.classList.remove('open'); b.setAttribute('aria-expanded', 'false'); exportar(fmt, o.dataset.ver); }));
+  }
+  document.addEventListener('click', () => $$('.expmenu.open').forEach((m) => m.classList.remove('open')));
 
   // ---------------- cabecera: biblioteca ----------------
   const sel = $('#promoSel');
@@ -564,12 +629,13 @@
   let bg = null; const bgQueue = []; let bgBusy = false;
   function bgWorker() { if (bg) return bg; try { bg = new Worker('worker.js?' + VERSION); bg.onmessage = bgDone; } catch (e) { bg = null; } return bg; }
   function bgRun(id, data) { bgQueue.push({ id, data }); bgPump(); }
-  function bgPump() { if (bgBusy || !bgQueue.length || !bgWorker()) return; bgBusy = true; const j = bgQueue.shift(); bg.postMessage({ id: j.id, data: JSON.parse(JSON.stringify(j.data)) }); }
+  function bgPump() { if (bgBusy || !bgQueue.length || !bgWorker()) return; bgBusy = true; const j = bgQueue.shift(); bg.postMessage({ id: j.id, data: JSON.parse(JSON.stringify(j.data)), print: !!j.print }); }
   function bgDone(e) {
     bgBusy = false;
     const { id, ok, res } = e.data;
     if (String(id).startsWith('s:')) { const p = lib.promociones.find((x) => x.id === id.slice(2)); if (p && ok) { p.resumen = summaryOf(res); saveLib(); if (ui.mode === 'lib') renderLibrary(); } }
     if (String(id).startsWith('w:') && ok && +id.slice(2) === wiz.req) wizPreview(res);
+    if (printWaits[id]) { const w = printWaits[id]; delete printWaits[id]; if (ok) w.ok(res); else w.ko(new Error(e.data.error || 'error al calcular')); }
     bgPump();
   }
   function refreshSummaries() {
@@ -616,7 +682,7 @@
     } else {
       card.append(h('div', { class: 'pbody' + (fresh ? '' : ' stale') },
         h('div', { class: 'plabel' }, 'Resultado'),
-        h('div', { class: 'pbig ' + (s.resultado < 0 ? 'neg' : '') }, fmtMill(s.resultado), h('span', { class: 'chip ' + (s.margen >= 0.15 ? 'ok' : s.margen >= 0 ? 'warn' : 'bad') }, fmtPct(s.margen, 1))),
+        h('div', { class: 'pbig ' + (s.resultado < 0 ? 'neg' : '') }, fmtMill(s.resultado), h('span', { class: 'chip ' + (s.margen >= Number(CALC.withDefaults(p.data).margen_minimo) ? 'ok' : s.margen >= 0 ? 'warn' : 'bad'), title: 'Margen sobre ventas' }, 'Margen ' + fmtPct(s.margen, 1))),
         sparkline(s.saldo),
         h('div', { class: 'pstats' },
           h('div', {}, h('span', {}, 'Ingresos'), h('b', {}, fmtMill(s.ingresos))),
