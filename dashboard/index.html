@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400&display=swap" rel="stylesheet">
-<script src="vendor/d3.min.js?v=2026-10-20b"></script>
+<script src="vendor/d3.min.js?v=2026-10-20c"></script>
 <script>
 try { var t = localStorage.getItem('nz-theme'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
 </script>
@@ -183,9 +183,44 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
 [data-dash-source-state=empty] { color: transparent; }
 [data-dash-source-state=refreshing] { opacity: .5; transition: opacity var(--cds-dur-slow); }
 @media (prefers-reduced-motion: no-preference) { .nz-section:not([hidden]) { animation: nzfade var(--cds-dur-slow) var(--cds-ease-out); } }
+.nz-shell { display: grid; grid-template-columns: 228px minmax(0, 1fr); gap: var(--cds-gap-xl); max-width: 1600px; margin-inline: auto; align-items: start; }
+.nz-shell .nz { max-width: 1320px; margin-inline: 0; min-width: 0; }
+.nz-side { position: sticky; top: var(--dash-gutter); font-family: var(--font-anthropic-sans); }
+.nz-sidenav { display: flex; flex-direction: column; gap: 2px; background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: 12px; padding: 10px; }
+.nz-sidelabel { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--color-fg-muted); padding: 10px 10px 4px; }
+.nz-sidelabel:first-child { padding-top: 2px; }
+.nz-navi { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; border-radius: 8px; padding: 9px 10px; font-size: 14px; }
+.nz-navi svg { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.nz-navi:hover { background: color-mix(in srgb, var(--color-fg) 6%, transparent); color: var(--color-fg); }
+.nz-navi[aria-selected="true"] { background: color-mix(in srgb, var(--c1) 14%, transparent); color: var(--color-fg); }
+.nz-navi[aria-selected="true"] svg { stroke: var(--c1); }
+.nz-calc { display: block; width: 100%; height: calc(100vh - 2 * var(--dash-gutter) - 40px); min-height: 640px; border: 1px solid var(--color-border-line); border-radius: 12px; background: var(--color-bg); }
+.nz-calcnote { max-width: 70rem; }
+.nz-calcnote a { color: var(--c1); }
+@media (max-width: 960px) {
+  .nz-shell { grid-template-columns: minmax(0, 1fr); gap: var(--cds-gap-md); }
+  .nz-side, .nz-sidenav { min-width: 0; }
+  .nz-side { position: sticky; top: 0; z-index: 30; margin: calc(-1 * var(--dash-gutter)) calc(-1 * var(--dash-gutter)) 0; padding: 8px var(--dash-gutter); background: var(--color-bg); border-bottom: 1px solid var(--color-border-line); }
+  .nz-sidenav { flex-direction: row; overflow-x: auto; scrollbar-width: none; padding: 4px; border-radius: 10px; }
+  .nz-sidelabel { display: none; }
+  .nz-navi { width: auto; white-space: nowrap; padding: 7px 10px; font-size: 13px; }
+  .nz-calc { height: calc(100vh - 110px); }
+}
 @keyframes nzfade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 </style>
 
+<div class="nz-shell">
+  <aside class="nz-side">
+    <nav class="nz-sidenav" role="tablist" aria-label="Secciones" aria-orientation="vertical">
+      <span class="nz-sidelabel">Paneles</span>
+      <button class="nz-tab nz-navi" role="tab" id="tab-inicio" data-tab="inicio" aria-selected="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Dashboard General</span></button>
+      <button class="nz-tab nz-navi" role="tab" id="tab-inmobiliario" data-tab="inmobiliario" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21V8l8-5 8 5v13"/><path d="M9 21v-6h6v6M9 10h.01M15 10h.01"/></svg><span>Dashboard Inmobiliario</span></button>
+      <button class="nz-tab nz-navi" role="tab" id="tab-panticosa" data-tab="panticosa" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20h18M5 20V9h14v11M9 13h2M13 13h2M9 16h2M13 16h2M12 4v5"/></svg><span>Dashboard Hoteles</span></button>
+      <button class="nz-tab nz-navi" role="tab" id="tab-bodegas" data-tab="bodegas" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8l-1 7a3 3 0 0 1-6 0zM12 13v6M8 21h8"/></svg><span>Dashboard Bodegas</span></button>
+      <span class="nz-sidelabel">Herramientas</span>
+      <button class="nz-tab nz-navi" role="tab" id="tab-analisis" data-tab="analisis" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h2M12 11h2M16 11h0M8 15h2M12 15h2M8 18h2M12 18h4"/></svg><span>Análisis Promociones</span></button>
+    </nav>
+  </aside>
 <div class="nz">
   <header class="nz-head">
     <div class="nz-brand">
@@ -198,12 +233,6 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
     <div class="nz-live"><span class="nz-live-dot"></span>En directo · último movimiento a las <span data-source="actividad_hoy" data-field="hora" data-row="0" class="dash-skeleton">—</span></div>
   </header>
 
-  <nav class="nz-tabs" role="tablist" aria-label="Secciones">
-    <button class="nz-tab" role="tab" id="tab-inicio" data-tab="inicio" aria-selected="true">Inicio</button>
-    <button class="nz-tab" role="tab" id="tab-inmobiliario" data-tab="inmobiliario" aria-selected="false">Inmobiliario</button>
-    <button class="nz-tab" role="tab" id="tab-panticosa" data-tab="panticosa" aria-selected="false">Balneario de Panticosa</button>
-    <button class="nz-tab" role="tab" id="tab-bodegas" data-tab="bodegas" aria-selected="false">Bodegas</button>
-  </nav>
 
   <!-- ================= INICIO ================= -->
   <section class="nz-section" id="inicio" data-page="inicio">
@@ -564,13 +593,21 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
     </div>
   </section>
 
-  <p class="nz-foot">Maqueta: todas las cifras son simuladas y solo sirven para enseñar cómo se vería el panel. Los nombres de promociones, ubicaciones, número de viviendas y referencias de vino salen de las webs de Nozar, Enate, Laus y Las Moradas y de prensa; algunas promociones y referencias de Laus son aproximadas. En producción, cada fuente se conectaría al CRM de ventas, al sistema de reservas del hotel y al ERP de las bodegas.</p>
+  <!-- ================= ANÁLISIS DE PROMOCIONES ================= -->
+  <section class="nz-section" id="analisis" data-page="analisis" hidden>
+    <h2 class="nz-h2">Análisis de promociones <small>Calculadora del estudio económico de una promoción</small></h2>
+    <p class="nz-note nz-calcnote">Rellena los datos de una promoción y obtén costes, ingresos, resultado, rentabilidad y flujo de caja, con descarga en Excel y PDF. Cada dato lleva su explicación; los que vienen rellenos con un valor habitual están marcados para revisar. Las promociones se guardan solo en este navegador. <a href="../calculadora/" target="_blank" rel="noopener">Abrir en una pestaña aparte</a></p>
+    <iframe class="nz-calc" id="calc-frame" title="Calculadora de promociones" data-src="../calculadora/?embed=1"></iframe>
+  </section>
+
+  <p class="nz-foot">Maqueta: todas las cifras son simuladas y solo sirven para enseñar cómo se vería el panel (la calculadora de promociones no lleva datos de ninguna promoción real). Los nombres de promociones, ubicaciones, número de viviendas y referencias de vino salen de las webs de Nozar, Enate, Laus y Las Moradas y de prensa; algunas promociones y referencias de Laus son aproximadas. En producción, cada fuente se conectaría al CRM de ventas, al sistema de reservas del hotel y al ERP de las bodegas.</p>
+</div>
 </div>
 
 </div>
-<script src="dash-shim.js?v=2026-10-20b"></script>
-<script src="lib.js?v=2026-10-20b"></script>
-<script src="app.js?v=2026-10-20b"></script>
-<script src="theme.js?v=2026-10-20b"></script>
+<script src="dash-shim.js?v=2026-10-20c"></script>
+<script src="lib.js?v=2026-10-20c"></script>
+<script src="app.js?v=2026-10-20c"></script>
+<script src="theme.js?v=2026-10-20c"></script>
 </body>
 </html>

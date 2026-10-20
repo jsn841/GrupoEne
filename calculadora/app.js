@@ -75,7 +75,7 @@
   function renderField(f, v) {
     const wrap = h('div', { class: 'field', 'data-id': f.id, id: 'f-' + f.id });
     if (f.type === 'salesplan') { wrap.append(h('div', { id: 'planEditor' })); renderPlan(wrap.firstChild); return wrap; }
-    if (f.type === 'curve') { wrap.append(h('label', {}, f.label), h('div', { id: 'curveEditor' })); renderCurve($('#curveEditor', wrap) || wrap.lastChild); if (f.help) wrap.append(h('span', { class: 'help' }, f.help)); return wrap; }
+    if (f.type === 'curve') { wrap.append(h('label', {}, f.label), h('div', { id: 'curveEditor' })); renderCurve($('#curveEditor', wrap) || wrap.lastChild); wrap.append(helpEl(f)); return wrap; }
     const id = 'in-' + f.id;
     wrap.append(h('label', { for: id }, f.label));
     let ctrl;
@@ -107,10 +107,30 @@
       ctrl = h('div', { class: 'inp' + (UNIT[f.type] ? ' has-unit' : '') }, inp, UNIT[f.type] ? h('span', { class: 'unit' }, UNIT[f.type]) : null);
     }
     wrap.append(h('div', { class: 'ctrl' }, ctrl, h('div', { class: 'flags' })));
-    if (f.help) wrap.append(h('span', { class: 'help' }, f.help));
+    wrap.append(helpEl(f));
+    if (f.preset) wrap.append(h('div', { class: 'presetnote', id: 'ccaaNote' }, ccaaNoteText()));
     return wrap;
   }
 
+  function helpEl(f) {
+    const src = f.hoja === 'modelo' ? 'Supuesto del modelo' : f.hoja ? 'Excel: hoja ' + f.hoja : '';
+    return h('span', { class: 'help' }, f.help || '', src ? h('span', { class: 'src' }, src) : null);
+  }
+  function ccaaNoteText() {
+    const c = SCHEMA.CCAA.find((x) => x[0] === promo().data.ccaa);
+    if (!c) return '';
+    const v = values();
+    return `Rellenado con ${c[1]}: AJD del ${fmtPct(c[2], 2)} en ${Number(v.vendedor_suelo) === 1 ? 'la obra nueva (la compra a un particular paga ITP: escríbelo a mano)' : 'la compra del suelo y la obra nueva'}; AJD de los préstamos a 0 %, porque lo paga el banco.${c[3] ? ' ' + c[3] : ''} Revisa los valores.`;
+  }
+  function applyCcaa() {
+    const p = promo(), c = SCHEMA.CCAA.find((x) => x[0] === p.data.ccaa);
+    if (!c) { const n = $('#ccaaNote'); if (n) n.textContent = ''; return; }
+    const set = { pct_ajd_obra_nueva: c[2], pct_ajd_prestamo_suelo: 0, pct_ajd_prestamo_promotor: 0 };
+    if (Number(values().vendedor_suelo) !== 1) set.pct_ajd_compra = c[2];
+    Object.assign(p.data, set);
+    p.revisados = (p.revisados || []).filter((id) => !(id in set));
+    touch(); renderForm(); toast('Impuestos de ' + c[1] + ' rellenados');
+  }
   function setValue(f, val) {
     const p = promo();
     if (val === null || val === '') delete p.data[f.id]; else p.data[f.id] = val;
@@ -121,6 +141,8 @@
     if (['meses_inicio', 'meses_obra', 'meses_llaves', 'fecha_compra', 'forma_pago_suelo'].includes(f.id) || SALES.some((r) => r[3] === f.id)) renderPlan($('#planEditor'));
     if (['meses_obra', 'reparto_obra'].includes(f.id)) renderCurve($('#curveEditor'));
     if (f.id === 'n_viviendas') { for (const s of SCHEMA.fields.filter((x) => x.sync === 'n_viviendas')) { const i = $('#in-' + s.id); if (i) i.placeholder = 'Igual que ' + FIELDS.n_viviendas.label.toLowerCase() + (val ? ' (' + fmtNum(val) + ')' : ''); } }
+    if (f.preset) { applyCcaa(); schedule(); return; }
+    if (f.id === 'vendedor_suelo') { if (Number(val) === 1) toast('Escribe el ITP de tu comunidad en «Impuesto de la compra del suelo»'); else if (p.data.ccaa) { applyCcaa(); schedule(); return; } const n = $('#ccaaNote'); if (n) n.textContent = ccaaNoteText(); }
     refreshStates();
     schedule();
   }
@@ -171,7 +193,7 @@
     const rows = SALES.filter(([key, , , u]) => Number(v[u]) > 0 || ((v.plan_ventas || {})[key] || []).some((x) => x > 0));
     const plan = p.data.plan_ventas || {};
     el.innerHTML = '';
-    el.append(h('label', {}, 'Unidades vendidas cada mes'));
+    el.append(h('label', {}, 'Unidades vendidas cada mes'), helpEl(FIELDS.plan_ventas));
     if (!rows.length) { el.append(h('p', { class: 'help' }, 'Primero escribe cuántas viviendas, plazas y locales hay (grupo «Producto y precios de venta»).')); return; }
     const perm = v.forma_pago_suelo === 'a' && ui.res && ui.res.permuta ? ui.res.permuta : null;
     const units = (key, u) => Math.max(0, (Number(v[u]) || 0) - (perm ? perm[key] || 0 : 0));
@@ -308,7 +330,32 @@
     return h('div', { class: 'alert warn' }, h('b', {}, w.length === 1 ? 'Hay un aviso sobre los datos' : `Hay ${w.length} avisos sobre los datos`), ul);
   }
   const cls = (v) => (v < -0.5 ? 'neg' : '');
-  function kpi(l, v, s, o = {}) { return h('div', { class: 'card kpi' + (o.hero ? ' hero' : '') }, h('div', { class: 'l' }, l), h('div', { class: 'v ' + (o.neg ? 'neg' : '') }, v), s ? h('div', { class: 's' }, s) : null); }
+  function kpi(l, v, s, o = {}) {
+    const info = KPI_HELP[l];
+    const box = h('div', { class: 'card kpi' + (o.hero ? ' hero' : '') });
+    const tip = info ? h('div', { class: 'kinfo', hidden: true }, info) : null;
+    box.append(h('div', { class: 'l' }, l, info ? h('button', { class: 'ibtn', type: 'button', 'aria-label': '¿Qué es ' + l.toLowerCase() + '?', 'aria-expanded': 'false', onclick: (e) => { tip.hidden = !tip.hidden; e.currentTarget.setAttribute('aria-expanded', String(!tip.hidden)); } }, 'i') : null), h('div', { class: 'v ' + (o.neg ? 'neg' : '') }, v), s ? h('div', { class: 's' }, s) : null, tip);
+    return box;
+  }
+  const KPI_HELP = {
+    'Resultado (antes de impuestos)': 'Ingresos menos todos los costes, antes del impuesto de sociedades. El margen es el resultado dividido entre los ingresos: con un 15 %, de cada 100 € vendidos quedan 15 € de beneficio.',
+    'Ingresos por ventas': 'Lo que se cobra por vender todo (viviendas, plazas, trasteros y locales), sin IVA.',
+    'Costes totales': 'Suma de los ocho capítulos de coste (suelo, impuestos, notaría y seguros, proyectos, obra, gastos financieros, comercialización y gestión), sin IVA.',
+    'TIR del proyecto': 'Rentabilidad anual de la promoción sin contar los préstamos, como si todo se pagara con dinero propio. Sirve para comparar promociones entre sí. La VAN es cuánto vale hoy el beneficio, descontado a la tasa del grupo «Cálculo de la rentabilidad».',
+    'TIR con financiación': 'Rentabilidad anual del dinero propio que se pone, contando los préstamos y sus intereses. Suele ser mayor que la del proyecto porque el banco pone gran parte del dinero.',
+    'Saldo de caja más bajo': 'El peor momento de la caja, contando préstamos e IVA: lo máximo que llega a faltar. Es el dinero propio que hace falta tener disponible.',
+    'Resultado sobre capital propio': 'Resultado dividido entre el capital propio previsto: lo que hay que poner al principio (suelo con sus gastos y primeros pagos, menos el préstamo del suelo), redondeado a cientos de miles.',
+  };
+  const CAP_HELP = {
+    'Suelo': 'Precio del solar y gastos de la compra.',
+    'Impuestos y tasas': 'Tasas e impuestos municipales y autonómicos: licencia, ICIO, plusvalía, primera ocupación, AJD e IAE.',
+    'Notaría, registro y seguros': 'Escrituras, inscripciones, tasaciones y seguros de la promoción.',
+    'Proyectos y estudios': 'Honorarios de arquitecto y aparejador, estudios, controles técnicos y acometidas.',
+    'Obra': 'Lo que se paga a la constructora, con sus partidas sueltas e imprevistos.',
+    'Gastos financieros': 'Intereses y comisiones de los préstamos, avales y cobro de mensualidades.',
+    'Comercialización': 'Comisión de venta.',
+    'Gastos de gestión y contingencia': 'Gastos de estructura de la empresa y fondo para imprevistos.',
+  };
   function renderResumen(el) {
     const r = ui.res, k = r.kpis, p = promo(), v = ui.values;
     const wb = warnBox(); if (wb) el.append(wb);
@@ -318,8 +365,8 @@
       kpi('Resultado (antes de impuestos)', fmtEur(k.resultado), 'Margen sobre ventas: ' + fmtPct(k.margen, 2), { hero: true, neg: k.resultado < 0 }),
       kpi('Ingresos por ventas', fmtEur(k.ingresos), fmtNum(v.n_viviendas) + ' viviendas'),
       kpi('Costes totales', fmtEur(k.costes), 'Obra: ' + fmtPct(k.costes ? r.capitulos[4].importe / k.costes : 0, 1) + ' del total'),
-      kpi('TIR del proyecto', k.tirOperativa === null ? '—' : fmtPct(k.tirOperativa, 2), 'Sin financiación · VAN 5 %: ' + fmtMill(k.vanOperativo), { neg: k.tirOperativa < 0 }),
-      kpi('TIR con financiación', k.tirFinanciera === null ? '—' : fmtPct(k.tirFinanciera, 2), 'VAN 5 %: ' + fmtMill(k.vanFinanciero), { neg: k.tirFinanciera < 0 }),
+      kpi('TIR del proyecto', k.tirOperativa === null ? '—' : fmtPct(k.tirOperativa, 2), 'Sin financiación · VAN al ' + fmtPct(Number(v.tasa_van), 1) + ': ' + fmtMill(k.vanOperativo), { neg: k.tirOperativa < 0 }),
+      kpi('TIR con financiación', k.tirFinanciera === null ? '—' : fmtPct(k.tirFinanciera, 2), 'VAN al ' + fmtPct(Number(v.tasa_van), 1) + ': ' + fmtMill(k.vanFinanciero), { neg: k.tirFinanciera < 0 }),
       kpi('Saldo de caja más bajo', fmtEur(k.peorSaldo), 'Mes ' + k.mesPeorSaldo + ' · ' + fmtMonthLong(k.fechaPeorSaldo), { neg: k.peorSaldo < 0 }),
       kpi('Resultado sobre capital propio', k.rentCapital === null ? '—' : fmtPct(k.rentCapital, 1), 'Capital previsto: ' + fmtEur(k.capital), { neg: k.rentCapital < 0 }),
     ));
@@ -348,7 +395,7 @@
       for (const l of d.lineas) tb.append(h('tr', {}, h('td', {}, l.label), h('td', {}, EXPORT.baseTxt(l.base).replace('€/m2', '€/m²')), h('td', { class: cls(l.importe) }, fmtEur(l.importe))));
       tb.append(h('tr', { class: 'tot' }, h('td', {}, 'Total'), h('td', {}, fmtPct(r.kpis.costes ? d.total / r.kpis.costes : 0, 2) + ' del total'), h('td', {}, fmtEur(d.total))));
       t.append(tb);
-      el.append(h('div', { class: 'card panel' }, h('h2', {}, d.capitulo), t));
+      el.append(h('div', { class: 'card panel' }, h('h2', {}, d.capitulo), h('p', { class: 'sub' }, CAP_HELP[d.capitulo] || ''), t));
     }
     el.append(h('div', { class: 'card panel' }, h('table', { class: 't' }, h('tbody', {}, h('tr', { class: 'tot' }, h('td', {}, 'Total costes'), h('td', {}, fmtEur(r.kpis.costes))), h('tr', {}, h('td', {}, 'Presupuesto de ejecución material (PEM)'), h('td', {}, fmtEur(r.kpis.pem))), h('tr', {}, h('td', {}, 'Precio del suelo por m² edificable'), h('td', {}, fmtEur(r.kpis.precioSueloM2)))))));
   }
@@ -370,7 +417,7 @@
     const r = ui.res;
     const seg = h('div', { class: 'seg', style: 'margin-bottom:12px' });
     for (const [id, l] of [['mensual', 'Mes a mes'], ['anual', 'Por años']]) seg.append(h('button', { 'aria-pressed': String(ui.flujo === id), onclick: () => { ui.flujo = id; renderResults(); } }, l));
-    el.append(seg);
+    el.append(seg, h('p', { class: 'sub' }, 'Pagos: lo que sale (sin IVA y luego con IVA). Cobros: lo que entra, incluidos los préstamos y el IVA que pagan los compradores. Caja: la diferencia de cada mes y el saldo acumulado. Los números negativos, en rojo.'));
     const t = h('table', { class: 'cf' });
     if (ui.flujo === 'mensual') {
       const n = r.ultimoMes;
@@ -385,7 +432,7 @@
       for (const f of r.anual) { if (f.seccion) { tb.append(h('tr', { class: 'sec' }, h('td', {}, f.label), h('td', { colspan: 8 }))); continue; } const tot = f.valores.reduce((a, b) => a + b, f.previo || 0); tb.append(h('tr', { class: f.kind === 'total' ? 'tot' : '' }, h('td', {}, f.label), f.valores.map((x) => h('td', { class: Math.abs(x) < 0.5 ? 'z' : cls(x) }, Math.abs(x) < 0.5 ? '–' : fmtNum(x))), h('td', { class: cls(tot) }, /acumulado/.test(f.label) ? '' : fmtNum(tot)))); }
       t.append(tb);
       el.append(h('div', { class: 'scrollx' }, t));
-      el.append(h('div', { class: 'card panel', style: 'margin-top:16px' }, h('table', { class: 't' }, h('tbody', {}, h('tr', {}, h('td', {}, 'TIR del proyecto (sin financiación)'), h('td', {}, fmtPct(r.kpis.tirOperativa, 2))), h('tr', {}, h('td', {}, 'VAN del proyecto al 5 %'), h('td', {}, fmtEur(r.kpis.vanOperativo))), h('tr', {}, h('td', {}, 'TIR con financiación'), h('td', {}, fmtPct(r.kpis.tirFinanciera, 2))), h('tr', {}, h('td', {}, 'VAN con financiación al 5 %'), h('td', {}, fmtEur(r.kpis.vanFinanciero))))), h('p', { class: 'sub', style: 'margin:10px 0 0' }, 'Cada año es un bloque de 12 meses desde la compra del suelo.')));
+      el.append(h('div', { class: 'card panel', style: 'margin-top:16px' }, h('table', { class: 't' }, h('tbody', {}, h('tr', {}, h('td', {}, 'TIR del proyecto (sin financiación)'), h('td', {}, fmtPct(r.kpis.tirOperativa, 2))), h('tr', {}, h('td', {}, 'VAN del proyecto al ' + fmtPct(Number(ui.values.tasa_van), 1)), h('td', {}, fmtEur(r.kpis.vanOperativo))), h('tr', {}, h('td', {}, 'TIR con financiación'), h('td', {}, fmtPct(r.kpis.tirFinanciera, 2))), h('tr', {}, h('td', {}, 'VAN con financiación al ' + fmtPct(Number(ui.values.tasa_van), 1)), h('td', {}, fmtEur(r.kpis.vanFinanciero))))), h('p', { class: 'sub', style: 'margin:10px 0 0' }, 'Cada año es un bloque de 12 meses desde la compra del suelo.')));
     }
   }
   function renderNotas(el) {
@@ -401,6 +448,8 @@
     n.append(h('div', { class: 'card panel' }, h('h2', {}, 'Cambios respecto al Excel original'), h('p', { class: 'sub' }, 'La calculadora repite las fórmulas del Excel. Estos fallos se han corregido:'), dl));
     const ul2 = h('ul'); for (const x of NOTAS.limites) ul2.append(h('li', {}, x));
     n.append(h('div', { class: 'card panel' }, h('h2', {}, 'Cómo calcula'), ul2));
+    const ul3 = h('ul'); for (const x of NOTAS.fijos) ul3.append(h('li', {}, x));
+    n.append(h('div', { class: 'card panel' }, h('h2', {}, 'Supuestos fijos del modelo'), h('p', { class: 'sub' }, 'Reglas del Excel que no se pueden cambiar desde la calculadora.'), ul3));
     n.append(h('div', { class: 'card panel' }, h('h2', {}, 'Dónde se guardan los datos'), h('p', {}, 'En esta versión de prueba las promociones se guardan solo en este navegador, en este dispositivo. No se envían a ningún sitio. Si borras los datos del navegador o usas otro dispositivo, no estarán. Para guardar una copia, descarga el Excel o el PDF.')));
     el.append(n);
   }
@@ -491,6 +540,8 @@
   const setHdr = () => document.documentElement.style.setProperty('--hdr', $('#hdr').offsetHeight + 'px');
   let rz; window.addEventListener('resize', () => { setHdr(); clearTimeout(rz); rz = setTimeout(() => { if (ui.res && ['resumen', 'ingresos'].includes(ui.tab)) renderResults(); }, 200); });
   window.addEventListener('storage', (e) => { if (e.key === LIBKEY) { loadLib(); openPromo(); } });
+  // Dentro del panel: el modo día/noche lo decide el panel
+  if (document.documentElement.classList.contains('embed')) window.addEventListener('storage', (e) => { if (e.key === 'nz-theme' && (e.newValue === 'light' || e.newValue === 'dark')) { document.documentElement.setAttribute('data-theme', e.newValue); themeSw.checked = e.newValue === 'dark'; if (ui.res) renderResults(); } });
 
   loadLib(); saveLib(); setHdr(); startWorker(); openPromo();
   window.__calc = { ui, lib: () => lib }; // para las pruebas

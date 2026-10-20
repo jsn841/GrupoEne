@@ -181,7 +181,7 @@
   };
 
   // ---------- tabs & links ----------
-  const TABS = ['inicio', 'inmobiliario', 'panticosa', 'bodegas'];
+  const TABS = ['inicio', 'inmobiliario', 'panticosa', 'bodegas', 'analisis'];
   let tab = 'inicio';
   function showTab(t, scrollTo) {
     tab = t;
@@ -190,7 +190,9 @@
       $('#tab-' + x).setAttribute('aria-selected', String(x === t));
     });
     dash.setLink(scrollTo || t);
+    if (t === 'analisis') { const f = $('#calc-frame'); if (f && !f.src) f.src = f.dataset.src; }
     draw();
+    window.scrollTo({ top: 0 });
     if (scrollTo) { const el = document.getElementById(scrollTo); if (el) el.scrollIntoView(); }
   }
   $$('.nz-tab').forEach((b) => b.addEventListener('click', () => showTab(b.dataset.tab)));
@@ -608,7 +610,7 @@
       if (tab === 'inicio') drawInicio();
       else if (tab === 'inmobiliario') drawInmo();
       else if (tab === 'panticosa') drawHotel();
-      else drawBodegas();
+      else if (tab === 'bodegas') drawBodegas();
     } finally {
       fillMarks();
       NZ.slides();

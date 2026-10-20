@@ -69,14 +69,11 @@
     }
     const plan = v.plan_ventas || {};
     const salesRows = SCHEMA.fields.find((f) => f.type === 'salesplan').rows;
-    const llaves = Number(v.meses_inicio) + Number(v.meses_obra) + Number(v.meses_llaves);
-    for (const [key, label, , unitsField] of salesRows) {
+        for (const [key, label, , unitsField] of salesRows) {
       const total = (Number(v[unitsField]) || 0) - (permuta && v.forma_pago_suelo === 'a' ? permuta[key] || 0 : 0);
       const list = plan[key] || [];
       const sold = sum(list);
       if (total && !near(sold, total)) warn.push(['plan_ventas', `${label}: el calendario vende ${fmtInt(sold)} y hay ${fmtInt(total)} a la venta${permuta && v.forma_pago_suelo === 'a' && permuta[key] ? ' (las otras ' + fmtInt(permuta[key]) + ' van a la permuta)' : ''}.`]);
-      const late = list.slice(llaves).some((x) => Number(x) > 0);
-      if (late) warn.push(['plan_ventas', `${label}: hay ventas después de la entrega de llaves (mes ${llaves}); el modelo las cobra como si se vendieran antes.`]);
     }
     return { missing, warn };
   }

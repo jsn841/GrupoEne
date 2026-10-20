@@ -2,11 +2,12 @@
 
 ## Panel de ventas en directo del Grupo Nozar (maqueta)
 
-Maqueta de un panel de ventas para los tres negocios del grupo:
+Maqueta de un panel de ventas para los tres negocios del grupo. Un menú lateral lleva a cada panel (Dashboard General, Inmobiliario, Hoteles y Bodegas) y a la herramienta de Análisis Promociones:
 
 - **Inicio**: facturación y beneficio bruto del grupo y de cada negocio frente al mismo periodo de 2025, facturación mensual y últimos movimientos del día.
 - **Inmobiliario**: promociones entregadas y en curso, mapa de España, reservas por mes y detalle de cada vivienda (precio y estado).
 - **Balneario de Panticosa**: Gran Hotel y Hotel Continental (ocupación, precio medio, ingresos, personas alojadas, reservas futuras), resultados por restaurante, bar y spa, y lo más vendido de cada carta.
+- **Análisis Promociones**: la calculadora de promociones (ver abajo), dentro del panel.
 - **Bodegas**: Enate, Laus y Las Moradas de San Martín por separado, con ventas por referencia, por provincia, exportación por país y producto, comparación con años anteriores y venta online, visitas y tienda.
 
 > **Todas las cifras son simuladas.** Los nombres de promociones, ubicaciones, nº de viviendas, referencias de vino y cartas del balneario salen de las webs públicas; algunos precios y promociones son aproximados (lo indica el propio panel).
@@ -34,7 +35,9 @@ La cabecera tiene un interruptor de modo día / noche que recuerda la elección 
 Calculadora anónima del estudio económico de una promoción inmobiliaria: se rellenan los datos de la promoción y calcula costes, ingresos, resultado, TIR, VAN y flujo de caja mensual y anual, con descarga en Excel y PDF.
 
 - Repite las fórmulas de un modelo en Excel (`template.json`), sin textos ni datos de ninguna promoción real.
-- Los datos con valores habituales vienen rellenos y marcados con **«Revisar este dato»**.
+- Cada dato lleva una explicación en lenguaje sencillo y la hoja del Excel de la que sale. Los datos con valores habituales vienen rellenos y marcados con **«Revisar este dato»**.
+- Al elegir la comunidad autónoma se rellenan los tipos de AJD (valores orientativos de octubre de 2026).
+- También se abre dentro del panel, en «Análisis Promociones» (`calculadora/?embed=1`, que toma el modo día/noche del panel).
 - Las promociones se guardan **solo en el navegador** de cada usuario (`localStorage`). No hay servidor ni base de datos.
 - Trae una promoción de ejemplo con datos inventados.
 - Calcula en segundo plano (`worker.js`); `export.js` crea el Excel (sin librerías) y el PDF (con [pdf-lib](https://github.com/Hopding/pdf-lib), licencia MIT, en `vendor/`).

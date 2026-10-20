@@ -37,23 +37,34 @@
   const NOTAS = {
     correcciones: [
       ['Préstamo de los locales', 'La última disposición del préstamo de los locales apuntaba a una celda de otro bloque: una parte del préstamo no se devolvía nunca y la caja final no cuadraba con el resultado. Ahora cuadra.'],
-      ['Gastos del préstamo del suelo', 'La notaría y el registro del préstamo del suelo se volvían a pagar cada vez que se pagaba una parte del suelo. Con pago por hitos o lineal salían varias veces en la caja y no cuadraba con el resultado. Ahora se pagan una vez, con el primer pago.'],
-      ['Permuta', 'Con el suelo pagado en permuta se seguía calculando un préstamo del suelo con su comisión y su tasación: sumaban costes que nunca se pagaban. Ahora, con permuta, no hay préstamo del suelo. En el calendario de ventas se ponen solo las unidades que se venden; las que se entregan al dueño del suelo las calcula el modelo.'],
-      ['IAE', 'El impuesto de actividades económicas sumaba el número de cocinas como si fueran metros cuadrados. Ahora solo suma metros.'],
       ['Intereses en el flujo anual', 'A partir del segundo año, cada año sumaba intereses de meses que ya estaban en el año anterior. Se contaban de más y la rentabilidad del proyecto salía mejor de lo que es.'],
+      ['Gastos del préstamo del suelo', 'La notaría y el registro del préstamo del suelo se volvían a pagar cada vez que se pagaba una parte del suelo. Con pago por hitos o lineal salían varias veces en la caja. Ahora se pagan una vez, con el primer pago.'],
+      ['Permuta', 'Con el suelo pagado en permuta se seguía calculando un préstamo del suelo con su comisión y su tasación, que sumaban costes que nunca se pagaban. Ahora, con permuta, no hay préstamo del suelo. Además, las viviendas en aportación que se entregan en la permuta estaban escritas a mano; ahora se calculan como las demás.'],
+      ['IVA de las ventas del mes 1', 'Lo que se cobraba a los compradores en el mes 1 no llevaba IVA (estaba multiplicado por 0 %). Ahora lleva el tipo de IVA de las ventas.'],
+      ['Préstamo promotor dispuesto al final', 'La parte del préstamo que se dispone al terminar la obra estaba escrita a mano (10 %). Si se cambiaba la parte que se dispone durante la obra, las dos ya no sumaban el 100 %. Ahora se calcula sola.'],
+      ['IAE', 'El impuesto de actividades económicas sumaba el número de cocinas como si fueran metros cuadrados. Ahora solo suma metros.'],
       ['Descuento de efectos', 'La hoja enseñaba un 0,05 %, pero el cálculo usaba un 0,5 % escrito en otra celda. Ahora hay un solo dato (0,5 % por defecto, para revisar).'],
       ['Curva de obra', 'El reparto del coste de obra con curva solo funcionaba si la obra duraba exactamente 22 meses; con otra duración se repartía a partes iguales sin avisar. Ahora se elige: a partes iguales o con una curva propia de la duración que sea.'],
       ['Fechas', 'El inicio de obra, el fin de obra y las llaves se calculaban con meses de 30 o 31 días, y las fechas se iban desplazando. Ahora se suman meses exactos.'],
-      ['Datos escondidos en fórmulas', 'La edificabilidad, la superficie de viviendas, el 136 % de responsabilidad hipotecaria, el 19 % de la constructora, los 36 meses de coordinación de seguridad, los tipos de IVA y las comisiones de los préstamos estaban escritos dentro de las fórmulas. Ahora son datos que se ven y se pueden cambiar.'],
+      ['Datos escondidos en fórmulas', 'La edificabilidad, la superficie de viviendas, el 136 % de responsabilidad hipotecaria, el 19 % de la constructora, los 36 meses de coordinación de seguridad, los tipos de IVA, las comisiones de los préstamos y el 5 % de la VAN estaban escritos dentro de las fórmulas. Ahora son datos que se ven y se pueden cambiar.'],
     ],
     limites: [
-      'El cálculo cubre 84 meses (7 años) desde la compra del suelo.',
+      'El cálculo cubre 84 meses (7 años) desde la compra del suelo, que es el mes 1.',
       'El flujo anual agrupa bloques de 12 meses contados desde la compra, no años naturales.',
-      'La TIR y la VAN se calculan sobre el flujo anual; la VAN usa un 5 % anual.',
+      'La TIR y la VAN se calculan sobre el flujo anual. La VAN usa la tasa del grupo «Cálculo de la rentabilidad» (5 % por defecto).',
       'El IVA de las ventas es un único tipo para todo lo que se vende (los locales suelen ir al 21 %).',
       'Las primeras plazas de garaje van incluidas en el precio de la vivienda: solo se cobran las que superan una por vivienda.',
-      'Las ventas posteriores a la entrega de llaves se cobran como si se hubieran vendido antes.',
-      'Los plazos admitidos son los mismos que en el modelo original: obra de 18 a 48 meses, de 2 a 12 meses hasta empezar, de 1 a 5 meses hasta las llaves.',
+      'Lo que se vende después de la entrega de llaves se cobra entero en el mes de la venta.',
+      'Los plazos admitidos son los mismos que en el modelo original: obra de 18 a 48 meses, de 2 a 12 meses hasta empezar, de 1 a 5 meses hasta las llaves y de 0 a 150 días para pagar a la constructora.',
+    ],
+    fijos: [
+      'El AJD y la notaría y el registro de la obra nueva y la división horizontal se pagan 4 meses antes del fin de obra; los de la distribución hipotecaria, 3 meses antes.',
+      'El seguro de afianzamiento que no se paga con las ventas se reparte en cuatro pagos iguales en los meses 1, 13, 25 y 37.',
+      'Los préstamos pagan intereses cada mes sobre lo que se debe ese mes (el interés anual dividido entre 12).',
+      'El préstamo promotor se devuelve con lo que pagan los compradores en la entrega de llaves.',
+      'El IVA que se paga se recupera de Hacienda: cada mes se compensa con el IVA que se cobra a los compradores.',
+      'El capital propio previsto es lo que hay que poner al principio: suelo con sus gastos, licencia, ICIO, AJD de la compra y del préstamo del suelo, notaría «varios», la mitad del arquitecto y el estudio geotécnico, menos el préstamo del suelo. Se redondea hacia arriba a cientos de miles de euros.',
+      'Los impuestos autonómicos que se rellenan al elegir una comunidad son orientativos (consultados en octubre de 2026). Los municipales dependen de cada ayuntamiento.',
     ],
   };
 
@@ -70,8 +81,8 @@
     const k = res.kpis;
     return [
       ['Ingresos por ventas', k.ingresos, 'eur'], ['Costes totales', k.costes, 'eur'], ['Resultado (beneficio antes de impuestos)', k.resultado, 'eur'], ['Margen sobre ventas', k.margen, 'pct'],
-      ['TIR del proyecto (sin financiación)', k.tirOperativa, 'pct'], ['VAN del proyecto al 5 %', k.vanOperativo, 'eur'],
-      ['TIR con financiación', k.tirFinanciera, 'pct'], ['VAN con financiación al 5 %', k.vanFinanciero, 'eur'],
+      ['TIR del proyecto (sin financiación)', k.tirOperativa, 'pct'], ['VAN del proyecto', k.vanOperativo, 'eur'],
+      ['TIR con financiación', k.tirFinanciera, 'pct'], ['VAN con financiación', k.vanFinanciero, 'eur'],
       ['Capital propio previsto', k.capital, 'eur'], ['Resultado sobre el capital propio', k.rentCapital, 'pct'],
       ['Saldo de caja más bajo', k.peorSaldo, 'eur'], ['Mes del saldo más bajo', k.mesPeorSaldo + ' (' + fmtMonthLong(k.fechaPeorSaldo) + ')', ''],
       ['Préstamo del suelo', k.prestamoSuelo, 'eur'], ['Préstamo promotor', k.prestamoPromotor, 'eur'],
@@ -126,7 +137,7 @@
       const st = f.kind === 'total' ? 'eurb' : 'eur';
       fa.push([f.kind === 'total' ? { v: f.label, s: 'b' } : f.label, ...f.valores.map((v) => ({ v, s: st })), /acumulado/.test(f.label) ? '' : { v: f.valores.reduce((a, b) => a + b, f.previo || 0), s: st }]);
     }
-    fa.push([], ['TIR del proyecto (sin financiación)', { v: k.tirOperativa, s: 'pct' }], ['VAN del proyecto al 5 %', { v: k.vanOperativo, s: 'eur' }], ['TIR con financiación', { v: k.tirFinanciera, s: 'pct' }], ['VAN con financiación al 5 %', { v: k.vanFinanciero, s: 'eur' }]);
+    fa.push([], ['TIR del proyecto (sin financiación)', { v: k.tirOperativa, s: 'pct' }], ['VAN del proyecto (tasa en «Datos de entrada»)', { v: k.vanOperativo, s: 'eur' }], ['TIR con financiación', { v: k.tirFinanciera, s: 'pct' }], ['VAN con financiación', { v: k.vanFinanciero, s: 'eur' }]);
     fa.push([], [{ v: 'Cada año es un bloque de 12 meses desde la compra del suelo.', s: 'note' }]);
     sheets.push({ name: 'Flujo anual', cols: [44, 15, 15, 15, 15, 15, 15, 15, 16], rows: fa, freeze: 'B3', landscape: true });
     // Ventas
@@ -138,7 +149,7 @@
     v.push([{ v: 'Total', s: 'b' }, '', ...rowsDef.map(([key]) => ({ v: (plan[key] || []).reduce((s, x) => s + (Number(x) || 0), 0), s: 'int' }))]);
     sheets.push({ name: 'Ventas', cols: [8, 12, ...rowsDef.map(() => 18)], rows: v, freeze: 'C2' });
     // Datos de entrada
-    const d = [[{ v: 'Datos de entrada', s: 't' }], [], [H('Grupo'), H('Dato'), HR('Valor'), H('Estado')]];
+    const d = [[{ v: 'Datos de entrada', s: 't' }], [], [H('Grupo'), H('Dato'), HR('Valor'), H('Estado'), H('Qué es'), H('Origen')]];
     for (const g of SCHEMA.groups) {
       for (const f of SCHEMA.fields.filter((x) => x.group === g.id)) {
         if (f.type === 'salesplan') continue;
@@ -148,10 +159,10 @@
         else if (f.calc) val = f.id === 'pct_permuta_viviendas' && res.permuta ? fmtPct(res.permuta.pct, 2) + ' (' + fmtNum(res.permuta.viviendas) + ' viviendas)' : '';
         else val = fmtField(f, values[f.id]);
         const st = fieldState(f, promo, values);
-        d.push([g.title, f.label, { v: val, s: st === 'revisar' ? 'warn' : '' }, st === 'revisar' ? { v: 'Revisar este dato', s: 'warn' } : st === 'falta' ? 'Falta' : f.revisar ? 'Revisado' : '']);
+        d.push([g.title, f.label, { v: val, s: st === 'revisar' ? 'warn' : '' }, st === 'revisar' ? { v: 'Revisar este dato', s: 'warn' } : st === 'falta' ? 'Falta' : f.revisar ? 'Revisado' : '', { v: f.help || '', s: 'note' }, f.hoja === 'modelo' ? 'Supuesto del modelo' : f.hoja ? 'Hoja ' + f.hoja : '']);
       }
     }
-    sheets.push({ name: 'Datos de entrada', cols: [30, 58, 22, 18], rows: d, freeze: 'A4' });
+    sheets.push({ name: 'Datos de entrada', cols: [26, 50, 22, 18, 90, 20], rows: d, freeze: 'C4' });
     // Notas
     const no = [[{ v: 'Avisos y notas', s: 't' }], []];
     if (check.warn.length) { no.push([H('Avisos sobre los datos')]); for (const [, t] of check.warn) no.push([{ v: t, s: 'warn' }]); no.push([]); }
@@ -159,6 +170,8 @@
     for (const [t, x] of NOTAS.correcciones) no.push([{ v: t + ': ' + x, s: 'note' }]);
     no.push([], [H('Cómo calcula')]);
     for (const x of NOTAS.limites) no.push([{ v: x, s: 'note' }]);
+    no.push([], [H('Supuestos fijos del modelo')]);
+    for (const x of NOTAS.fijos) no.push([{ v: x, s: 'note' }]);
     sheets.push({ name: 'Notas', cols: [120], rows: no });
     return root.XLSX.build(sheets, { title: promo.nombre });
   }
@@ -273,6 +286,8 @@
     for (const [t, x] of NOTAS.correcciones) { wrap(t + '. ' + x, M, W - 2 * M, { size: 8.5 }); y -= 3; }
     h2('Cómo calcula');
     for (const x of NOTAS.limites) wrap('• ' + x, M, W - 2 * M, { size: 8.5 });
+    h2('Supuestos fijos del modelo');
+    for (const x of NOTAS.fijos) wrap('• ' + x, M, W - 2 * M, { size: 8.5 });
     return await doc.save();
   }
   function baseTxt(b) { if (!b) return ''; if (b.type === 'pct') return fmtPct(b.v); if (b.type === 'eur_m2') return fmtNum(b.v, b.v % 1 ? 2 : 0) + ' €/m2'; return fmtEur(b.v); }
