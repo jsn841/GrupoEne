@@ -38,6 +38,7 @@ Calculadora anónima del estudio económico de una promoción inmobiliaria: se r
 - Cada dato lleva una explicación en lenguaje sencillo y la hoja del Excel de la que sale. Los datos con valores habituales vienen rellenos y marcados con **«Revisar este dato»**.
 - Al elegir la comunidad autónoma se rellenan los tipos de AJD (valores orientativos de octubre de 2026).
 - También se abre dentro del panel, en «Análisis Promociones» (`calculadora/?embed=1`, que toma el modo día/noche del panel).
+- «Mis promociones» enseña cada promoción en una tarjeta (resultado, margen, TIR, evolución de la caja) o en una tabla para compararlas; «Nueva promoción» abre un asistente de tres pasos con una primera estimación.
 - Las promociones se guardan **solo en el navegador** de cada usuario (`localStorage`). No hay servidor ni base de datos.
 - Trae una promoción de ejemplo con datos inventados.
 - Calcula en segundo plano (`worker.js`); `export.js` crea el Excel (sin librerías) y el PDF (con [pdf-lib](https://github.com/Hopding/pdf-lib), licencia MIT, en `vendor/`).

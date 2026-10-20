@@ -281,7 +281,7 @@
     const { id, ok, res, error } = e.data;
     if (id !== reqId) return;
     setBusy(false);
-    if (!ok) { ui.res = null; ui.error = error; } else { ui.res = res; ui.error = null; ui.check = CALC.check(promo().data, res.permuta); updatePlanFootGlobal(); }
+    if (!ok) { ui.res = null; ui.error = error; } else { ui.res = res; ui.error = null; ui.check = CALC.check(promo().data, res.permuta); updatePlanFootGlobal(); const pp = promo(); pp.resumen = summaryOf(res); saveLib(); }
     renderResults(); refreshStates();
   }
   function setBusy(b) { ui.busy = b; const s = $('#calcState'); if (s) { s.classList.toggle('busy', b); $('span', s).textContent = b ? 'Calculando…' : 'Calculado'; } }
@@ -516,7 +516,7 @@
   $$('.menu-list button', menu).forEach((b) => b.addEventListener('click', async () => {
     menu.classList.remove('open');
     const act = b.dataset.act, p = promo();
-    if (act === 'nueva') { const n = await ask('Nueva promoción', 'Nombre de la promoción', 'Promoción ' + (lib.promociones.length + 1)); if (!n) return; lib.activa = newPromo(n, {}).id; }
+    if (act === 'nueva') { openWizard(); return; }
     if (act === 'ejemplo') { const n = await ask('Nueva a partir del ejemplo', 'Nombre de la promoción', 'Ejemplo ' + (lib.promociones.length + 1)); if (!n) return; lib.activa = newPromo(n, EJEMPLO.ejemplo()).id; }
     if (act === 'duplicar') { const n = await ask('Duplicar promoción', 'Nombre de la copia', p.nombre + ' (copia)'); if (!n) return; const c = newPromo(n, JSON.parse(JSON.stringify(p.data))); c.revisados = [...(p.revisados || [])]; lib.activa = c.id; }
     if (act === 'renombrar') { const n = await ask('Cambiar el nombre', 'Nombre de la promoción', p.nombre); if (!n) return; p.nombre = n; }
@@ -539,10 +539,266 @@
   let tt; function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(tt); tt = setTimeout(() => t.classList.remove('on'), 2600); }
   const setHdr = () => document.documentElement.style.setProperty('--hdr', $('#hdr').offsetHeight + 'px');
   let rz; window.addEventListener('resize', () => { setHdr(); clearTimeout(rz); rz = setTimeout(() => { if (ui.res && ['resumen', 'ingresos'].includes(ui.tab)) renderResults(); }, 200); });
-  window.addEventListener('storage', (e) => { if (e.key === LIBKEY) { loadLib(); openPromo(); } });
+  window.addEventListener('storage', (e) => { if (e.key === LIBKEY) { loadLib(); if (ui.mode === 'lib') renderLibrary(); else openPromo(); } });
   // Dentro del panel: el modo día/noche lo decide el panel
   if (document.documentElement.classList.contains('embed')) window.addEventListener('storage', (e) => { if (e.key === 'nz-theme' && (e.newValue === 'light' || e.newValue === 'dark')) { document.documentElement.setAttribute('data-theme', e.newValue); themeSw.checked = e.newValue === 'dark'; if (ui.res) renderResults(); } });
 
-  loadLib(); saveLib(); setHdr(); startWorker(); openPromo();
+  // ================= biblioteca visual y asistente de nueva promoción =================
+  const libEl = $('#library');
+  ui.mode = 'lib'; ui.libView = store.get('calcpromo.libvista') || 'tarjetas'; ui.libSort = 'modificada'; ui.libQ = '';
+  const AVATAR = ['#2a78d6', '#eb6834', '#1baf7a', '#6250d6', '#e87ba4', '#008300', '#eda100', '#e34948'];
+  const avatarColor = (id) => { let x = 0; for (const c of id) x = (x * 31 + c.charCodeAt(0)) >>> 0; return AVATAR[x % AVATAR.length]; };
+  const initials = (s) => (s || '?').replace(/[^\p{L}\p{N} ]/gu, ' ').trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase() || '?';
+  function ago(iso) {
+    const s = (Date.now() - new Date(iso).getTime()) / 1000;
+    if (s < 60) return 'ahora mismo'; if (s < 3600) return 'hace ' + Math.round(s / 60) + ' min'; if (s < 86400) return 'hace ' + Math.round(s / 3600) + ' h';
+    if (s < 86400 * 30) { const d = Math.round(s / 86400); return d === 1 ? 'ayer' : 'hace ' + d + ' días'; }
+    return fmtDate(iso.slice(0, 10));
+  }
+  function pendientes(p) { const v = CALC.withDefaults(p.data); let r = 0; for (const f of SCHEMA.fields) if (CALC.visible(f, v) && fieldState(f, p, v) === 'revisar') r++; return r; }
+  function summaryOf(res) {
+    const k = res.kpis, saldo = res.mensual.find((f) => f.label === 'Saldo acumulado').valores.slice(0, res.ultimoMes);
+    return { at: new Date().toISOString(), ingresos: k.ingresos, costes: k.costes, resultado: k.resultado, margen: k.margen, tirO: k.tirOperativa, tirF: k.tirFinanciera, peor: k.peorSaldo, llaves: k.fechas.llaves, compra: k.fechas.compra, saldo: saldo.map((x) => Math.round(x / 1000)) };
+  }
+  // cálculo en segundo plano de los resúmenes de la biblioteca (y de la vista previa del asistente)
+  let bg = null; const bgQueue = []; let bgBusy = false;
+  function bgWorker() { if (bg) return bg; try { bg = new Worker('worker.js?' + VERSION); bg.onmessage = bgDone; } catch (e) { bg = null; } return bg; }
+  function bgRun(id, data) { bgQueue.push({ id, data }); bgPump(); }
+  function bgPump() { if (bgBusy || !bgQueue.length || !bgWorker()) return; bgBusy = true; const j = bgQueue.shift(); bg.postMessage({ id: j.id, data: JSON.parse(JSON.stringify(j.data)) }); }
+  function bgDone(e) {
+    bgBusy = false;
+    const { id, ok, res } = e.data;
+    if (String(id).startsWith('s:')) { const p = lib.promociones.find((x) => x.id === id.slice(2)); if (p && ok) { p.resumen = summaryOf(res); saveLib(); if (ui.mode === 'lib') renderLibrary(); } }
+    if (String(id).startsWith('w:') && ok && +id.slice(2) === wiz.req) wizPreview(res);
+    bgPump();
+  }
+  function refreshSummaries() {
+    for (const p of lib.promociones) {
+      if (CALC.check(p.data).missing.length) continue;
+      if (!p.resumen || p.resumen.at < p.modificada) if (!bgQueue.some((j) => j.id === 's:' + p.id)) bgRun('s:' + p.id, p.data);
+    }
+  }
+
+  function setMode(m) {
+    ui.mode = m; document.body.dataset.mode = m;
+    libEl.hidden = m !== 'lib';
+    $('#libBtn').setAttribute('aria-pressed', String(m === 'lib'));
+    if (m === 'lib') { renderLibrary(); refreshSummaries(); }
+    setHdr(); window.scrollTo(0, 0);
+  }
+  function openEditor(id) { lib.activa = id; saveLib(); setMode('edit'); openPromo(); }
+
+  function sparkline(vals, w = 220, hgt = 46) {
+    const svg = svgEl(w, hgt); svg.setAttribute('class', 'spark'); svg.setAttribute('aria-hidden', 'true');
+    if (!vals || vals.length < 2) return svg;
+    const lo = Math.min(0, ...vals), hi = Math.max(0, ...vals) || 1, Y = (v) => 3 + (1 - (v - lo) / (hi - lo || 1)) * (hgt - 6), X = (i) => (i / (vals.length - 1)) * w;
+    svg.append(SV('line', { x1: 0, x2: w, y1: Y(0), y2: Y(0), class: 'spark-zero' }));
+    const d = vals.map((v, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1)).join('');
+    svg.append(SV('path', { d: d + `L${w} ${Y(0)}L0 ${Y(0)}Z`, class: 'spark-area' }), SV('path', { d, class: 'spark-line' }));
+    return svg;
+  }
+  function promoCard(p) {
+    const ck = CALC.check(p.data), s = p.resumen, falta = ck.missing.length, rev = pendientes(p);
+    const fresh = s && s.at >= p.modificada;
+    const card = h('article', { class: 'pcard', tabindex: 0, 'aria-label': p.nombre, onclick: (e) => { if (!e.target.closest('.pmenu')) openEditor(p.id); }, onkeydown: (e) => { if (e.key === 'Enter' && e.target === card) openEditor(p.id); } });
+    const menuBtn = h('button', { class: 'btn small ghost pmenu-btn', type: 'button', 'aria-label': 'Opciones de ' + p.nombre, onclick: (e) => { e.stopPropagation(); $$('.pmenu.open').forEach((m) => m !== pm && m.classList.remove('open')); pm.classList.toggle('open'); } }, '⋯');
+    const pm = h('div', { class: 'pmenu menu' }, menuBtn, h('div', { class: 'menu-list' },
+      h('button', { type: 'button', onclick: () => openEditor(p.id) }, 'Abrir'),
+      h('button', { type: 'button', onclick: () => libAction('duplicar', p) }, 'Duplicar'),
+      h('button', { type: 'button', onclick: () => libAction('renombrar', p) }, 'Cambiar el nombre'),
+      h('button', { type: 'button', class: 'danger', onclick: () => libAction('borrar', p) }, 'Borrar')));
+    card.append(h('header', {}, h('span', { class: 'avatar', style: 'background:' + avatarColor(p.id) }, initials(p.nombre)), h('div', { class: 'pname' }, h('b', {}, p.nombre), h('span', {}, 'Modificada ' + ago(p.modificada))), pm));
+    if (falta) {
+      const total = SCHEMA.fields.filter((f) => f.def === null && !f.calc && !f.sync && f.type !== 'salesplan' && f.type !== 'curve').length;
+      card.append(h('div', { class: 'pbody empty-state' }, h('div', { class: 'pbig muted' }, 'Sin calcular'), h('div', { class: 'progress', title: 'Datos propios rellenos' }, h('i', { style: `width:${Math.round(((total - falta) / total) * 100)}%` })), h('span', { class: 'chip bad' }, `Faltan ${falta} ${falta === 1 ? 'dato' : 'datos'}`)));
+    } else if (!s) {
+      card.append(h('div', { class: 'pbody' }, h('div', { class: 'pbig muted' }, 'Calculando…')));
+    } else {
+      card.append(h('div', { class: 'pbody' + (fresh ? '' : ' stale') },
+        h('div', { class: 'plabel' }, 'Resultado'),
+        h('div', { class: 'pbig ' + (s.resultado < 0 ? 'neg' : '') }, fmtMill(s.resultado), h('span', { class: 'chip ' + (s.margen >= 0.15 ? 'ok' : s.margen >= 0 ? 'warn' : 'bad') }, fmtPct(s.margen, 1))),
+        sparkline(s.saldo),
+        h('div', { class: 'pstats' },
+          h('div', {}, h('span', {}, 'Ingresos'), h('b', {}, fmtMill(s.ingresos))),
+          h('div', {}, h('span', {}, 'TIR proyecto'), h('b', {}, s.tirO === null ? '—' : fmtPct(s.tirO, 1))),
+          h('div', {}, h('span', {}, 'Viviendas'), h('b', {}, fmtNum(CALC.withDefaults(p.data).n_viviendas))))));
+    }
+    card.append(h('footer', {}, s && !falta ? h('span', {}, 'Llaves: ' + fmtMonthLong(s.llaves)) : h('span', {}, 'Creada ' + ago(p.creada)), rev ? h('span', { class: 'chip warn' }, rev + ' por revisar') : h('span', { class: 'chip ok' }, 'Revisada')));
+    return card;
+  }
+  function libSorted() {
+    const q = ui.libQ.trim().toLowerCase();
+    const list = lib.promociones.filter((p) => !q || p.nombre.toLowerCase().includes(q));
+    const key = { modificada: (p) => p.modificada, nombre: (p) => p.nombre.toLowerCase(), resultado: (p) => (p.resumen ? p.resumen.resultado : -Infinity), margen: (p) => (p.resumen ? p.resumen.margen : -Infinity), tir: (p) => (p.resumen && p.resumen.tirO !== null ? p.resumen.tirO : -Infinity) }[ui.libSort];
+    return list.sort((a, b) => { const x = key(a), y = key(b); if (ui.libSort === 'nombre') return x.localeCompare(y); return x < y ? 1 : x > y ? -1 : 0; });
+  }
+  function renderLibrary() {
+    const keepFocus = document.activeElement && document.activeElement.id === 'libQ';
+    libEl.innerHTML = '';
+    const n = lib.promociones.length;
+    const seg = h('div', { class: 'seg' }, [['tarjetas', 'Tarjetas'], ['comparar', 'Comparar']].map(([id, l]) => h('button', { type: 'button', 'aria-pressed': String(ui.libView === id), onclick: () => { ui.libView = id; store.set('calcpromo.libvista', id); renderLibrary(); } }, l)));
+    const sortSel = h('select', { class: 'libsort', 'aria-label': 'Ordenar', onchange: (e) => { ui.libSort = e.target.value; renderLibrary(); } }, [['modificada', 'Últimas modificadas'], ['nombre', 'Nombre'], ['resultado', 'Mayor resultado'], ['margen', 'Mayor margen'], ['tir', 'Mayor TIR']].map(([v, l]) => h('option', { value: v, selected: ui.libSort === v }, l)));
+    const q = h('input', { id: 'libQ', type: 'search', placeholder: 'Buscar por nombre', value: ui.libQ, 'aria-label': 'Buscar promoción', oninput: (e) => { ui.libQ = e.target.value; renderLibrary(); } });
+    libEl.append(h('div', { class: 'libhead' },
+      h('div', {}, h('h1', {}, 'Mis promociones'), h('p', {}, n === 1 ? '1 promoción guardada en este navegador' : `${n} promociones guardadas en este navegador`)),
+      h('button', { class: 'btn primary big', type: 'button', onclick: () => openWizard() }, h('span', { html: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>' }), 'Nueva promoción')));
+    libEl.append(h('div', { class: 'libtools' }, q, sortSel, seg));
+    const list = libSorted();
+    if (ui.libView === 'tarjetas') {
+      const grid = h('div', { class: 'pgrid' });
+      grid.append(h('button', { class: 'pcard pnew', type: 'button', onclick: () => openWizard() }, h('span', { class: 'plus', html: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>' }), h('b', {}, 'Nueva promoción'), h('span', {}, 'En blanco, desde el ejemplo o copiando una de las tuyas')));
+      for (const p of list) grid.append(promoCard(p));
+      libEl.append(grid);
+      if (!list.length && ui.libQ) libEl.append(h('p', { class: 'empty' }, 'Ninguna promoción se llama así.'));
+    } else libEl.append(compareTable(list));
+    if (keepFocus) { const i = $('#libQ'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }
+  }
+  function compareTable(list) {
+    const cols = [['Promoción', null], ['Viviendas', (p) => fmtNum(CALC.withDefaults(p.data).n_viviendas)], ['Ingresos', (p, s) => fmtEur(s.ingresos)], ['Costes', (p, s) => fmtEur(s.costes)], ['Resultado', (p, s) => fmtEur(s.resultado), (s) => s.resultado < 0], ['Margen', null], ['TIR proyecto', (p, s) => fmtPct(s.tirO, 1)], ['TIR con financiación', (p, s) => fmtPct(s.tirF, 1)], ['Saldo más bajo', (p, s) => fmtEur(s.peor), (s) => s.peor < 0], ['Llaves', (p, s) => fmtMonth(s.llaves)], ['Por revisar', (p) => fmtNum(pendientes(p))]];
+    const maxM = Math.max(0.0001, ...list.map((p) => (p.resumen ? Math.abs(p.resumen.margen) : 0)));
+    const t = h('table', { class: 'cmp' }, h('thead', {}, h('tr', {}, cols.map(([l]) => h('th', {}, l)))));
+    const tb = h('tbody');
+    for (const p of list) {
+      const s = p.resumen, falta = CALC.check(p.data).missing.length;
+      const tr = h('tr', { tabindex: 0, onclick: () => openEditor(p.id), onkeydown: (e) => { if (e.key === 'Enter') openEditor(p.id); } });
+      tr.append(h('td', {}, h('span', { class: 'avatar sm', style: 'background:' + avatarColor(p.id) }, initials(p.nombre)), h('b', {}, p.nombre)));
+      if (falta || !s) { tr.append(h('td', {}, fmtNum(CALC.withDefaults(p.data).n_viviendas) || '—'), h('td', { colspan: cols.length - 2, class: 'muted' }, falta ? `Faltan ${falta} datos para calcular` : 'Calculando…')); tb.append(tr); continue; }
+      for (const [l, fn, negf] of cols.slice(1)) {
+        if (l === 'Margen') { tr.append(h('td', {}, h('div', { class: 'mbar' }, h('i', { style: `width:${Math.max(2, Math.round((Math.abs(s.margen) / maxM) * 70))}px;background:${s.margen < 0 ? 'var(--neg)' : 'var(--s1)'}` }), h('span', {}, fmtPct(s.margen, 1))))); continue; }
+        tr.append(h('td', { class: negf && negf(s) ? 'neg' : '' }, fn(p, s)));
+      }
+      tb.append(tr);
+    }
+    t.append(tb);
+    return h('div', { class: 'scrollx cmpwrap' }, t, h('p', { class: 'sub', style: 'padding:8px 12px;margin:0' }, 'Pulsa una fila para abrir la promoción. Las cifras se actualizan al cambiar los datos.'));
+  }
+  async function libAction(act, p) {
+    $$('.pmenu.open').forEach((m) => m.classList.remove('open'));
+    if (act === 'duplicar') { const n = await ask('Duplicar promoción', 'Nombre de la copia', p.nombre + ' (copia)'); if (!n) return; const c = newPromo(n, JSON.parse(JSON.stringify(p.data))); c.revisados = [...(p.revisados || [])]; c.resumen = p.resumen; c.resumen = p.resumen ? { ...p.resumen, at: c.modificada } : undefined; }
+    if (act === 'renombrar') { const n = await ask('Cambiar el nombre', 'Nombre de la promoción', p.nombre); if (!n) return; p.nombre = n; }
+    if (act === 'borrar') { const ok = await confirmDlg('Borrar promoción', `Se borrará «${p.nombre}» de este navegador. No se puede deshacer.`); if (!ok) return; lib.promociones = lib.promociones.filter((x) => x.id !== p.id); if (!lib.promociones.length) newPromo(EJEMPLO.nombre, EJEMPLO.ejemplo()); if (lib.activa === p.id) lib.activa = lib.promociones[0].id; }
+    saveLib(); renderSel(); renderLibrary(); refreshSummaries(); toast(act === 'borrar' ? 'Promoción borrada' : act === 'duplicar' ? 'Copia creada' : 'Nombre cambiado');
+  }
+  document.addEventListener('click', (e) => { if (!e.target.closest('.pmenu')) $$('.pmenu.open').forEach((m) => m.classList.remove('open')); });
+
+  // ---------- asistente ----------
+  const wizDlg = $('#wiz');
+  const wiz = { step: 1, base: 'blank', copyId: null, nombre: '', data: {}, gen: { mes: 3, pct: 25, desde: 4, hasta: 0 }, req: 0, prev: null };
+  const WIZ_FIELDS = ['ccaa', 'fecha_compra', 'precio_suelo', 'edif_residencial', 'sup_viviendas', 'n_viviendas', 'precio_m2_viv', 'coste_m2_viv', 'meses_inicio', 'meses_obra'];
+  const WIZ_HELP = { ccaa: 'Para los impuestos autonómicos.', fecha_compra: 'Es el mes 1.', precio_suelo: 'Sin IVA ni gastos.', edif_residencial: 'm² de vivienda que permite la normativa.', sup_viviendas: 'm² construidos de todas las viviendas.', n_viviendas: 'Una plaza de garaje y un trastero por vivienda; se cambia después.', precio_m2_viv: 'Precio medio de venta, sin IVA.', coste_m2_viv: 'Precio de la constructora, sin IVA.', meses_inicio: 'Proyecto y licencia.', meses_obra: 'Hasta el certificado final de obra.' };
+  function openWizard() {
+    Object.assign(wiz, { step: 1, base: 'blank', copyId: null, nombre: 'Promoción ' + (lib.promociones.length + 1), data: {}, gen: { mes: 3, pct: 25, desde: 4, hasta: 0 }, prev: null });
+    renderWizard(); wizDlg.showModal();
+  }
+  function wizBaseData() {
+    if (wiz.base === 'example') return EJEMPLO.ejemplo();
+    if (wiz.base === 'copy') { const p = lib.promociones.find((x) => x.id === wiz.copyId); return p ? JSON.parse(JSON.stringify(p.data)) : {}; }
+    return {};
+  }
+  function wizLlaves() { const v = CALC.withDefaults(wiz.data); return Number(v.meses_inicio) + Number(v.meses_obra) + Number(v.meses_llaves); }
+  function wizPlan() {
+    const v = CALC.withDefaults(wiz.data), g = wiz.gen, hasta = g.hasta || Math.max(g.desde, wizLlaves() - 3);
+    const o = { preventaMes: g.mes, preventaPct: g.pct / 100, desde: g.desde, hasta };
+    const plan = {}; for (const [key, , , u] of SALES) if (Number(v[u]) > 0) plan[key] = CALC.spread(v[u], o);
+    return plan;
+  }
+  function wizFinalData() {
+    const d = JSON.parse(JSON.stringify(wiz.data));
+    if (wiz.base !== 'copy' || wiz.replan) d.plan_ventas = wizPlan();
+    const c = SCHEMA.CCAA.find((x) => x[0] === d.ccaa);
+    if (c && (wiz.base !== 'copy' || wiz.ccaaChanged)) { d.pct_ajd_obra_nueva = c[2]; d.pct_ajd_prestamo_suelo = 0; d.pct_ajd_prestamo_promotor = 0; if (Number(CALC.withDefaults(d).vendedor_suelo) !== 1) d.pct_ajd_compra = c[2]; }
+    return d;
+  }
+  function wizSchedulePreview() {
+    clearTimeout(wiz.t);
+    const miss = CALC.check(wiz.data).missing;
+    const box = $('#wizPrev'); if (!box) return;
+    if (miss.length) { box.innerHTML = ''; box.append(h('span', { class: 'muted' }, `Rellena ${miss.length === 1 ? 'el dato que falta' : 'los ' + miss.length + ' datos que faltan'} para ver una primera estimación.`)); return; }
+    box.classList.add('busy');
+    wiz.t = setTimeout(() => { wiz.req++; bgRun('w:' + wiz.req, wizFinalData()); }, 300);
+  }
+  function wizPreview(res) {
+    wiz.prev = res; const box = $('#wizPrev'); if (!box) return; box.classList.remove('busy');
+    const k = res.kpis; box.innerHTML = '';
+    box.append(h('div', { class: 'wprev-t' }, 'Primera estimación'), h('div', { class: 'wprev-grid' },
+      h('div', {}, h('span', {}, 'Ingresos'), h('b', {}, fmtMill(k.ingresos))), h('div', {}, h('span', {}, 'Costes'), h('b', {}, fmtMill(k.costes))),
+      h('div', {}, h('span', {}, 'Resultado'), h('b', { class: k.resultado < 0 ? 'neg' : '' }, fmtMill(k.resultado))), h('div', {}, h('span', {}, 'Margen'), h('b', { class: k.margen < 0 ? 'neg' : '' }, fmtPct(k.margen, 1)))),
+      h('span', { class: 'muted' }, 'Con los valores habituales en el resto de datos. Luego podrás revisarlos uno a uno.'));
+  }
+  function wizField(id) {
+    const f = FIELDS[id], v = CALC.withDefaults(wiz.data);
+    const wrap = h('label', { class: 'wfield' }, h('span', { class: 'wl' }, f.label));
+    let ctrl;
+    if (f.type === 'select') {
+      ctrl = h('select', { onchange: (e) => { const x = typeof f.options[0][0] === 'number' ? Number(e.target.value) : e.target.value; if (x === '' ) delete wiz.data[id]; else wiz.data[id] = x; if (id === 'ccaa') wiz.ccaaChanged = true; if (id === 'meses_inicio' || id === 'meses_obra') wiz.replan = true; wizSchedulePreview(); } }, f.options.map(([val, lab]) => h('option', { value: val, selected: String(v[id] ?? '') === String(val) }, lab)));
+    } else if (f.type === 'date') {
+      ctrl = h('input', { type: 'date', value: v[id] || '', onchange: (e) => { if (e.target.value) wiz.data[id] = e.target.value; else delete wiz.data[id]; wizSchedulePreview(); } });
+    } else {
+      ctrl = h('input', { inputmode: 'decimal', value: toInput(f, wiz.data[id] ?? null), placeholder: f.def === null ? 'Obligatorio' : '', onchange: (e) => { const n = parseNum(e.target.value); if (Number.isNaN(n)) { e.target.value = ''; delete wiz.data[id]; } else if (n === null) delete wiz.data[id]; else wiz.data[id] = f.type === 'int' ? Math.round(Math.abs(n)) : Math.abs(n); if (id === 'n_viviendas') wiz.replan = true; e.target.value = toInput(f, wiz.data[id] ?? null); wizSchedulePreview(); } });
+    }
+    wrap.append(h('span', { class: 'wctrl' + (UNIT[f.type] ? ' has-unit' : '') }, ctrl, UNIT[f.type] ? h('i', {}, UNIT[f.type]) : null), h('span', { class: 'wh' }, WIZ_HELP[id] || ''));
+    return wrap;
+  }
+  function planBars(plan) {
+    const v = CALC.withDefaults(wiz.data), viv = plan.viviendas || [], L = wizLlaves(), n = Math.max(L + 1, viv.reduce((m, x, i) => (x > 0 ? i + 1 : m), 0));
+    const W = 560, H = 120, bw = W / n, mx = Math.max(1, ...viv.slice(0, n));
+    const svg = svgEl(W, H + 34); svg.setAttribute('class', 'wbars');
+    const ini = Number(v.meses_inicio) + 1, fin = Number(v.meses_inicio) + Number(v.meses_obra);
+    svg.append(SV('rect', { x: (ini - 1) * bw, y: 0, width: (fin - ini + 1) * bw, height: H, class: 'wobra' }));
+    for (let i = 0; i < n; i++) { const x = viv[i] || 0; if (x > 0) { const hh = Math.max(2, (x / mx) * (H - 14)); const r = SV('rect', { x: i * bw + bw * 0.15, y: H - hh, width: bw * 0.7, height: hh, rx: Math.min(3, bw * 0.3), class: 'wbar' }); const tt = SV('title', {}); tt.textContent = `Mes ${i + 1}${v.fecha_compra ? ' (' + fmtMonthLong(addMonths(v.fecha_compra, i)) + ')' : ''}: ${fmtNum(x)} ${x === 1 ? 'vivienda' : 'viviendas'}`; r.append(tt); svg.append(r); } }
+    svg.append(SV('line', { x1: (L - 0.5) * bw, x2: (L - 0.5) * bw, y1: 0, y2: H, class: 'wllaves' }));
+    const lab = (x, t, anchor) => { const e = SV('text', { x, y: H + 16, 'text-anchor': anchor || 'middle', class: 'axis' }); e.textContent = t; svg.append(e); };
+    lab(0, 'Mes 1', 'start'); lab(((ini - 1) + (fin - ini + 1) / 2) * bw, 'Obra'); lab(Math.min(W - 2, (L - 0.5) * bw), 'Llaves (mes ' + L + ')', 'end');
+    return svg;
+  }
+  function renderWizard() {
+    const b = $('#wizBody'); b.innerHTML = '';
+    $$('#wizSteps li').forEach((li, i) => { li.classList.toggle('on', i + 1 === wiz.step); li.classList.toggle('done', i + 1 < wiz.step); });
+    $('#wizBack').hidden = wiz.step === 1; $('#wizNext').textContent = wiz.step === 3 ? 'Crear promoción' : 'Siguiente';
+    if (wiz.step === 1) {
+      const name = h('input', { id: 'wizName', value: wiz.nombre, maxlength: 80, oninput: (e) => { wiz.nombre = e.target.value; } });
+      b.append(h('label', { class: 'wfield wide' }, h('span', { class: 'wl' }, 'Nombre de la promoción'), name, h('span', { class: 'wh' }, 'Por ejemplo, la calle o el nombre comercial.')));
+      b.append(h('div', { class: 'wl', style: 'margin:14px 0 8px' }, '¿Cómo quieres empezar?'));
+      const opts = h('div', { class: 'wopts' });
+      const copies = [...lib.promociones].sort((x, y) => y.modificada.localeCompare(x.modificada));
+      const opt = (id, icon, t, d, extra) => h('button', { type: 'button', class: 'wopt', 'aria-pressed': String(wiz.base === id), onclick: () => { wiz.base = id; if (id === 'copy' && !wiz.copyId) wiz.copyId = copies[0] && copies[0].id; renderWizard(); } }, h('span', { class: 'wico', html: icon }), h('b', {}, t), h('span', {}, d), extra || null);
+      opts.append(
+        opt('blank', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>', 'En blanco', 'Con los valores habituales y sin datos de la promoción.'),
+        opt('example', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 21V8l8-5 8 5v13"/><path d="M9 21v-6h6v6"/></svg>', 'Desde el ejemplo', '62 viviendas con datos inventados, para cambiar lo que quieras.'),
+        opt('copy', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>', 'Copiar una mía', 'Parte de una promoción que ya tienes.',
+          wiz.base === 'copy' ? h('select', { class: 'wcopy', onclick: (e) => e.stopPropagation(), onchange: (e) => { wiz.copyId = e.target.value; } }, copies.map((p) => h('option', { value: p.id, selected: p.id === wiz.copyId }, p.nombre))) : null));
+      b.append(opts);
+      setTimeout(() => name.focus(), 50);
+    } else if (wiz.step === 2) {
+      b.append(h('p', { class: 'wintro' }, 'Los datos básicos. Todo lo demás viene con valores habituales marcados para revisar, y lo puedes cambiar después.'));
+      const g = h('div', { class: 'wgrid' }); for (const id of WIZ_FIELDS) g.append(wizField(id)); b.append(g);
+      b.append(h('div', { class: 'wprev', id: 'wizPrev' })); wizSchedulePreview();
+    } else {
+      const v = CALC.withDefaults(wiz.data), L = wizLlaves();
+      if (!wiz.gen.hasta) wiz.gen.hasta = Math.max(wiz.gen.desde, L - 3);
+      if (wiz.base === 'copy' && !wiz.replan) b.append(h('p', { class: 'wintro' }, 'Se mantiene el calendario de ventas de la promoción que copias. Si quieres uno nuevo, cámbialo aquí.', ' ', h('button', { type: 'button', class: 'btn small', onclick: () => { wiz.replan = true; renderWizard(); } }, 'Hacer uno nuevo')));
+      else {
+        b.append(h('p', { class: 'wintro' }, `¿Cuándo se venden las ${fmtNum(v.n_viviendas)} viviendas? Las plazas y los trasteros siguen el mismo ritmo.`));
+        const gi = (k, label, max) => h('label', { class: 'wfield sm' }, h('span', { class: 'wl' }, label), h('span', { class: 'wctrl' + (k === 'pct' ? ' has-unit' : '') }, h('input', { inputmode: 'numeric', value: wiz.gen[k], onchange: (e) => { const x = Math.max(k === 'pct' ? 0 : 1, Math.min(max, Math.round(parseNum(e.target.value) || 0))); wiz.gen[k] = x; renderWizard(); } }), k === 'pct' ? h('i', {}, '%') : null));
+        b.append(h('div', { class: 'wgen' }, gi('mes', 'Preventa en el mes', 84), gi('pct', 'Unidades en preventa', 100), gi('desde', 'Resto desde el mes', 84), gi('hasta', 'hasta el mes', 84)));
+        const plan = wizPlan();
+        b.append(h('div', { class: 'wbarsbox' }, planBars(plan), h('div', { class: 'legend' }, h('span', {}, h('i', { style: 'background:var(--s1)' }), 'Viviendas vendidas cada mes'), h('span', {}, h('i', { style: 'background:var(--accent-soft);border:1px solid var(--line-2)' }), 'Meses de obra'), h('span', {}, h('i', { style: 'background:var(--s2)' }), 'Entrega de llaves'))));
+        if (wiz.gen.hasta >= L) b.append(h('p', { class: 'help' }, 'Hay ventas después de la entrega de llaves: se cobran enteras en el mes de la venta.'));
+      }
+      b.append(h('div', { class: 'wprev', id: 'wizPrev' })); wizSchedulePreview();
+    }
+  }
+  $('#wizNext').addEventListener('click', (e) => {
+    e.preventDefault();
+    if (wiz.step === 1) { if (!wiz.nombre.trim()) { toast('Escribe un nombre'); $('#wizName').focus(); return; } wiz.data = wizBaseData(); wiz.replan = false; wiz.ccaaChanged = false; wiz.step = 2; }
+    else if (wiz.step === 2) { const miss = CALC.check(wiz.data).missing; if (miss.length) { toast('Faltan: ' + miss.map((f) => f.label.toLowerCase()).join(', ')); return; } wiz.step = 3; }
+    else { const src = wiz.base === 'copy' && lib.promociones.find((x) => x.id === wiz.copyId); const p = newPromo(wiz.nombre.trim(), wizFinalData()); if (src) p.revisados = [...(src.revisados || [])]; if (wiz.base === 'example') p.ejemplo = true; saveLib(); wizDlg.close(); openEditor(p.id); toast('Promoción creada. Revisa los datos en amarillo.'); return; }
+    renderWizard();
+  });
+  $('#wizBack').addEventListener('click', (e) => { e.preventDefault(); wiz.step = Math.max(1, wiz.step - 1); renderWizard(); });
+  $('#wizClose').addEventListener('click', (e) => { e.preventDefault(); wizDlg.close(); });
+  $('#libBtn').addEventListener('click', () => setMode('lib'));
+
+  loadLib(); saveLib(); setHdr(); startWorker(); openPromo(); setMode('lib');
   window.__calc = { ui, lib: () => lib }; // para las pruebas
 })();

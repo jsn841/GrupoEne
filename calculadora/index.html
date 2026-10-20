@@ -231,18 +231,134 @@ dialog p{color:var(--ink-2);font-size:13.5px;margin:0}
   .timeline{grid-template-columns:repeat(2,1fr);row-gap:14px}.timeline::before{display:none}
 }
 @media (max-width:520px){.kpis{grid-template-columns:1fr 1fr;gap:8px}.kpi .v{font-size:17px}.kpi.hero .v{font-size:24px}.brand span{display:none}}
+
+/* biblioteca */
+body[data-mode="lib"] main,body[data-mode="lib"] .mobile-tabs,body[data-mode="lib"] .promo,body[data-mode="lib"] #xlsxBtn,body[data-mode="lib"] #pdfBtn{display:none!important}
+.libbtn[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+#library{max-width:1400px;margin:0 auto;padding:24px 20px 40px}
+.libhead{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.libhead h1{margin:0;font-size:24px;letter-spacing:-.02em}
+.libhead p{margin:4px 0 0;color:var(--ink-3);font-size:13px}
+.btn.big{height:42px;padding:0 18px;font-size:14.5px;border-radius:11px}
+.btn.big svg{width:18px;height:18px}
+.libtools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
+.libtools input[type=search]{flex:1;min-width:200px;max-width:380px;height:36px;border:1px solid var(--line-2);border-radius:9px;background:var(--surface);padding:0 12px}
+.libsort{height:36px;border:1px solid var(--line-2);border-radius:9px;background:var(--surface);padding:0 10px}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,270px),1fr));gap:16px}
+.pcard{min-width:0}
+.pcard{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:16px;display:flex;flex-direction:column;gap:12px;cursor:pointer;text-align:left;transition:transform .15s,box-shadow .15s,border-color .15s;position:relative;min-height:250px}
+.pcard:hover,.pcard:focus-visible{transform:translateY(-2px);box-shadow:0 8px 24px rgba(16,24,40,.12);border-color:var(--line-2);outline:none}
+.pcard>header{display:flex;align-items:center;gap:10px}
+.avatar{width:38px;height:38px;border-radius:11px;color:#fff;font-weight:700;font-size:14px;display:inline-flex;align-items:center;justify-content:center;flex:none;letter-spacing:.02em}
+.avatar.sm{width:26px;height:26px;border-radius:8px;font-size:11px;margin-right:8px;vertical-align:middle}
+.pname{flex:1;min-width:0;display:flex;flex-direction:column}
+.pname b{font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pname span{font-size:12px;color:var(--ink-3)}
+.pmenu .menu-list{top:32px}
+.pmenu-btn{font-size:18px;line-height:1}
+.pbody{display:flex;flex-direction:column;gap:8px;flex:1}
+.pbody.stale{opacity:.6}
+.plabel{font-size:12px;color:var(--ink-3)}
+.pbig{font-size:26px;font-weight:750;letter-spacing:-.02em;display:flex;align-items:center;gap:8px;font-variant-numeric:tabular-nums}
+.pbig.muted{font-size:18px;color:var(--ink-3);font-weight:600}
+.spark{width:100%;height:46px}
+.spark-line{fill:none;stroke:var(--s1);stroke-width:2;stroke-linejoin:round}
+.spark-area{fill:var(--s1);opacity:.1}
+.spark-zero{stroke:var(--line-2);stroke-width:1;stroke-dasharray:3 3}
+.pstats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;border-top:1px solid var(--line);padding-top:10px}
+.pstats span{display:block;font-size:11px;color:var(--ink-3)}
+.pstats b{font-size:14px;font-variant-numeric:tabular-nums}
+.pcard>footer{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;color:var(--ink-2)}
+.empty-state{justify-content:center}
+.progress{height:8px;background:var(--surface-2);border-radius:5px;overflow:hidden;border:1px solid var(--line)}
+.progress i{display:block;height:100%;background:var(--accent);border-radius:5px}
+.pnew{border:2px dashed var(--line-2);background:transparent;box-shadow:none;align-items:center;justify-content:center;text-align:center;color:var(--ink-2);font:inherit}
+.pnew b{font-size:16px;color:var(--ink)}
+.pnew>span:last-child{font-size:12.5px;max-width:200px}
+.pnew .plus{width:52px;height:52px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;justify-content:center}
+.pnew .plus svg{width:26px;height:26px}
+.pnew:hover{border-color:var(--accent)}
+.muted{color:var(--ink-3)}
+.cmpwrap{background:var(--surface)}
+table.cmp{border-collapse:separate;border-spacing:0;width:100%;font-size:13px}
+table.cmp th,table.cmp td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+table.cmp th{background:var(--surface-2);color:var(--ink-2);font-weight:600;font-size:12px;position:sticky;top:0}
+table.cmp td:first-child,table.cmp th:first-child{text-align:left;position:sticky;left:0;background:var(--surface);z-index:1}
+table.cmp th:first-child{background:var(--surface-2);z-index:2}
+table.cmp tbody tr{cursor:pointer}
+table.cmp tbody tr:hover td{background:var(--accent-soft)}
+.mbar{display:flex;align-items:center;gap:8px;justify-content:flex-end}
+.mbar i{display:block;height:8px;border-radius:4px;min-width:2px}
+.mbar{min-width:120px}
+/* asistente */
+dialog.wiz{width:min(720px,calc(100vw - 24px));padding:0;max-height:calc(100vh - 24px)}
+.wiz form{display:flex;flex-direction:column;max-height:calc(100vh - 24px)}
+.wiztop{display:flex;justify-content:space-between;align-items:center;padding:18px 22px 0}
+.wiztop h3{margin:0;font-size:18px}
+.wsteps{display:flex;gap:6px;list-style:none;margin:14px 22px 0;padding:0}
+.wsteps li{flex:1;display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-3);padding-bottom:10px;border-bottom:3px solid var(--line)}
+.wsteps li i{font-style:normal;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--line-2);display:inline-flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700}
+.wsteps li.on{color:var(--ink);font-weight:600;border-bottom-color:var(--accent)}
+.wsteps li.on i{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.wsteps li.done{border-bottom-color:var(--ok)}
+.wsteps li.done i{background:var(--ok);border-color:var(--ok);color:#fff}
+.wizbody{padding:18px 22px;overflow:auto;flex:1}
+.wiz .row{padding:14px 22px;border-top:1px solid var(--line);margin:0}
+.wintro{color:var(--ink-2);font-size:13.5px;margin:0 0 14px}
+.wfield{display:flex;flex-direction:column;gap:4px}
+.wl{font-size:13px;font-weight:600;color:var(--ink-2)}
+.wh{font-size:11.5px;color:var(--ink-3)}
+.wfield input,.wfield select{width:100%;height:38px;border:1px solid var(--line-2);border-radius:9px;background:var(--surface);padding:0 10px}
+.wctrl{position:relative;display:flex;align-items:center}
+.wctrl input{text-align:right}
+.wctrl.has-unit input{padding-right:46px}
+.wctrl i{position:absolute;right:10px;font-style:normal;color:var(--ink-3);font-size:12.5px;pointer-events:none}
+.wgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px 16px}
+.wopts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.wopt{display:flex;flex-direction:column;gap:6px;text-align:left;border:1.5px solid var(--line-2);border-radius:12px;padding:14px;background:var(--surface);cursor:pointer;font:inherit;color:var(--ink)}
+.wopt span{font-size:12.5px;color:var(--ink-2)}
+.wopt[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent) inset}
+.wico{width:34px;height:34px;border-radius:9px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;color:var(--accent)}
+.wico svg{width:20px;height:20px}
+.wcopy{margin-top:4px;height:32px;border:1px solid var(--line-2);border-radius:7px;background:var(--surface);width:100%}
+.wprev{margin-top:18px;border-radius:12px;background:var(--surface-2);border:1px solid var(--line);padding:14px;font-size:12.5px;min-height:20px}
+.wprev.busy{opacity:.6}
+.wprev-t{font-weight:650;font-size:13px;margin-bottom:8px}
+.wprev-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:8px}
+.wprev-grid span{display:block;font-size:11px;color:var(--ink-3)}
+.wprev-grid b{font-size:17px;font-variant-numeric:tabular-nums}
+.wgen{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.wfield.sm input{height:34px}
+.wbarsbox{margin-top:14px;border:1px solid var(--line);border-radius:12px;padding:12px}
+.wbars{width:100%;height:auto;display:block}
+.wbar{fill:var(--s1)}
+.wobra{fill:var(--accent-soft)}
+.wllaves{stroke:var(--s2);stroke-width:2.5}
+.wbars .axis{fill:var(--ink-3);font-size:11px}
+@media (max-width:640px){
+  #library{padding:16px}
+  .pgrid{grid-template-columns:minmax(0,1fr)}
+  .pnew{display:none}
+  dialog.wiz{width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;margin:0;border-radius:0}
+  .wiz form{max-height:100dvh;height:100%}
+  .wgrid,.wopts{grid-template-columns:1fr}
+  .wgen,.wprev-grid{grid-template-columns:1fr 1fr}
+  .wsteps li{font-size:0;gap:0}.wsteps li i{font-size:11.5px}
+  .libbtn .lbl{display:inline}
+}
 </style>
 </head>
 <body data-view="datos">
 <header id="hdr">
   <div class="bar">
     <div class="brand"><b>Calculadora de promociones</b><span>Versión de prueba</span></div>
+    <button class="btn libbtn" id="libBtn" type="button" aria-pressed="true" title="Ver todas mis promociones"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="lbl">Mis promociones</span></button>
     <div class="promo">
       <select id="promoSel" aria-label="Promoción"></select>
       <div class="menu" id="promoMenu">
         <button class="btn" id="promoMenuBtn" aria-haspopup="true" aria-expanded="false" title="Opciones de la promoción"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg><span class="lbl">Promociones</span></button>
         <div class="menu-list" role="menu">
-          <button data-act="nueva" role="menuitem">Nueva promoción en blanco</button>
+          <button data-act="nueva" role="menuitem">Nueva promoción…</button>
           <button data-act="ejemplo" role="menuitem">Nueva a partir del ejemplo</button>
           <button data-act="duplicar" role="menuitem">Duplicar esta promoción</button>
           <button data-act="renombrar" role="menuitem">Cambiar el nombre</button>
@@ -259,11 +375,18 @@ dialog p{color:var(--ink-2);font-size:13.5px;margin:0}
   <div class="notice">Versión de prueba: lo que escribes se guarda solo en este navegador. No se envía ni se guarda en ningún servidor.</div>
 </header>
 <div class="mobile-tabs"><div class="seg" id="viewSeg"><button data-v="datos" aria-pressed="true">Datos</button><button data-v="resultados" aria-pressed="false">Resultados</button></div></div>
+<section id="library" aria-label="Mis promociones" hidden></section>
 <main>
   <section id="form" aria-label="Datos de la promoción"></section>
   <section id="results" aria-label="Resultados"></section>
 </main>
 <div class="toast" id="toast" role="status"></div>
+<dialog id="wiz" class="wiz" aria-labelledby="wizT"><form method="dialog">
+  <div class="wiztop"><h3 id="wizT">Nueva promoción</h3><button class="btn ghost small" id="wizClose" aria-label="Cerrar">✕</button></div>
+  <ol class="wsteps" id="wizSteps"><li><i>1</i>Empezar</li><li><i>2</i>Datos básicos</li><li><i>3</i>Ventas</li></ol>
+  <div id="wizBody" class="wizbody"></div>
+  <div class="row"><button class="btn" id="wizBack" type="button">Atrás</button><button class="btn primary" id="wizNext" type="button">Siguiente</button></div>
+</form></dialog>
 <dialog id="dlg"><form method="dialog"><h3 id="dlgT"></h3><div id="dlgB"></div><div class="row"><button class="btn" value="cancel">Cancelar</button><button class="btn primary" id="dlgOk" value="ok">Aceptar</button></div></form></dialog>
 <script src="engine.js"></script>
 <script src="schema.js"></script>
