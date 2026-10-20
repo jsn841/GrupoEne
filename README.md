@@ -27,10 +27,23 @@ python3 -m http.server 8000
 
 La cabecera tiene un interruptor de modo día / noche que recuerda la elección en cada navegador; sin elección, sigue el ajuste del dispositivo.
 
+## Calculadora de promociones (versión de prueba)
+
+**Publicada:** https://jsn841.github.io/GrupoEne/calculadora/
+
+Calculadora anónima del estudio económico de una promoción inmobiliaria: se rellenan los datos de la promoción y calcula costes, ingresos, resultado, TIR, VAN y flujo de caja mensual y anual, con descarga en Excel y PDF.
+
+- Repite las fórmulas de un modelo en Excel (`template.json`), sin textos ni datos de ninguna promoción real.
+- Los datos con valores habituales vienen rellenos y marcados con **«Revisar este dato»**.
+- Las promociones se guardan **solo en el navegador** de cada usuario (`localStorage`). No hay servidor ni base de datos.
+- Trae una promoción de ejemplo con datos inventados.
+- Calcula en segundo plano (`worker.js`); `export.js` crea el Excel (sin librerías) y el PDF (con [pdf-lib](https://github.com/Hopding/pdf-lib), licencia MIT, en `vendor/`).
+
 ### Estructura
 
 ```
 index.html          portada: redirige al panel
+calculadora/        calculadora de promociones (página estática)
 .nojekyll           publica los archivos tal cual en GitHub Pages
 dashboard/
   index.html        página del panel
