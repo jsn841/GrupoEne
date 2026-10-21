@@ -2,7 +2,7 @@
 
 ## Panel de ventas en directo del Grupo Nozar (maqueta)
 
-Maqueta de un panel de ventas para los tres negocios del grupo. Un menú lateral lleva a cada panel (Dashboard General, Inmobiliario, Marketing Inmobiliario, Hoteles y Bodegas) y a la herramienta de Análisis Promociones:
+Maqueta de un panel de ventas para los tres negocios del grupo. Un menú lateral lleva a cada panel (Dashboard General, Inmobiliario, Hoteles y Bodegas) y a las herramientas (Análisis Promociones y Marketing Inmobiliario):
 
 - **Inicio**: facturación y beneficio bruto del grupo y de cada negocio frente al periodo de comparación, progresión por años, facturación del periodo y últimos movimientos del día.
 - **Inmobiliario**: promociones entregadas y en curso, mapa de España, reservas por mes y detalle de cada vivienda (precio y estado).
