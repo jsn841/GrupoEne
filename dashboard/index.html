@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400&display=swap" rel="stylesheet">
-<script src="vendor/d3.min.js?v=2026-10-20c"></script>
+<script src="vendor/d3.min.js?v=2026-10-21b"></script>
 <script>
 try { var t = localStorage.getItem('nz-theme'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
 </script>
@@ -206,6 +206,20 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
   .nz-navi { width: auto; white-space: nowrap; padding: 7px 10px; font-size: 13px; }
   .nz-calc { height: calc(100vh - 110px); }
 }
+.nz-periodo { position: sticky; top: 0; z-index: 25; display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; background: color-mix(in srgb, var(--color-bg) 92%, transparent); backdrop-filter: blur(6px); border: 1px solid var(--color-border-line); border-radius: 12px; padding: 10px 14px; margin: 0 0 var(--cds-gap-lg); font-size: var(--cds-font-size-caption); }
+.nz-periodo[hidden] { display: none; }
+.nz-pf { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.nz-pl { color: var(--color-fg-muted); font-weight: var(--cds-font-weight-medium); }
+.nz-pd { display: inline-flex; align-items: center; gap: 4px; color: var(--color-fg-muted); }
+.nz-pd input { font: inherit; color: var(--color-fg); background: var(--color-panel); border: 1px solid var(--cds-border); border-radius: 7px; padding: 4px 6px; }
+.nz-psum { flex-basis: 100%; margin: 0; color: var(--color-fg-muted); }
+.nz-psum b { color: var(--color-fg); font-weight: var(--cds-font-weight-medium); }
+#t-prog td.nz-num, #t-prog th.nz-num { text-align: right; }
+#t-prog tr.nz-strong td { font-weight: var(--cds-font-weight-medium); }
+:root { --py3: #a9a59b; --py4: #c4c0b6; --py5: #d9d6ce; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --py3: #5e5c57; --py4: #4c4a46; --py5: #3e3d3a; } }
+:root[data-theme="dark"] { --py3: #5e5c57; --py4: #4c4a46; --py5: #3e3d3a; }
+@media (max-width: 960px) { .nz-periodo { top: 58px; } }
 @keyframes nzfade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 </style>
 
@@ -227,16 +241,17 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
       <img class="nz-logo" src="logo-nozar.png" alt="Nozar" width="300" height="151">
       <div>
       <h1 class="nz-title">Grupo Nozar · Ventas en directo <span class="nz-mock">Maqueta · datos simulados</span></h1>
-      <p class="nz-sub" id="takeaway">Hasta el 19 de octubre el grupo factura <b data-source="grupo_resumen" data-field="facturacion" data-where="negocio=Grupo" class="dash-skeleton">—</b>, <b data-source="grupo_resumen" data-field="variacion" data-where="negocio=Grupo" class="dash-skeleton">—</b> frente al mismo periodo de 2025, con un beneficio bruto de <b data-source="grupo_resumen" data-field="beneficio_bruto" data-where="negocio=Grupo" class="dash-skeleton">—</b>.</p>
+      <p class="nz-sub" id="takeaway">En <span class="pl-cur">el periodo</span> el grupo factura <b data-source="grupo_resumen" data-field="facturacion" data-where="negocio=Grupo" class="dash-skeleton">—</b>, <b data-source="grupo_resumen" data-field="variacion" data-where="negocio=Grupo" class="dash-skeleton">—</b> frente <span class="pl-cmp-l">periodo anterior</span>, con un beneficio bruto de <b data-source="grupo_resumen" data-field="beneficio_bruto" data-where="negocio=Grupo" class="dash-skeleton">—</b>.</p>
       </div>
     </div>
     <div class="nz-live"><span class="nz-live-dot"></span>En directo · último movimiento a las <span data-source="actividad_hoy" data-field="hora" data-row="0" class="dash-skeleton">—</span></div>
   </header>
+  <div class="nz-periodo" id="nz-periodo" role="region" aria-label="Filtro de fechas"></div>
 
 
   <!-- ================= INICIO ================= -->
   <section class="nz-section" id="inicio" data-page="inicio">
-    <h2 class="nz-h2">Facturación del grupo <small>1 ene – 19 oct 2026 vs mismo periodo 2025</small></h2>
+    <h2 class="nz-h2">Facturación del grupo <small><span class="pl-cur"></span> · variación frente a: <span class="pl-cmp"></span></small></h2>
     <div class="nz-tiles nz-wide" id="home-negocios">
       <div class="nz-tile nz-hero"><div class="nz-tl">Grupo Nozar</div><div class="nz-big dash-skeleton" data-source="grupo_resumen" data-field="facturacion" data-where="negocio=Grupo">—</div><div class="nz-meta"><span class="dash-skeleton" data-source="grupo_resumen" data-field="variacion" data-where="negocio=Grupo">—</span><span>BB <span class="dash-skeleton" data-source="grupo_resumen" data-field="beneficio_bruto" data-where="negocio=Grupo">—</span> · margen <span class="dash-skeleton" data-source="grupo_resumen" data-field="margen" data-where="negocio=Grupo">—</span></span></div></div>
       <div class="nz-tile"><div class="nz-tl">Inmobiliario</div><div class="nz-big dash-skeleton" data-source="grupo_resumen" data-field="facturacion" data-where="negocio=Inmobiliario">—</div><div class="nz-meta"><span class="dash-skeleton" data-source="grupo_resumen" data-field="variacion" data-where="negocio=Inmobiliario">—</span><span>BB <span class="dash-skeleton" data-source="grupo_resumen" data-field="beneficio_bruto" data-where="negocio=Inmobiliario">—</span> · margen <span class="dash-skeleton" data-source="grupo_resumen" data-field="margen" data-where="negocio=Inmobiliario">—</span></span></div></div>
@@ -244,6 +259,12 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
       <div class="nz-tile"><div class="nz-tl">Bodegas</div><div class="nz-big dash-skeleton" data-source="grupo_resumen" data-field="facturacion" data-where="negocio=Bodegas">—</div><div class="nz-meta"><span class="dash-skeleton" data-source="grupo_resumen" data-field="variacion" data-where="negocio=Bodegas">—</span><span>BB <span class="dash-skeleton" data-source="grupo_resumen" data-field="beneficio_bruto" data-where="negocio=Bodegas">—</span> · margen <span class="dash-skeleton" data-source="grupo_resumen" data-field="margen" data-where="negocio=Bodegas">—</span></span></div></div>
     </div>
     <p class="nz-note">BB = beneficio bruto: ventas menos el coste directo de lo vendido (obra y suelo en viviendas; habitaciones, comida y bebida en el hotel; uva, elaboración y botella en el vino). En inmobiliario se factura al escriturar, por eso va a saltos.</p>
+
+    <div class="nz-card" id="card-prog" style="margin-bottom:var(--cds-gap-md)">
+      <h3>Progresión por años</h3>
+      <p class="nz-note" id="n-prog">Facturación del mismo periodo en cada año.</p>
+      <div class="nz-tablebox" style="max-height:none"><table class="nz-t" id="t-prog"></table></div>
+    </div>
 
     <div class="nz-card" id="card-home-inmo" style="margin-bottom:var(--cds-gap-md)">
       <div class="nz-bar-row" style="margin-bottom:var(--cds-gap-xs)">
@@ -254,27 +275,28 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
       </div>
       <p class="nz-note" id="n-home-inmo"></p>
       <div class="nz-tiles" id="home-inmo-tiles">
-        <div class="nz-tile"><div class="nz-tl">2026 hasta el 19 oct</div><div class="nz-big dash-skeleton" id="hi-26">—</div></div>
-        <div class="nz-tile"><div class="nz-tl">Mismo periodo de 2025</div><div class="nz-big dash-skeleton" id="hi-25">—</div></div>
+        <div class="nz-tile"><div class="nz-tl pl-cur">Periodo</div><div class="nz-big dash-skeleton" id="hi-26">—</div></div>
+        <div class="nz-tile"><div class="nz-tl pl-cmp">Comparación</div><div class="nz-big dash-skeleton" id="hi-25">—</div></div>
         <div class="nz-tile"><div class="nz-tl">Variación</div><div class="nz-big dash-skeleton" id="hi-var">—</div></div>
       </div>
       <div class="nz-legend" id="lg-home-inmo"></div>
-      <div class="nz-chart" id="ch-home-inmo" data-source="inmo_mes"></div>
+      <div class="nz-chart" id="ch-home-inmo" data-source="series"></div>
     </div>
 
     <h2 class="nz-h2">Pulso comercial</h2>
     <div class="nz-tiles">
       <div class="nz-tile"><div class="nz-tl">Viviendas vendidas o reservadas</div><div class="nz-big dash-skeleton" data-source="inmo_kpis" data-field="comercializadas" data-row="0">—</div><div class="nz-meta">de <span class="dash-skeleton" data-source="inmo_kpis" data-field="viviendas_en_curso" data-row="0">—</span> en promociones en curso</div></div>
-      <div class="nz-tile"><div class="nz-tl">Reservas de vivienda en octubre</div><div class="nz-big dash-skeleton" data-source="reservas_mes_total" data-field="reservas" data-where="mes=2026-10">—</div><div class="nz-meta">septiembre: <span class="dash-skeleton" data-source="reservas_mes_total" data-field="reservas" data-where="mes=2026-09">—</span></div></div>
-      <div class="nz-tile"><div class="nz-tl">Ocupación Panticosa (año)</div><div class="nz-big dash-skeleton" data-source="hotel_resumen" data-field="ocupacion" data-where="hotel=Total">—</div><div class="nz-meta">2025: <span class="dash-skeleton" data-source="hotel_resumen" data-field="ocupacion_ant" data-where="hotel=Total">—</span></div></div>
-      <div class="nz-tile"><div class="nz-tl">Botellas vendidas (año)</div><div class="nz-big dash-skeleton" data-source="vino_totales" data-field="botellas" data-row="0">—</div><div class="nz-meta">2025: <span class="dash-skeleton" data-source="vino_totales" data-field="botellas_ant" data-row="0">—</span></div></div>
+      <div class="nz-tile"><div class="nz-tl">Reservas de vivienda en el periodo</div><div class="nz-big dash-skeleton" data-source="inmo_mes_totales" data-field="reservas_cur" data-row="0">—</div><div class="nz-meta"><span class="pl-cmp pl-colon"></span> <span class="dash-skeleton" data-source="inmo_mes_totales" data-field="reservas_cmp" data-row="0">—</span></div></div>
+      <div class="nz-tile"><div class="nz-tl">Ocupación Panticosa</div><div class="nz-big dash-skeleton" data-source="hotel_resumen" data-field="ocupacion" data-where="hotel=Total">—</div><div class="nz-meta"><span class="pl-cmp pl-colon"></span> <span class="dash-skeleton" data-source="hotel_resumen" data-field="ocupacion_ant" data-where="hotel=Total">—</span></div></div>
+      <div class="nz-tile"><div class="nz-tl">Botellas vendidas</div><div class="nz-big dash-skeleton" data-source="vino_totales" data-field="botellas" data-row="0">—</div><div class="nz-meta"><span class="pl-cmp pl-colon"></span> <span class="dash-skeleton" data-source="vino_totales" data-field="botellas_ant" data-row="0">—</span></div></div>
     </div>
 
     <div class="nz-grid2">
       <div class="nz-card" id="card-grupo-mes">
-        <h3>Facturación mensual del hotel y las bodegas</h3>
-        <p class="nz-note">Enero 2025 – octubre 2026 (octubre hasta el día 19). Cada negocio con su propia escala; el inmobiliario está arriba.</p>
-        <div data-source="grupo_mes" id="grupo-mes-wrap">
+        <h3>Facturación del hotel y las bodegas</h3>
+        <p class="nz-note">El periodo elegido en cada año. Cada negocio con su propia escala; el inmobiliario está arriba.</p>
+        <div class="nz-legend" id="lg-grupo-mes"></div>
+        <div data-source="series" id="grupo-mes-wrap">
           <div class="nz-tl">Hotelero</div><div class="nz-chart nz-short" id="ch-grupo-hot"></div>
           <div class="nz-tl">Bodegas</div><div class="nz-chart nz-short" id="ch-grupo-bod"></div>
         </div>
@@ -316,11 +338,12 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
         <div class="nz-chart nz-tall" id="ch-mapa" data-source="promociones"></div>
       </div>
       <div class="nz-card" id="card-reservas">
-        <h3 id="h-reservas">Reservas nuevas por mes</h3>
-        <p class="nz-note" id="n-reservas">Todas las promociones en curso · enero 2025 – octubre 2026 (octubre hasta el día 19).</p>
-        <div class="nz-chart" id="ch-reservas" data-source="reservas_mes_total"></div>
-        <div class="nz-tl" style="margin-top:var(--cds-gap-md)" id="h-reservas-acum">Viviendas comercializadas acumuladas</div>
-        <div class="nz-chart nz-short" id="ch-reservas-acum" data-source="reservas_mes_total"></div>
+        <h3 id="h-reservas">Reservas nuevas</h3>
+        <p class="nz-note" id="n-reservas">Todas las promociones · el periodo elegido en cada año, por meses (o por días si el periodo es de dos meses o menos).</p>
+        <div class="nz-legend" id="lg-reservas"></div>
+        <div class="nz-chart" id="ch-reservas" data-source="series"></div>
+        <div class="nz-tl" style="margin-top:var(--cds-gap-md)" id="h-reservas-acum">Reservas acumuladas dentro del periodo</div>
+        <div class="nz-chart nz-short" id="ch-reservas-acum" data-source="series"></div>
       </div>
     </div>
 
@@ -350,7 +373,7 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
         <div class="nz-tile"><div class="nz-tl">Facturación</div><div class="nz-big dash-skeleton" id="pt-fac">—</div><div class="nz-meta">precio medio <span id="pt-pm">—</span></div></div>
       </div>
       <div class="nz-tl">Reservas por mes de esta promoción</div>
-      <div class="nz-chart nz-short" id="ch-promo-res" data-source="reservas_mes"></div>
+      <div class="nz-chart nz-short" id="ch-promo-res" data-source="series"></div>
       <div class="nz-tablebox nz-tall" style="margin-top:var(--cds-gap-md)">
         <table class="nz-t" id="t-vivs" data-source="viviendas" data-row-key="id">
           <thead><tr><th data-field="vivienda">Vivienda</th><th data-field="tipologia">Tipología</th><th data-field="dormitorios">Dorm.</th><th data-field="m2">m²</th><th data-field="precio">Precio</th><th data-field="estado">Estado</th><th data-field="fecha_reserva">Fecha de reserva</th></tr></thead>
@@ -375,48 +398,49 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
       <div class="nz-seg" id="seg-hotel" role="group" aria-label="Hotel">
         <button data-v="Total">Todo el balneario</button><button data-v="Gran Hotel">Gran Hotel</button><button data-v="Hotel Continental">Hotel Continental</button>
       </div>
-      <span class="nz-note" style="margin:0">1 ene – 19 oct 2026 vs mismo periodo 2025</span>
+      <span class="nz-note" style="margin:0"><span class="pl-cur"></span> · comparado con <span class="pl-cmp-l"></span></span>
     </div>
     <div class="nz-tiles" id="hotel-tiles">
-      <div class="nz-tile"><div class="nz-tl">Facturación</div><div class="nz-big dash-skeleton" data-k="facturacion">—</div><div class="nz-meta"><span data-d="facturacion">—</span><span>2025: <span data-k="facturacion_ant">—</span></span></div></div>
-      <div class="nz-tile"><div class="nz-tl">Beneficio bruto</div><div class="nz-big dash-skeleton" data-k="beneficio_bruto">—</div><div class="nz-meta"><span data-d="beneficio_bruto">—</span><span>2025: <span data-k="beneficio_bruto_ant">—</span></span></div></div>
-      <div class="nz-tile"><div class="nz-tl">Ocupación</div><div class="nz-big dash-skeleton" data-k="ocupacion">—</div><div class="nz-meta"><span>2025: <span data-k="ocupacion_ant">—</span></span></div></div>
-      <div class="nz-tile"><div class="nz-tl">Precio medio por noche</div><div class="nz-big dash-skeleton" data-k="adr">—</div><div class="nz-meta"><span>2025: <span data-k="adr_ant">—</span></span></div></div>
-      <div class="nz-tile"><div class="nz-tl">Ingreso por habitación disponible</div><div class="nz-big dash-skeleton" data-k="revpar">—</div><div class="nz-meta"><span>2025: <span data-k="revpar_ant">—</span></span></div></div>
-      <div class="nz-tile"><div class="nz-tl">Personas alojadas</div><div class="nz-big dash-skeleton" data-k="huespedes">—</div><div class="nz-meta"><span>2025: <span data-k="huespedes_ant">—</span></span><span><span data-k="noches_vendidas">—</span> noches</span></div></div>
+      <div class="nz-tile"><div class="nz-tl">Facturación</div><div class="nz-big dash-skeleton" data-k="facturacion">—</div><div class="nz-meta"><span data-d="facturacion">—</span><span><span class="pl-cmp pl-colon"></span> <span data-k="facturacion_ant">—</span></span></div></div>
+      <div class="nz-tile"><div class="nz-tl">Beneficio bruto</div><div class="nz-big dash-skeleton" data-k="beneficio_bruto">—</div><div class="nz-meta"><span data-d="beneficio_bruto">—</span><span><span class="pl-cmp pl-colon"></span> <span data-k="beneficio_bruto_ant">—</span></span></div></div>
+      <div class="nz-tile"><div class="nz-tl">Ocupación</div><div class="nz-big dash-skeleton" data-k="ocupacion">—</div><div class="nz-meta"><span><span class="pl-cmp pl-colon"></span> <span data-k="ocupacion_ant">—</span></span></div></div>
+      <div class="nz-tile"><div class="nz-tl">Precio medio por noche</div><div class="nz-big dash-skeleton" data-k="adr">—</div><div class="nz-meta"><span><span class="pl-cmp pl-colon"></span> <span data-k="adr_ant">—</span></span></div></div>
+      <div class="nz-tile"><div class="nz-tl">Ingreso por habitación disponible</div><div class="nz-big dash-skeleton" data-k="revpar">—</div><div class="nz-meta"><span><span class="pl-cmp pl-colon"></span> <span data-k="revpar_ant">—</span></span></div></div>
+      <div class="nz-tile"><div class="nz-tl">Personas alojadas</div><div class="nz-big dash-skeleton" data-k="huespedes">—</div><div class="nz-meta"><span><span class="pl-cmp pl-colon"></span> <span data-k="huespedes_ant">—</span></span><span><span data-k="noches_vendidas">—</span> noches</span></div></div>
     </div>
-    <p class="nz-note">Habitaciones: <span data-source="hotel_resumen" data-field="habitaciones" data-where="hotel=Gran Hotel">—</span> en el Gran Hotel y <span data-source="hotel_resumen" data-field="habitaciones" data-where="hotel=Hotel Continental">—</span> en el Hotel Continental. El precio medio por noche es lo cobrado por habitación ocupada; el ingreso por habitación disponible reparte ese cobro entre todas las habitaciones, ocupadas o no. Cada hotel incluye sus propios restaurantes, bares y spa; las zonas comunes del balneario (Termas de Tiberio, La Fontana, Bar Qbo y El Embarcadero, <span data-source="hotel_resumen" data-field="ingresos_zonas_comunes" data-where="hotel=Total" class="dash-skeleton">—</span> este año) solo cuentan en «Todo el balneario».</p>
+    <p class="nz-note">Habitaciones: <span data-source="hotel_resumen" data-field="habitaciones" data-where="hotel=Gran Hotel">—</span> en el Gran Hotel y <span data-source="hotel_resumen" data-field="habitaciones" data-where="hotel=Hotel Continental">—</span> en el Hotel Continental. El precio medio por noche es lo cobrado por habitación ocupada; el ingreso por habitación disponible reparte ese cobro entre todas las habitaciones, ocupadas o no. Cada hotel incluye sus propios restaurantes, bares y spa; las zonas comunes del balneario (Termas de Tiberio, La Fontana, Bar Qbo y El Embarcadero, <span data-source="hotel_resumen" data-field="ingresos_zonas_comunes" data-where="hotel=Total" class="dash-skeleton">—</span> en el periodo) solo cuentan en «Todo el balneario».</p>
 
     <div class="nz-grid2">
       <div class="nz-card" id="card-ocupacion">
-        <h3>Ocupación por mes</h3>
-        <p class="nz-note">Porcentaje de habitaciones ocupadas. 2026 llega hasta el 19 de octubre.</p>
-        <div class="nz-chart" id="ch-ocupacion" data-source="hotel_mes_total"></div>
+        <h3>Ocupación</h3>
+        <p class="nz-note">Porcentaje de habitaciones ocupadas, en el periodo elegido de cada año.</p>
+        <div class="nz-legend" id="lg-ocupacion"></div>
+        <div class="nz-chart" id="ch-ocupacion" data-source="series"></div>
       </div>
       <div class="nz-card" id="card-huespedes">
-        <h3>Personas alojadas por mes</h3>
-        <p class="nz-note">En color, 2026; en gris, 2025. Octubre de 2026 hasta el día 19.</p>
-        <div class="nz-chart" id="ch-huespedes" data-source="hotel_mes_total"></div>
+        <h3>Personas alojadas</h3>
+        <p class="nz-note">El año actual en azul, el anterior en naranja y los demás en gris.</p>
+        <div class="nz-chart" id="ch-huespedes" data-source="series"></div>
       </div>
       <div class="nz-card" id="card-ingresos-aloj">
-        <h3>Ingresos de alojamiento por mes</h3>
+        <h3>Ingresos de alojamiento</h3>
         <p class="nz-note">Solo habitaciones; restauración y spa van abajo.</p>
-        <div class="nz-chart" id="ch-ingresos-aloj" data-source="hotel_mes_total"></div>
+        <div class="nz-chart" id="ch-ingresos-aloj" data-source="series"></div>
       </div>
       <div class="nz-card" id="card-reservas-hotel">
         <h3>Reservas ya cerradas para los próximos meses</h3>
-        <p class="nz-note">Noches reservadas a hoy frente a las que había el mismo día del año pasado. Todo el balneario.</p>
+        <p class="nz-note">Noches reservadas a hoy frente a las que había el mismo día del año pasado. Todo el balneario. Mira al futuro, así que no depende del filtro de fechas.</p>
         <div class="nz-legend" id="lg-otb"></div>
         <div class="nz-chart" id="ch-otb" data-source="hotel_reservas_futuras"></div>
       </div>
     </div>
     <div class="nz-card" id="card-pickup" style="margin-bottom:var(--cds-gap-md)">
       <h3>Reservas nuevas por semana</h3>
-      <p class="nz-note">Reservas creadas cada semana, para cualquier fecha de estancia. La última semana va por el lunes–hoy.</p>
+      <p class="nz-note">Reservas creadas cada semana, para cualquier fecha de estancia. La última semana va por el lunes–hoy. Siempre son las últimas 16 semanas.</p>
       <div class="nz-chart nz-short" id="ch-pickup" data-source="hotel_pickup"></div>
     </div>
 
-    <h2 class="nz-h2" id="h-origen">Facturación por origen de los huéspedes <small id="s-origen">alojamiento · 1 ene – 19 oct 2026 vs mismo periodo 2025</small></h2>
+    <h2 class="nz-h2" id="h-origen">Facturación por origen de los huéspedes <small id="s-origen">alojamiento</small></h2>
     <div class="nz-tiles" id="origen-tiles">
       <div class="nz-tile"><div class="nz-tl">Huéspedes de España</div><div class="nz-big dash-skeleton" data-k="facturacion" data-a="Nacional">—</div><div class="nz-meta"><span><span data-k="cuota" data-a="Nacional">—</span> del total</span><span data-k="variacion" data-a="Nacional">—</span><span><span data-k="huespedes" data-a="Nacional">—</span> huéspedes</span></div></div>
       <div class="nz-tile"><div class="nz-tl">Huéspedes del extranjero</div><div class="nz-big dash-skeleton" data-k="facturacion" data-a="Internacional">—</div><div class="nz-meta"><span><span data-k="cuota" data-a="Internacional">—</span> del total</span><span data-k="variacion" data-a="Internacional">—</span><span><span data-k="huespedes" data-a="Internacional">—</span> huéspedes</span></div></div>
@@ -426,7 +450,7 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
     <div class="nz-grid2">
       <div class="nz-card" id="card-origen-nac">
         <h3>España, por comunidad autónoma</h3>
-        <p class="nz-note">«% total» es sobre toda la facturación de alojamiento. Variación frente al mismo periodo de 2025.</p>
+        <p class="nz-note">«% total» es sobre toda la facturación de alojamiento. Variación frente <span class="pl-cmp-l"></span>.</p>
         <div class="nz-tablebox">
           <table class="nz-t" id="t-origen-nac" data-source="hotel_origen" data-row-key="id">
             <thead><tr><th data-field="origen">Comunidad</th><th data-field="facturacion">Facturación</th><th data-field="cuota">% total</th><th data-field="variacion">Var.</th><th data-field="huespedes">Huéspedes</th><th data-field="estancia_media">Estancia</th></tr></thead>
@@ -435,7 +459,7 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
       </div>
       <div class="nz-card" id="card-origen-int">
         <h3>Extranjero, por país</h3>
-        <p class="nz-note">«% total» es sobre toda la facturación de alojamiento. Variación frente al mismo periodo de 2025.</p>
+        <p class="nz-note">«% total» es sobre toda la facturación de alojamiento. Variación frente <span class="pl-cmp-l"></span>.</p>
         <div class="nz-tablebox">
           <table class="nz-t" id="t-origen-int" data-source="hotel_origen" data-row-key="id">
             <thead><tr><th data-field="origen">País</th><th data-field="facturacion">Facturación</th><th data-field="cuota">% total</th><th data-field="variacion">Var.</th><th data-field="huespedes">Huéspedes</th><th data-field="estancia_media">Estancia</th></tr></thead>
@@ -444,17 +468,17 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
       </div>
     </div>
 
-    <h2 class="nz-h2" id="h-puntos">Restaurantes, bares y spas <small>1 ene – 19 oct 2026</small></h2>
+    <h2 class="nz-h2" id="h-puntos">Restaurantes, bares y spas <small class="pl-cur"></small></h2>
     <div class="nz-grid2">
       <div class="nz-card" id="card-puntos">
         <h3>Ingresos por punto de venta</h3>
-        <p class="nz-note">Variación frente al mismo periodo de 2025. Pulsa uno para ver su evolución.</p>
+        <p class="nz-note">Variación frente <span class="pl-cmp-l"></span>. Pulsa uno para ver su evolución.</p>
         <div class="nz-chart" id="ch-puntos" data-source="hotel_puntos_resumen"></div>
       </div>
       <div class="nz-card" id="card-punto-mes">
-        <h3 id="h-punto-mes">Ingresos por mes</h3>
-        <p class="nz-note">Octubre de 2026 hasta el día 19.</p>
-        <div class="nz-chart" id="ch-punto-mes" data-source="hotel_puntos_mes"></div>
+        <h3 id="h-punto-mes">Ingresos</h3>
+        <p class="nz-note">El periodo elegido en cada año.</p>
+        <div class="nz-chart" id="ch-punto-mes" data-source="series"></div>
       </div>
     </div>
     <div class="nz-card">
@@ -462,12 +486,12 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
       <p class="nz-note">Coste directo = producto vendido y personal del punto. Margen = beneficio bruto sobre ingresos.</p>
       <div class="nz-tablebox">
         <table class="nz-t" id="t-puntos" data-source="hotel_puntos_resumen" data-row-key="punto">
-          <thead><tr><th data-field="punto">Punto de venta</th><th data-field="tipo">Tipo</th><th data-field="ubicacion">Ubicación</th><th data-field="ingresos">Ingresos</th><th data-field="ingresos_ant">2025</th><th data-field="variacion">Var.</th><th data-field="coste_directo">Coste directo</th><th data-field="beneficio_bruto">Beneficio bruto</th><th data-field="margen">Margen</th></tr></thead>
+          <thead><tr><th data-field="punto">Punto de venta</th><th data-field="tipo">Tipo</th><th data-field="ubicacion">Ubicación</th><th data-field="ingresos">Ingresos</th><th data-field="ingresos_ant"><span class="pl-cmp">Comparación</span></th><th data-field="variacion">Var.</th><th data-field="coste_directo">Coste directo</th><th data-field="beneficio_bruto">Beneficio bruto</th><th data-field="margen">Margen</th></tr></thead>
         </table>
       </div>
     </div>
 
-    <h2 class="nz-h2" id="h-productos">Lo más vendido de las cartas <small>1 ene – 19 oct 2026</small></h2>
+    <h2 class="nz-h2" id="h-productos">Lo más vendido de las cartas <small class="pl-cur"></small></h2>
     <div class="nz-grid2">
       <div class="nz-card" id="card-top-balneario">
         <h3>Los 12 productos que más facturan</h3>
@@ -482,7 +506,7 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
     </div>
     <div class="nz-card" id="card-carta">
       <h3 id="h-carta">Ventas de la carta por punto de venta</h3>
-      <p class="nz-note">Cada plato, bebida o servicio con su precio, unidades vendidas frente a 2025 e ingresos. «Origen del precio» dice si sale de la carta publicada o es una estimación.</p>
+      <p class="nz-note">Cada plato, bebida o servicio con su precio, unidades vendidas frente al periodo de comparación e ingresos. «Origen del precio» dice si sale de la carta publicada o es una estimación.</p>
       <div class="nz-controls">
         <label for="sel-punto">Punto de venta</label>
         <select class="nz-select" id="sel-punto" data-source="hotel_puntos_resumen"></select>
@@ -490,7 +514,7 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
       </div>
       <div class="nz-tablebox nz-tall">
         <table class="nz-t" id="t-carta" data-source="hotel_productos" data-row-key="id">
-          <thead><tr><th data-field="ranking">#</th><th data-field="producto">Producto o servicio</th><th data-field="categoria">Sección</th><th data-field="precio">Precio</th><th data-field="unidades">Unidades</th><th data-field="unidades_ant">2025</th><th data-field="variacion">Var.</th><th data-field="ingresos">Ingresos</th><th data-field="precio_fuente">Origen del precio</th></tr></thead>
+          <thead><tr><th data-field="ranking">#</th><th data-field="producto">Producto o servicio</th><th data-field="categoria">Sección</th><th data-field="precio">Precio</th><th data-field="unidades">Unidades</th><th data-field="unidades_ant"><span class="pl-cmp">Comparación</span></th><th data-field="variacion">Var.</th><th data-field="ingresos">Ingresos</th><th data-field="precio_fuente">Origen del precio</th></tr></thead>
         </table>
       </div>
     </div>
@@ -502,7 +526,7 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
       <div class="nz-seg" id="seg-bodega" role="group" aria-label="Bodega">
         <button data-v="Enate">Enate</button><button data-v="Laus">Laus</button><button data-v="Las Moradas de San Martín">Las Moradas de San Martín</button>
       </div>
-      <span class="nz-note" style="margin:0">1 ene – 19 oct 2026 vs mismo periodo 2025</span>
+      <span class="nz-note" style="margin:0"><span class="pl-cur"></span> · comparado con <span class="pl-cmp-l"></span></span>
     </div>
     <nav class="nz-pnav" aria-label="Apartados de la bodega">
       <a data-go="b-resumen">Resumen</a><a data-go="b-referencias">Referencias</a><a data-go="b-provincias">Ventas por provincia</a><a data-go="b-export">Exportación</a><a data-go="b-canales">Online, visitas y tienda</a>
@@ -510,23 +534,24 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
 
     <h2 class="nz-h2" id="b-resumen">Resumen</h2>
     <div class="nz-tiles" id="vino-tiles">
-      <div class="nz-tile"><div class="nz-tl">Facturación</div><div class="nz-big dash-skeleton" data-k="facturacion">—</div><div class="nz-meta"><span data-d="variacion">—</span><span>2025: <span data-k="facturacion_ant">—</span></span></div></div>
-      <div class="nz-tile"><div class="nz-tl">Beneficio bruto</div><div class="nz-big dash-skeleton" data-k="beneficio_bruto">—</div><div class="nz-meta"><span>margen <span data-k="margen">—</span></span><span>2025: <span data-k="beneficio_bruto_ant">—</span></span></div></div>
-      <div class="nz-tile"><div class="nz-tl">Botellas vendidas</div><div class="nz-big dash-skeleton" data-k="botellas">—</div><div class="nz-meta"><span>2025: <span data-k="botellas_ant">—</span></span></div></div>
+      <div class="nz-tile"><div class="nz-tl">Facturación</div><div class="nz-big dash-skeleton" data-k="facturacion">—</div><div class="nz-meta"><span data-d="variacion">—</span><span><span class="pl-cmp pl-colon"></span> <span data-k="facturacion_ant">—</span></span></div></div>
+      <div class="nz-tile"><div class="nz-tl">Beneficio bruto</div><div class="nz-big dash-skeleton" data-k="beneficio_bruto">—</div><div class="nz-meta"><span>margen <span data-k="margen">—</span></span><span><span class="pl-cmp pl-colon"></span> <span data-k="beneficio_bruto_ant">—</span></span></div></div>
+      <div class="nz-tile"><div class="nz-tl">Botellas vendidas</div><div class="nz-big dash-skeleton" data-k="botellas">—</div><div class="nz-meta"><span><span class="pl-cmp pl-colon"></span> <span data-k="botellas_ant">—</span></span></div></div>
       <div class="nz-tile"><div class="nz-tl">Exportación</div><div class="nz-big dash-skeleton" data-k="facturacion_export">—</div><div class="nz-meta"><span><span data-k="pct_export">—</span> de la facturación</span></div></div>
       <div class="nz-tile"><div class="nz-tl">Venta directa</div><div class="nz-big dash-skeleton" data-k="facturacion_directa">—</div><div class="nz-meta">online, visitas y tienda</div></div>
     </div>
     <div class="nz-grid2">
       <div class="nz-card" id="card-vino-anual">
         <h3>Facturación y beneficio bruto por año</h3>
-        <p class="nz-note">2026 hasta el 19 de octubre.</p>
+        <p class="nz-note">Años naturales; el último llega hasta hoy. No depende del filtro de fechas.</p>
         <div class="nz-legend" id="lg-vino-anual"></div>
         <div class="nz-chart" id="ch-vino-anual" data-source="vino_anual"></div>
       </div>
       <div class="nz-card" id="card-vino-mes">
-        <h3>Facturación por mes, comparada con años anteriores</h3>
-        <p class="nz-note">Octubre de 2026 hasta el día 19.</p>
-        <div class="nz-chart" id="ch-vino-mes" data-source="vino_mes"></div>
+        <h3>Facturación, comparada con años anteriores</h3>
+        <p class="nz-note">El periodo elegido en cada año.</p>
+        <div class="nz-legend" id="lg-vino-mes"></div>
+        <div class="nz-chart" id="ch-vino-mes" data-source="series"></div>
       </div>
     </div>
 
@@ -534,7 +559,7 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
     <div class="nz-grid2">
       <div class="nz-card" id="card-refs">
         <h3>Facturación por referencia</h3>
-        <p class="nz-note">España y exportación juntas. Variación frente a 2025. Pulsa una para filtrar las provincias.</p>
+        <p class="nz-note">España y exportación juntas. Variación frente <span class="pl-cmp-l"></span>. Pulsa una para filtrar las provincias.</p>
         <div class="nz-chart" id="ch-refs" data-source="vino_referencias"></div>
       </div>
       <div class="nz-card" id="card-refs-t">
@@ -542,7 +567,7 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
         <p class="nz-note">PVP = precio de venta al público de referencia.</p>
         <div class="nz-tablebox">
           <table class="nz-t" id="t-refs" data-source="vino_referencias" data-row-key="referencia">
-            <thead><tr><th data-field="referencia">Referencia</th><th data-field="tipo">Tipo</th><th data-field="pvp">PVP</th><th data-field="botellas">Botellas</th><th data-field="botellas_ant">2025</th><th data-field="facturacion">Facturación</th><th data-field="variacion">Var.</th><th data-field="beneficio_bruto">Beneficio bruto</th><th data-field="margen">Margen</th></tr></thead>
+            <thead><tr><th data-field="referencia">Referencia</th><th data-field="tipo">Tipo</th><th data-field="pvp">PVP</th><th data-field="botellas">Botellas</th><th data-field="botellas_ant"><span class="pl-cmp">Comparación</span></th><th data-field="facturacion">Facturación</th><th data-field="variacion">Var.</th><th data-field="beneficio_bruto">Beneficio bruto</th><th data-field="margen">Margen</th></tr></thead>
           </table>
         </div>
       </div>
@@ -566,7 +591,7 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
     <div class="nz-grid2">
       <div class="nz-card" id="card-paises">
         <h3>Facturación por país</h3>
-        <p class="nz-note">Variación frente a 2025. Pulsa un país para ver sus referencias.</p>
+        <p class="nz-note">Variación frente <span class="pl-cmp-l"></span>. Pulsa un país para ver sus referencias.</p>
         <div class="nz-chart nz-tall" id="ch-paises" data-source="vino_paises"></div>
       </div>
       <div class="nz-card" id="card-pais-refs">
@@ -574,7 +599,7 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
         <div class="nz-controls"><label for="sel-pais">País</label><select class="nz-select" id="sel-pais" data-source="vino_paises"></select></div>
         <div class="nz-tablebox">
           <table class="nz-t" id="t-pais-refs" data-source="vino_export_referencia" data-row-key="id">
-            <thead><tr><th data-field="referencia">Referencia</th><th data-field="botellas">Botellas</th><th data-field="botellas_ant">2025</th><th data-field="facturacion">Facturación</th><th data-field="facturacion_ant">2025</th></tr></thead>
+            <thead><tr><th data-field="referencia">Referencia</th><th data-field="botellas">Botellas</th><th data-field="botellas_ant"><span class="pl-cmp">Comparación</span></th><th data-field="facturacion">Facturación</th><th data-field="facturacion_ant"><span class="pl-cmp">Comparación</span></th></tr></thead>
           </table>
         </div>
       </div>
@@ -587,9 +612,9 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
     <h2 class="nz-h2" id="b-canales">Venta online, visitas a la bodega y tienda</h2>
     <div class="nz-tiles nz-wide" id="canal-tiles"></div>
     <div class="nz-grid3">
-      <div class="nz-card" id="card-canal-online"><h3>Tienda online</h3><p class="nz-note">Facturación por mes.</p><div class="nz-chart nz-short" id="ch-canal-online" data-source="vino_canales_mes"></div></div>
-      <div class="nz-card" id="card-canal-visitas"><h3>Visitas a la bodega</h3><p class="nz-note">Personas por mes.</p><div class="nz-chart nz-short" id="ch-canal-visitas" data-source="vino_canales_mes"></div></div>
-      <div class="nz-card" id="card-canal-tienda"><h3>Tienda de la bodega</h3><p class="nz-note">Facturación por mes.</p><div class="nz-chart nz-short" id="ch-canal-tienda" data-source="vino_canales_mes"></div></div>
+      <div class="nz-card" id="card-canal-online"><h3>Tienda online</h3><p class="nz-note">Facturación.</p><div class="nz-chart nz-short" id="ch-canal-online" data-source="series"></div></div>
+      <div class="nz-card" id="card-canal-visitas"><h3>Visitas a la bodega</h3><p class="nz-note">Personas.</p><div class="nz-chart nz-short" id="ch-canal-visitas" data-source="series"></div></div>
+      <div class="nz-card" id="card-canal-tienda"><h3>Tienda de la bodega</h3><p class="nz-note">Facturación.</p><div class="nz-chart nz-short" id="ch-canal-tienda" data-source="series"></div></div>
     </div>
   </section>
 
@@ -605,9 +630,10 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
 </div>
 
 </div>
-<script src="dash-shim.js?v=2026-10-20c"></script>
-<script src="lib.js?v=2026-10-20c"></script>
-<script src="app.js?v=2026-10-20c"></script>
-<script src="theme.js?v=2026-10-20c"></script>
+<script src="dash-shim.js?v=2026-10-21b"></script>
+<script src="periodo.js?v=2026-10-21b"></script>
+<script src="lib.js?v=2026-10-21b"></script>
+<script src="app.js?v=2026-10-21b"></script>
+<script src="theme.js?v=2026-10-21b"></script>
 </body>
 </html>

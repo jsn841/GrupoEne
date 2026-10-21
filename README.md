@@ -4,11 +4,13 @@
 
 Maqueta de un panel de ventas para los tres negocios del grupo. Un menú lateral lleva a cada panel (Dashboard General, Inmobiliario, Hoteles y Bodegas) y a la herramienta de Análisis Promociones:
 
-- **Inicio**: facturación y beneficio bruto del grupo y de cada negocio frente al mismo periodo de 2025, facturación mensual y últimos movimientos del día.
+- **Inicio**: facturación y beneficio bruto del grupo y de cada negocio frente al periodo de comparación, progresión por años, facturación del periodo y últimos movimientos del día.
 - **Inmobiliario**: promociones entregadas y en curso, mapa de España, reservas por mes y detalle de cada vivienda (precio y estado).
 - **Balneario de Panticosa**: Gran Hotel y Hotel Continental (ocupación, precio medio, ingresos, personas alojadas, reservas futuras), resultados por restaurante, bar y spa, y lo más vendido de cada carta.
 - **Análisis Promociones**: la calculadora de promociones (ver abajo), dentro del panel.
 - **Bodegas**: Enate, Laus y Las Moradas de San Martín por separado, con ventas por referencia, por provincia, exportación por país y producto, comparación con años anteriores y venta online, visitas y tienda.
+
+**Filtro de fechas** (arriba de todos los paneles): año en curso (por defecto), trimestre, mes o fechas a elegir; comparado con el mismo periodo del año pasado, el año pasado entero, los mismos días del mes pasado o el mes pasado entero (estas dos, para periodos de un mes o menos); y de 1 a 5 años anteriores en los gráficos y en la progresión por años para ver la progresión. El filtro queda en el enlace, así que se puede compartir. Las cifras salen de series diarias desde enero de 2021 (`dashboard/data/series.json`, creadas con `scripts/generar_series.py` a partir de los datos de `scripts/generar_datos.py`); el panel suma los días del periodo elegido.
 
 > **Todas las cifras son simuladas.** Los nombres de promociones, ubicaciones, nº de viviendas, referencias de vino y cartas del balneario salen de las webs públicas; algunos precios y promociones son aproximados (lo indica el propio panel).
 

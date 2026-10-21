@@ -28,41 +28,6 @@
       }];
     },
   });
-  dash.calc('inmo_mes', {
-    title: 'Inmobiliario por mes',
-    description: 'Por mes: facturación escriturada (escrituras de promociones entregadas), viviendas reservadas y precio de esas reservas, en todas las promociones.',
-    inputs: ['viviendas', 'grupo_mes'],
-    fn: (viviendas, grupo_mes) => {
-      const by = new Map();
-      grupo_mes.filter((r) => r.negocio === 'Inmobiliario').forEach((r) => by.set(r.mes, { mes: r.mes, escriturado: r.facturacion, reservas: 0, comprometido: 0 }));
-      viviendas.forEach((v) => {
-        if (!v.fecha_reserva) return;
-        const row = by.get(v.fecha_reserva.slice(0, 7));
-        if (!row) return;
-        row.reservas += 1;
-        row.comprometido += v.precio;
-      });
-      return [...by.values()].sort((a, b) => (a.mes < b.mes ? -1 : 1));
-    },
-  });
-  dash.calc('inmo_mes_totales', {
-    title: 'Inmobiliario en lo que va de año',
-    description: 'Facturación escriturada, viviendas reservadas y facturación comprometida del 1 ene al 19 oct de 2026 y del mismo periodo de 2025, con su variación. Las escrituras de octubre cuentan el mes entero.',
-    inputs: ['viviendas', 'grupo_mes'],
-    fn: (viviendas, grupo_mes) => {
-      const esc = (y) => grupo_mes.filter((r) => r.negocio === 'Inmobiliario' && r.mes.startsWith(y) && r.mes <= y + '-10').reduce((t, r) => t + r.facturacion, 0);
-      const res = (y) => viviendas.filter((v) => v.fecha_reserva && v.fecha_reserva >= y + '-01-01' && v.fecha_reserva <= y + '-10-19');
-      const r26 = res('2026'), r25 = res('2025');
-      const sum = (a) => a.reduce((t, v) => t + v.precio, 0);
-      const o = {
-        escriturado_2026: esc('2026'), escriturado_2025: esc('2025'),
-        reservas_2026: r26.length, reservas_2025: r25.length,
-        comprometido_2026: sum(r26), comprometido_2025: sum(r25),
-      };
-      ['escriturado', 'reservas', 'comprometido'].forEach((k) => { o['var_' + k] = o[k + '_2025'] ? o[k + '_2026'] / o[k + '_2025'] - 1 : null; });
-      return [o];
-    },
-  });
   dash.calc('hotel_origen_ambito', {
     title: 'Huéspedes de España y del extranjero',
     description: 'Facturación de alojamiento, huéspedes y su cambio frente a 2025, sumando por hotel los orígenes nacionales y los internacionales.',
@@ -94,24 +59,6 @@
       botellas: vino_resumen.reduce((t, r) => t + r.botellas, 0),
       botellas_ant: vino_resumen.reduce((t, r) => t + r.botellas_ant, 0),
     }],
-  });
-  dash.calc('hotel_mes_total', {
-    title: 'Hotel por mes, con total',
-    description: 'Los meses de cada hotel más una fila "Total" por mes que suma los dos hoteles.',
-    inputs: ['hotel_mes'],
-    fn: (hotel_mes) => {
-      const by = new Map();
-      hotel_mes.forEach((r) => {
-        const t = by.get(r.mes) || { mes: r.mes, hotel: 'Total', habitaciones_disponibles: 0, noches_vendidas: 0, ingresos_alojamiento: 0, huespedes: 0 };
-        t.habitaciones_disponibles += r.habitaciones_disponibles;
-        t.noches_vendidas += r.noches_vendidas;
-        t.ingresos_alojamiento += r.ingresos_alojamiento;
-        t.huespedes += r.huespedes;
-        by.set(r.mes, t);
-      });
-      const tot = [...by.values()].map((t) => ({ ...t, ocupacion: t.noches_vendidas / t.habitaciones_disponibles }));
-      return hotel_mes.map((r) => ({ mes: r.mes, hotel: r.hotel, habitaciones_disponibles: r.habitaciones_disponibles, noches_vendidas: r.noches_vendidas, ingresos_alojamiento: r.ingresos_alojamiento, huespedes: r.huespedes, ocupacion: r.ocupacion })).concat(tot);
-    },
   });
   dash.calc('hotel_variaciones', {
     title: 'Variación del hotel vs 2025',
@@ -173,6 +120,10 @@
     return false;
   };
   const P = () => dash.params();
+  // series de los años elegidos en el filtro: el más antiguo primero, el actual al final
+  const yearSeries = (ch) => ch.series.filter((x) => x.k === 0 || x.values.some((v) => v != null)).reverse().map((x) => ({ name: x.name, color: PER.colorYear(x.k), thin: x.k >= 2, values: x.values }));
+  const plot = (box, ch, ser, o = {}) => (ser.length <= 3 && !o.lines ? NZ.cols : NZ.lines)(box, ch.xs, ser, { xLabel: ch.label, tipTitle: ch.tip, ...o });
+  const legendYears = (el, ser) => el && NZ.legend(el, ser.slice().reverse().map((x) => ({ name: x.name, color: x.color })));
   const setP = (o) => dash.setParams(o);
   const empty = (box, text) => {
     NZ.clear(box);
@@ -191,6 +142,7 @@
     });
     dash.setLink(scrollTo || t);
     if (t === 'analisis') { const f = $('#calc-frame'); if (f && !f.src) f.src = f.dataset.src; }
+    const pb = $('#nz-periodo'); if (pb) pb.hidden = t === 'analisis';
     draw();
     window.scrollTo({ top: 0 });
     if (scrollTo) { const el = document.getElementById(scrollTo); if (el) el.scrollIntoView(); }
@@ -213,41 +165,47 @@
 
   // ---------- INICIO ----------
   function drawInicio() {
-    const gm = ok('grupo_mes');
     // real-estate widget with three views
     const vista = P().inmo_vista || 'escriturado';
     const V = {
-      escriturado: { t: 'Facturación escriturada por mes', n: 'Lo que se factura al firmar la escritura y entregar las llaves. Va a saltos: cada promoción entregada se factura de golpe.', fmt: NZ.eurC, tip: NZ.eur },
-      reservas: { t: 'Viviendas reservadas por mes', n: 'Viviendas que se reservan cada mes, sumando todas las promociones.', fmt: NZ.int, tip: (v) => NZ.int(v) + ' viviendas' },
-      comprometido: { t: 'Facturación comprometida por reservas', n: 'Precio de las viviendas reservadas cada mes: dinero ya comprometido que se facturará cuando se escriture.', fmt: NZ.eurC, tip: NZ.eur },
+      escriturado: { t: 'Facturación escriturada', n: 'Lo que se factura al firmar la escritura y entregar las llaves. Va a saltos: cada promoción entregada se factura de golpe.', fmt: NZ.eurC, tip: NZ.eur, k: 'fact' },
+      reservas: { t: 'Viviendas reservadas', n: 'Viviendas que se reservan, sumando todas las promociones.', fmt: NZ.int, tip: (v) => NZ.int(v) + ' viviendas', k: 'reservas' },
+      comprometido: { t: 'Facturación comprometida por reservas', n: 'Precio de las viviendas reservadas: dinero ya comprometido que se facturará cuando se escriture.', fmt: NZ.eurC, tip: NZ.eur, k: 'comprometido' },
     }[vista];
     $$('#seg-inmo button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === vista)));
     $('#h-home-inmo').textContent = V.t;
-    $('#n-home-inmo').textContent = V.n + ' 2026 llega hasta el 19 de octubre.';
-    NZ.mark($('#hi-26'), 'inmo_mes_totales', vista + '_2026');
-    NZ.mark($('#hi-25'), 'inmo_mes_totales', vista + '_2025');
+    $('#n-home-inmo').textContent = V.n;
+    NZ.mark($('#hi-26'), 'inmo_mes_totales', vista + '_cur');
+    NZ.mark($('#hi-25'), 'inmo_mes_totales', vista + '_cmp');
     NZ.mark($('#hi-var'), 'inmo_mes_totales', 'var_' + vista);
-    ['#hi-26', '#hi-25', '#hi-var'].forEach((s) => $(s).setAttribute('data-row', '0'));
-    const im = ok('inmo_mes');
-    if (im) {
-      const meses = d3.range(1, 13);
-      const ser = (y, name, color) => {
-        const m = new Map(im.filter((r) => r.mes.startsWith(y)).map((r) => [+r.mes.slice(5), r[vista]]));
-        return { name, color, values: meses.map((k) => (m.has(k) ? m.get(k) : null)) };
-      };
-      NZ.legend($('#lg-home-inmo'), [{ name: '2025', color: MUTED }, { name: '2026', color: C()[0] }]);
-      NZ.cols($('#ch-home-inmo'), meses, [ser('2025', '2025', MUTED), ser('2026', '2026', C()[0])],
-        { fmtY: V.fmt, fmtTip: V.tip, xLabel: (m) => NZ.MESES[m - 1], tipTitle: (m) => NZ.MESES[m - 1] + (m === 10 ? ' (2026 hasta el 19)' : '') });
-    } else failed($('#ch-home-inmo'), 'viviendas', 'grupo_mes');
-    const boxes = [['Hotelero', '#ch-grupo-hot', 1], ['Bodegas', '#ch-grupo-bod', 2]];
-    if (gm) {
-      const meses = [...new Set(gm.map((r) => r.mes))].sort();
-      boxes.forEach(([neg, sel, ci]) => {
-        const rows = new Map(gm.filter((r) => r.negocio === neg).map((r) => [r.mes, r.facturacion]));
-        NZ.cols($(sel), meses, [{ name: neg, color: C()[ci], values: meses.map((m) => rows.get(m) ?? null) }],
-          { fmtY: NZ.eurC, xLabel: NZ.mes, height: 170, tipTitle: (m) => NZ.mes(m) + (m === '2026-10' ? ' (hasta el 19)' : '') });
-      });
-    } else boxes.forEach(([, sel]) => failed($(sel), 'grupo_mes'));
+    ['#hi-26', '#hi-25', '#hi-var'].forEach((x) => $(x).setAttribute('data-row', '0'));
+    if (PER.ready) {
+      const ch = PER.chart((a, b) => PER.inmo(a, b)[V.k]);
+      const ser = yearSeries(ch);
+      legendYears($('#lg-home-inmo'), ser);
+      plot($('#ch-home-inmo'), ch, ser, { fmtY: V.fmt, fmtTip: V.tip });
+      const hot = PER.chart((a, b) => PER.hotel('Total', a, b).fact);
+      const bod = PER.chart((a, b) => PER.grupo(a, b).Bodegas.fact);
+      const sh = yearSeries(hot), sb = yearSeries(bod);
+      legendYears($('#lg-grupo-mes'), sh);
+      plot($('#ch-grupo-hot'), hot, sh, { fmtY: NZ.eurC, fmtTip: NZ.eur, height: 170 });
+      plot($('#ch-grupo-bod'), bod, sb, { fmtY: NZ.eurC, fmtTip: NZ.eur, height: 170 });
+      // progresión por años
+      const ga = ok('grupo_anios');
+      const tb = $('#t-prog');
+      if (ga && tb) {
+        const yrs = ga.slice().reverse();
+        const rows = ['Grupo', 'Inmobiliario', 'Hotelero', 'Bodegas'];
+        const th = '<thead><tr><th>Negocio</th>' + yrs.map((y) => `<th class="nz-num">${y.anio}${y.completo ? '' : '*'}</th>`).join('') + (yrs.length > 1 ? '<th class="nz-num">Var. total</th>' : '') + '</tr></thead>';
+        const body = rows.map((n) => {
+          const first = yrs[0][n], last = yrs[yrs.length - 1][n];
+          const v = first ? last / first - 1 : null;
+          return `<tr${n === 'Grupo' ? ' class="nz-strong"' : ''}><td>${n === 'Grupo' ? 'Grupo Nozar' : n}</td>` + yrs.map((y) => `<td class="nz-num">${NZ.eurC(y[n])}</td>`).join('') + (yrs.length > 1 ? `<td class="nz-num ${v > 0 ? 'nz-good' : v < 0 ? 'nz-bad' : ''}">${v == null ? '—' : NZ.dpct(v)}</td>` : '') + '</tr>';
+        }).join('');
+        tb.innerHTML = th + '<tbody>' + body + '</tbody>';
+        $('#n-prog').textContent = 'Facturación del periodo ' + PER.curLong() + ' en cada año.' + (yrs.some((y) => !y.completo) ? ' * Año incompleto: los datos empiezan en enero de 2021.' : '') + ' «Var. total» compara el primer año con el último.';
+      }
+    }
     const feed = ok('actividad_hoy');
     if (feed) {
       NZ.table($('#t-feed'), feed, {
@@ -292,14 +250,14 @@
       promoSel(promos);
     } else failed(mapBox, 'promociones');
     // reservations
-    const rt = ok('reservas_mes_total');
-    if (rt) {
-      const ms = rt.map((r) => r.mes);
-      NZ.cols($('#ch-reservas'), ms, [{ name: 'Reservas', color: C()[0], values: rt.map((r) => r.reservas) }],
-        { fmtY: NZ.int, xLabel: NZ.mes, tipTitle: (m) => NZ.mes(m) + (m === '2026-10' ? ' (hasta el 19)' : ''), fmtTip: (v) => NZ.int(v) + ' reservas' });
-      NZ.lines($('#ch-reservas-acum'), ms, [{ name: 'Acumulado', color: C()[0], values: rt.map((r) => r.acumulado) }],
-        { fmtY: NZ.int, xLabel: NZ.mes, height: 170, fmtTip: (v) => NZ.int(v) + ' viviendas' });
-    } else { failed($('#ch-reservas'), 'reservas_mes_total'); failed($('#ch-reservas-acum'), 'reservas_mes_total'); }
+    if (PER.ready) {
+      const ch = PER.chart((a, b) => PER.sum('inmo.reservas', a, b));
+      const ser = yearSeries(ch);
+      legendYears($('#lg-reservas'), ser);
+      plot($('#ch-reservas'), ch, ser, { fmtY: NZ.int, fmtTip: (v) => NZ.int(v) + ' reservas' });
+      const ac = PER.chart((a, b) => PER.sum('inmo.reservas', a, b), { cumulative: true });
+      NZ.lines($('#ch-reservas-acum'), ac.xs, yearSeries(ac), { fmtY: NZ.int, xLabel: ac.label, tipTitle: ac.tip, height: 170, fmtTip: (v) => NZ.int(v) + ' viviendas' });
+    }
     // tables
     if (promos) {
       const mini = (td, r) => {
@@ -332,15 +290,17 @@
       NZ.mark($('#pt-pm'), 'promociones', 'precio_medio', w);
       $('#n-vivs').textContent = p.promocion + ' · ' + p.zona + ', ' + p.ciudad + ' · ' + (ent ? 'entregada ' + p.entrega : 'entrega prevista ' + p.entrega) + ' · ' + p.fuente_viviendas + '.';
       $$('#promo-tiles .nz-big').forEach((e) => e.classList.remove('dash-skeleton'));
-      // promo monthly reservations
-      const rm = ok('reservas_mes');
+      // promo reservations in the period
+      const vv = ok('viviendas');
       const box = $('#ch-promo-res');
-      if (rm) {
-        const rows = rm.filter((r) => r.promo_id === p.id);
-        if (!rows.length) empty(box, 'Promoción ya entregada: no tiene reservas en 2025–2026.');
-        else NZ.cols(box, rows.map((r) => r.mes), [{ name: 'Reservas', color: C()[0], values: rows.map((r) => r.reservas) }],
-          { fmtY: NZ.int, xLabel: NZ.mes, height: 170, fmtTip: (v) => NZ.int(v) + ' reservas' });
-      } else failed(box, 'reservas_mes');
+      if (vv && PER.ready) {
+        const dates = vv.filter((x) => x.promo_id === p.id && x.fecha_reserva).map((x) => x.fecha_reserva);
+        const iso = (d) => d.toISOString().slice(0, 10);
+        const ch = PER.chart((a, b) => { const x = iso(a), z = iso(b); return dates.filter((d) => d >= x && d <= z).length; });
+        const ser = yearSeries(ch);
+        if (!ser.some((s) => s.values.some((v) => v))) empty(box, 'Sin reservas de esta promoción en el periodo elegido.');
+        else plot(box, ch, ser, { fmtY: NZ.int, height: 170, fmtTip: (v) => NZ.int(v) + ' reservas' });
+      }
     }
     const viv = ok('viviendas');
     if (viv) {
@@ -362,21 +322,18 @@
     const w = NZ.where({ hotel: h });
     $$('#hotel-tiles [data-k]').forEach((el) => NZ.mark(el, 'hotel_resumen', el.dataset.k, w));
     $$('#hotel-tiles [data-d]').forEach((el) => NZ.mark(el, 'hotel_variaciones', 'var_' + el.dataset.d, w));
-    const hm = ok('hotel_mes_total');
-    const meses = d3.range(1, 13);
-    const lab = (m) => NZ.MESES[m - 1];
-    const series = (field) => YEARS().map(([y, col, thin]) => {
-      const rows = new Map(hm.filter((r) => r.hotel === h && r.mes.startsWith(y)).map((r) => [+r.mes.slice(5), r[field]]));
-      return { name: y, color: col, thin, values: meses.map((m) => rows.get(m) ?? null) };
-    });
-    if (hm) {
-      NZ.lines($('#ch-ocupacion'), meses, series('ocupacion'), { fmtY: (v) => NZ.pct(v, 0), fmtTip: (v) => NZ.pct(v), xLabel: lab });
-      const hs = series('huespedes').slice(0, 2).reverse();
-      NZ.cols($('#ch-huespedes'), meses, hs.map((s) => ({ ...s, color: s.name === '2026' ? C()[0] : MUTED })), { fmtY: NZ.numC, fmtTip: NZ.int, xLabel: lab });
-      NZ.lines($('#ch-ingresos-aloj'), meses, series('ingresos_alojamiento'), { fmtY: NZ.eurC, xLabel: lab });
-    } else ['#ch-ocupacion', '#ch-huespedes', '#ch-ingresos-aloj'].forEach((s) => failed($(s), 'hotel_mes'));
+    if (PER.ready) {
+      const ser = (fn) => { const ch = PER.chart(fn); return [ch, yearSeries(ch)]; };
+      const [c1, s1] = ser((a, b) => { const x = PER.hotel(h, a, b); return x.disp ? x.noches / x.disp : null; });
+      legendYears($('#lg-ocupacion'), s1);
+      NZ.lines($('#ch-ocupacion'), c1.xs, s1, { fmtY: (v) => NZ.pct(v, 0), fmtTip: (v) => NZ.pct(v), xLabel: c1.label, tipTitle: c1.tip });
+      const [c2, s2] = ser((a, b) => PER.hotel(h, a, b).hu);
+      plot($('#ch-huespedes'), c2, s2, { fmtY: NZ.numC, fmtTip: NZ.int });
+      const [c3, s3] = ser((a, b) => PER.hotel(h, a, b).ing);
+      NZ.lines($('#ch-ingresos-aloj'), c3.xs, s3, { fmtY: NZ.eurC, fmtTip: NZ.eur, xLabel: c3.label, tipTitle: c3.tip });
+    }
     // guests by origin
-    $('#s-origen').textContent = (h === 'Total' ? 'todo el balneario' : h) + ' · alojamiento · 1 ene – 19 oct 2026 vs mismo periodo 2025';
+    $('#s-origen').textContent = (h === 'Total' ? 'todo el balneario' : h) + ' · alojamiento · ' + PER.curLong() + ' vs ' + PER.cmpShort().toLowerCase();
     $$('#origen-tiles [data-k]').forEach((el) => NZ.mark(el, 'hotel_origen_ambito', el.dataset.k, NZ.where({ id: h + '|' + el.dataset.a })));
     const ho = ok('hotel_origen');
     if (ho) {
@@ -438,15 +395,12 @@
         coste_directo: { num: true, fmt: NZ.eurC }, beneficio_bruto: { num: true, fmt: NZ.eurC }, margen: { num: true, fmt: (v) => NZ.pct(v) },
       }, { key: 'punto', sortField: 'ingresos', active: (r) => r.punto === punto, onRow: (r) => setP({ punto: r.punto }) });
     } else failed($('#ch-puntos'), 'hotel_puntos_resumen');
-    const pm = ok('hotel_puntos_mes');
-    $('#h-punto-mes').textContent = punto + ' · ingresos por mes';
-    if (pm) {
-      const s = YEARS().map(([y, col, thin]) => {
-        const rows = new Map(pm.filter((r) => r.punto === punto && r.mes.startsWith(y)).map((r) => [+r.mes.slice(5), r.ingresos]));
-        return { name: y, color: col, thin, values: meses.map((m) => rows.get(m) ?? null) };
-      });
-      NZ.lines($('#ch-punto-mes'), meses, s, { fmtY: NZ.eurC, xLabel: lab });
-    } else failed($('#ch-punto-mes'), 'hotel_puntos_mes');
+    $('#h-punto-mes').textContent = punto + ' · ingresos';
+    if (PER.ready) {
+      const pi = PER.puntoIdx(punto);
+      const ch = PER.chart((a, b) => PER.punto(pi, a, b).ing);
+      NZ.lines($('#ch-punto-mes'), ch.xs, yearSeries(ch), { fmtY: NZ.eurC, fmtTip: NZ.eur, xLabel: ch.label, tipTitle: ch.tip });
+    }
     // best sellers from the menus
     const hp = ok('hotel_productos');
     if (hp) {
@@ -495,15 +449,13 @@
         { name: 'Beneficio bruto', color: C()[1], values: rows.map((r) => r.beneficio_bruto) },
       ], { fmtY: NZ.eurC, xLabel: (a) => (a.startsWith('2026') ? '2026*' : a), tipTitle: (a) => a });
     } else failed($('#ch-vino-anual'), 'vino_anual');
-    const vm = ok('vino_mes');
-    if (vm) {
-      const rows = vm.filter((r) => r.bodega === b).sort((x, y) => x.mes - y.mes);
-      NZ.lines($('#ch-vino-mes'), rows.map((r) => r.mes), [
-        { name: '2026', color: C()[0], values: rows.map((r) => r.facturacion_2026) },
-        { name: '2025', color: C()[1], values: rows.map((r) => r.facturacion_2025) },
-        { name: '2024', color: MUTED, thin: true, values: rows.map((r) => r.facturacion_2024) },
-      ], { fmtY: NZ.eurC, xLabel: (m) => NZ.MESES[m - 1] });
-    } else failed($('#ch-vino-mes'), 'vino_mes');
+    if (PER.ready) {
+      const bi = PER.bodegaIdx(b);
+      const ch = PER.chart((x, z) => PER.bodega(bi, x, z).fact);
+      const ser = yearSeries(ch);
+      legendYears($('#lg-vino-mes'), ser);
+      NZ.lines($('#ch-vino-mes'), ch.xs, ser, { fmtY: NZ.eurC, fmtTip: NZ.eur, xLabel: ch.label, tipTitle: ch.tip });
+    }
     // references
     const refs = ok('vino_referencias');
     const ref = P().ref;
@@ -590,18 +542,13 @@
         tiles.appendChild(t);
       });
     }
-    const cm = ok('vino_canales_mes');
-    const chans = [['#ch-canal-online', 'facturacion_online', NZ.eurC], ['#ch-canal-visitas', 'visitantes', NZ.int], ['#ch-canal-tienda', 'facturacion_tienda', NZ.eurC]];
-    if (cm) {
-      const meses = d3.range(1, 13);
-      chans.forEach(([sel, f, fm]) => {
-        const s = YEARS().map(([y, col, thin]) => {
-          const m = new Map(cm.filter((r) => r.bodega === b && r.mes.startsWith(y)).map((r) => [+r.mes.slice(5), r[f]]));
-          return { name: y, color: col, thin, values: meses.map((k) => m.get(k) ?? null) };
-        });
-        NZ.lines($(sel), meses, s, { fmtY: fm, xLabel: (m) => NZ.MESES[m - 1], height: 170 });
+    if (PER.ready) {
+      const bi = PER.bodegaIdx(b);
+      [['#ch-canal-online', (x) => x.online.f, NZ.eurC, NZ.eur], ['#ch-canal-visitas', (x) => x.visitas.q, NZ.int, (v) => NZ.int(v) + ' personas'], ['#ch-canal-tienda', (x) => x.tienda.f, NZ.eurC, NZ.eur]].forEach(([sel, f, fm, ft]) => {
+        const ch = PER.chart((x, z) => f(PER.direct(bi, x, z)));
+        NZ.lines($(sel), ch.xs, yearSeries(ch), { fmtY: fm, fmtTip: ft, xLabel: ch.label, tipTitle: ch.tip, height: 170 });
       });
-    } else chans.forEach(([sel]) => failed($(sel), 'vino_canales_mes'));
+    }
   }
 
   // ---------- main ----------
@@ -620,7 +567,7 @@
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => NZ.slides());
 
   // open the place named in the link
-  const hash = decodeURIComponent(location.hash.slice(1));
+  const hash = decodeURIComponent(location.hash.slice(1).split('?')[0]);
   if (hash) {
     const el = document.getElementById(hash);
     const sec = el && el.closest('section[data-page]');

@@ -1,23 +1,23 @@
 // Minimal stand-in for the `dash` API the dashboard uses inside Claude.
 // Loads the JSON files in ./data, runs the derived calculations and redraws on resize.
 (function () {
-  const DATASETS = [
-    'promociones', 'viviendas', 'reservas_mes', 'reservas_mes_total',
-    'hotel_mes', 'hotel_puntos_mes', 'hotel_resumen', 'hotel_puntos_resumen', 'hotel_reservas_futuras', 'hotel_pickup', 'hotel_productos', 'hotel_origen',
-    'vino_referencias', 'vino_provincia_referencia', 'vino_export_referencia', 'vino_provincias', 'vino_paises',
-    'vino_canales_mes', 'vino_canales_resumen', 'vino_resumen', 'vino_anual', 'vino_mes',
-    'grupo_mes', 'grupo_resumen', 'actividad_hoy',
-  ];
+  // Lo que no depende de las fechas se carga tal cual; el resto se calcula con las series diarias (periodo.js)
+  const DATASETS = ['promociones', 'viviendas', 'hotel_reservas_futuras', 'hotel_pickup', 'actividad_hoy', 'series'];
   const DEFAULT_PARAMS = { inmo_vista: 'escriturado', promo: 'avda-america', hotel: 'Total', punto: 'Termas de Tiberio', bodega: 'Enate', ref: null, pais: null };
 
   const store = {};
   const calcs = {};
   const listeners = [];
   let params = { ...DEFAULT_PARAMS };
-  const VERSION = '2026-10-20b';
+  const VERSION = '2026-10-21b';
   const errors = {};
   let loaded = false;
 
+  const rebuild = () => {
+    if (!window.PER || !store.series) return;
+    if (!PER.ready) PER.init(store.series);
+    try { Object.assign(store, PER.build()); } catch (e) { console.error('periodo', e); }
+  };
   const runCalcs = () => {
     Object.entries(calcs).forEach(([id, c]) => {
       const bad = c.inputs.filter((i) => !(i in store));
@@ -46,9 +46,9 @@
     calc(id, def) { calcs[id] = def; if (loaded) { runCalcs(); fire(); } },
     loader() {},
     params() { return { ...params }; },
-    setParams(o) { params = { ...params, ...o }; fire(); },
-    resetParams() { params = { ...DEFAULT_PARAMS }; fire(); },
-    setLink(name) { history.replaceState(null, '', '#' + name); },
+    setParams(o) { const per = Object.keys(o).some((k) => k.startsWith('per_')); params = { ...params, ...o }; if (per && loaded) { rebuild(); runCalcs(); if (window.PER) PER.renderBar(); } fire(); },
+    resetParams() { params = { ...DEFAULT_PARAMS }; rebuild(); runCalcs(); fire(); },
+    setLink(name) { const q = location.hash.split('?')[1]; history.replaceState(null, '', '#' + name + (q ? '?' + q : '')); },
     refresh() {},
   };
 
@@ -73,7 +73,9 @@
     .catch((e) => { errors[id] = String(e.message || e); console.error(id, e); })))
     .then(() => {
       loaded = true;
+      rebuild();
       runCalcs();
+      if (window.PER) PER.renderBar();
       fire();
       showErrors();
     });
