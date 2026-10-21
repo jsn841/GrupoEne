@@ -10,7 +10,7 @@
   const FIELDS = Object.fromEntries(SCHEMA.fields.map((f) => [f.id, f]));
   const SALES = FIELDS.plan_ventas.rows; // [key,label,row,unitsField]
   const LIBKEY = 'calcpromo.biblioteca.v1';
-  const VERSION = '2026-10-20d';
+  const VERSION = '2026-10-21a';
 
   // ---------------- biblioteca ----------------
   let lib = null;
@@ -58,8 +58,11 @@
     form.innerHTML = '';
     const st = h('div', { class: 'card status', id: 'statusCard' });
     form.append(st);
-    for (const g of SCHEMA.groups) {
-      const det = h('details', { class: 'card group', id: 'g-' + g.id, open: ui.open.has(g.id) });
+    const grupos = [...SCHEMA.groups.filter((g) => !g.fijo), ...SCHEMA.groups.filter((g) => g.fijo)];
+    let cabecera = false;
+    for (const g of grupos) {
+      if (g.fijo && !cabecera) { cabecera = true; form.append(h('div', { class: 'fixhead' }, h('b', {}, 'Supuestos estándar'), h('span', {}, 'Vienen con los valores fijos del modelo o de la comunidad autónoma. No hace falta revisarlos; ábrelos solo para comprobarlos o cambiar algo.'))); }
+      const det = h('details', { class: 'card group' + (g.fijo ? ' fijo' : ''), id: 'g-' + g.id, open: ui.open.has(g.id) });
       det.addEventListener('toggle', () => { det.open ? ui.open.add(g.id) : ui.open.delete(g.id); });
       const sum = h('summary', {}, h('span', { class: 't' }, g.title), h('span', { class: 'gchips' }), h('svg', { class: 'chev', viewBox: '0 0 24 24', width: 16, height: 16, fill: 'none', stroke: 'currentColor', 'stroke-width': 2, html: '<path d="M9 6l6 6-6 6"/>' }));
       const body = h('div', { class: 'gbody' });
@@ -165,13 +168,17 @@
           if (st === 'falta') flags.append(h('span', { class: 'chip bad' }, 'Falta'));
           if (st === 'revisar') flags.append(h('button', { class: 'chip warn', type: 'button', title: 'Valor habitual ya rellenado. Compruébalo y pulsa para marcarlo como revisado.', onclick: () => { p.revisados = [...new Set([...(p.revisados || []), f.id])]; touch(); refreshStates(); } }, 'Revisar este dato'));
           else if (f.revisar && vis && st === 'ok') flags.append(h('span', { class: 'chip ok', title: 'Revisado' }, '✓'));
+          const gg = SCHEMA.groups.find((x) => x.id === f.group);
+          const porCcaa = p.data.ccaa && ['pct_ajd_compra', 'pct_ajd_obra_nueva', 'pct_ajd_prestamo_suelo', 'pct_ajd_prestamo_promotor'].includes(f.id);
+          if (gg && gg.fijo && !porCcaa && f.def !== null && f.def !== undefined && f.def !== '' && p.data[f.id] !== undefined && String(p.data[f.id]) !== String(f.def) && f.type !== 'select')
+            flags.append(h('button', { class: 'chip warn', type: 'button', title: 'Valor estándar: ' + fmtField(f, f.def) + '. Pulsa para volver a él.', onclick: () => { delete p.data[f.id]; touch(); const i = $('#in-' + f.id); if (i) i.value = toInput(f, f.def); refreshStates(); schedule(); } }, 'Cambiado · volver al estándar'));
         }
         if (f.calc && f.id === 'pct_permuta_viviendas') { const i = $('#in-' + f.id); const pm = ui.res && ui.res.permuta; if (i) i.value = pm ? fmtPct(pm.pct, 2) + ' · ' + fmtNum(pm.viviendas) + ' viviendas' : ''; }
         if (vis && st === 'falta') gf++; if (vis && st === 'revisar') gr++;
       }
       if (g.id === 'ventas') { const w = (ui.check || CALC.check(p.data)).warn.filter((x) => x[0] === 'plan_ventas').length; if (w) gr += 0; }
       const chips = $('#g-' + g.id + ' .gchips');
-      if (chips) { chips.innerHTML = ''; if (gf) chips.append(h('span', { class: 'chip bad' }, gf + (gf === 1 ? ' falta' : ' faltan'))); if (gr) chips.append(h('span', { class: 'chip warn' }, gr + ' por revisar')); if (!gf && !gr) chips.append(h('span', { class: 'chip ok' }, '✓')); }
+      if (chips) { chips.innerHTML = ''; if (gf) chips.append(h('span', { class: 'chip bad' }, gf + (gf === 1 ? ' falta' : ' faltan'))); if (gr) chips.append(h('span', { class: 'chip warn' }, gr + ' por revisar')); if (!gf && !gr) chips.append(g.fijo ? h('span', { class: 'chip std' }, { estandar: 'Estándar', comunidad: p.data.ccaa ? (SCHEMA.CCAA.find((c) => c[0] === p.data.ccaa) || [, , ])[1] : 'Estándar', financiero: 'Estándar' }[g.fijo]) : h('span', { class: 'chip ok' }, '✓')); }
       falta += gf; rev += gr;
     }
     const st = $('#statusCard');

@@ -59,6 +59,11 @@
     const sum = (a) => a.reduce((s, x) => s + (Number(x) || 0), 0);
     const near = (a, b) => Math.abs(a - b) < 1e-6;
     if (v.forma_pago_suelo === 'd' && !near(sum([v.hito_compra, v.hito_inicio, v.hito_cfo, v.hito_llaves]), 1)) warn.push(['forma_pago_suelo', 'Los hitos de pago del suelo tienen que sumar el 100 %.']);
+    // datos con un rango razonable (por ejemplo, la responsabilidad hipotecaria es más del 100 %)
+    for (const f of SCHEMA.fields) if ((f.min !== undefined || f.max !== undefined) && v[f.id] !== null && v[f.id] !== undefined && v[f.id] !== '') {
+      const x = Number(v[f.id]);
+      if ((f.min !== undefined && x < f.min) || (f.max !== undefined && x > f.max)) warn.push([f.id, `«${f.label}» está en ${(x * 100).toFixed(2).replace('.', ',')} %: tiene que estar entre el ${f.min * 100} % y el ${f.max * 100} % (lo normal es el ${(f.def * 100).toFixed(0)} %).`]);
+    }
     if (!near(sum([v.cobro_contrato, v.cobro_obra, v.cobro_llaves]), 1)) warn.push(['cobro_contrato', 'Los cobros a los compradores tienen que sumar el 100 %.']);
     if (!near(sum([v.pct_com_contrato, v.pct_com_escritura]), 1)) warn.push(['pct_com_contrato', 'Los pagos de la comisión de venta tienen que sumar el 100 %.']);
     if (!near(sum([v.arq_anteproyecto, v.arq_basico, v.arq_ejecucion, v.arq_licencia, v.arq_obra, v.arq_cfo, v.arq_cedula]), 1)) warn.push(['arq_anteproyecto', 'Los pagos al arquitecto tienen que sumar el 100 %.']);

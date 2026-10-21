@@ -2,11 +2,12 @@
 
 ## Panel de ventas en directo del Grupo Nozar (maqueta)
 
-Maqueta de un panel de ventas para los tres negocios del grupo. Un menú lateral lleva a cada panel (Dashboard General, Inmobiliario, Hoteles y Bodegas) y a la herramienta de Análisis Promociones:
+Maqueta de un panel de ventas para los tres negocios del grupo. Un menú lateral lleva a cada panel (Dashboard General, Inmobiliario, Marketing Inmobiliario, Hoteles y Bodegas) y a la herramienta de Análisis Promociones:
 
 - **Inicio**: facturación y beneficio bruto del grupo y de cada negocio frente al periodo de comparación, progresión por años, facturación del periodo y últimos movimientos del día.
 - **Inmobiliario**: promociones entregadas y en curso, mapa de España, reservas por mes y detalle de cada vivienda (precio y estado).
-- **Balneario de Panticosa**: Gran Hotel y Hotel Continental (ocupación, precio medio, ingresos, personas alojadas, reservas futuras), resultados por restaurante, bar y spa, y lo más vendido de cada carta.
+- **Marketing Inmobiliario**: calendario de lanzamiento de cada promoción (renders, ficha en la web, landing page, portales, redes sociales, anuncios, email…) con fecha prevista y real y avisos de lo retrasado; próximos lanzamientos; todas las promociones en el tiempo; inversión, contactos, coste por contacto y reservas del periodo; rendimiento por canal; emails; redes sociales; e histórico de las promociones cerradas. Los datos vendrían de la herramienta de marketing y las reservas del sistema de ventas, así que marketing no necesita licencia de Salesforce.
+- **Balneario de Panticosa**: Gran Hotel y Hotel Continental (ocupación, precio medio, ingresos, personas alojadas, reservas futuras), resultados por local, y consumos separados en spa, comida, bebida y punto de venta (tienda): lo más y lo menos vendido, por margen, cuándo se consume por día de la semana y hora, y recomendaciones de stock, turnos y ofertas.
 - **Análisis Promociones**: la calculadora de promociones (ver abajo), dentro del panel.
 - **Bodegas**: Enate, Laus y Las Moradas de San Martín por separado, con ventas por referencia, por provincia, exportación por país y producto, comparación con años anteriores y venta online, visitas y tienda.
 
@@ -63,10 +64,13 @@ dashboard/
 scripts/
   generar_datos.py           genera todos los datos de data/
   generar_productos_hotel.py genera las ventas de las cartas del balneario
+  generar_series.py          series diarias para el filtro de fechas
+  generar_consumos.py        tipo de consumo, coste y horario de cada producto del balneario
+  generar_marketing.py       datos simulados de la herramienta de marketing
 ```
 
-Para regenerar los datos: `python3 scripts/generar_datos.py && python3 scripts/generar_productos_hotel.py` (en ese orden; salen siempre las mismas cifras). Si cambias los datos, sube el número de versión (`VERSION` en `dash-shim.js` y los `?v=` de los `index.html`) para que los navegadores no usen copias antiguas.
+Para regenerar los datos: `python3 scripts/generar_datos.py && python3 scripts/generar_productos_hotel.py && python3 scripts/generar_series.py && python3 scripts/generar_consumos.py && python3 scripts/generar_marketing.py` (en ese orden; salen siempre las mismas cifras). Si cambias los datos, sube el número de versión (`VERSION` en `dash-shim.js` y los `?v=` de los `index.html`) para que los navegadores no usen copias antiguas.
 
 ### Pasar a datos reales
 
-Cada archivo de `data/` corresponde a una fuente que en producción vendría de su sistema: el CRM de ventas de viviendas, el programa de reservas y TPV del hotel y el ERP de las bodegas. Basta con que cada sistema exporte un JSON con las mismas columnas.
+Cada archivo de `data/` corresponde a una fuente que en producción vendría de su sistema: el CRM de ventas de viviendas, el programa de reservas y TPV del hotel (con la hora de cada ticket), la herramienta de marketing (email, redes y anuncios) y el ERP de las bodegas. Basta con que cada sistema exporte un JSON con las mismas columnas.

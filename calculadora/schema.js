@@ -13,13 +13,13 @@
     { id: 'obra', title: 'Coste de la obra', note: 'Lo que cobra la constructora, por metro cuadrado y en partidas sueltas. Sin IVA.' },
     { id: 'plazos', title: 'Plazos', note: 'Calendario de la promoción, contado en meses desde la compra del suelo (mes 1).' },
     { id: 'ventas', title: 'Calendario de ventas', note: 'Cuántas unidades se venden (se firma el contrato de compraventa) cada mes.' },
-    { id: 'tributos', title: 'Impuestos y tasas', note: 'Cambian según la comunidad autónoma y el ayuntamiento. Elige la comunidad para rellenar los impuestos autonómicos.' },
-    { id: 'notaria', title: 'Notaría, registro y seguros', note: 'Gastos de escrituras y seguros, casi todos como porcentaje de una base.' },
-    { id: 'proyectos', title: 'Proyectos y estudios', note: 'Honorarios de los técnicos y estudios previos.' },
+    { id: 'tributos', title: 'Impuestos y tasas', fijo: 'comunidad', note: 'Vienen con los tipos habituales. Al elegir la comunidad autónoma se ponen los impuestos autonómicos de esa comunidad; los municipales (licencia, ICIO, plusvalía) dependen del ayuntamiento.' },
+    { id: 'notaria', title: 'Notaría, registro y seguros', fijo: 'estandar', note: 'Porcentajes fijos del modelo, iguales para todas las promociones. Se pueden cambiar si hace falta.' },
+    { id: 'proyectos', title: 'Proyectos y estudios', fijo: 'estandar', note: 'Honorarios y estudios con los valores fijos del modelo. Se pueden cambiar si hace falta.' },
     { id: 'financieros', title: 'Préstamos y gastos financieros', note: 'Préstamo del suelo, intereses, comisiones y avales.' },
     { id: 'iva', title: 'IVA y retenciones', note: 'El IVA no es un coste: se paga y se recupera, pero mueve la caja.' },
     { id: 'comercial', title: 'Comercialización y gastos de gestión', note: 'Comisión de venta y gastos de estructura de la empresa.' },
-    { id: 'calendario', title: 'Momento de los pagos', note: 'Supuestos del modelo sobre cuándo se paga cada gasto. Normalmente no hace falta cambiarlos.' },
+    { id: 'calendario', title: 'Momento de los pagos', fijo: 'financiero', note: 'Cuándo se paga cada gasto. Es un supuesto para el equipo financiero: viene con los valores estándar del modelo.' },
     { id: 'rentabilidad', title: 'Cálculo de la rentabilidad', note: 'Margen mínimo exigido y tasa para la VAN.' },
   ];
 
@@ -139,7 +139,7 @@
     { id: 'pct_ajd_obra_nueva', label: 'AJD: obra nueva y división horizontal', type: 'pct', cell: 'Promoción!C20', def: 0.0075, revisar: true, help: 'Impuesto autonómico de las escrituras que declaran el edificio y lo dividen en viviendas. Como en el Excel original, se aplica dos veces sobre el PEM (una por cada escritura) y una sobre el precio del suelo. Se paga 4 meses antes del fin de obra.' },
     { id: 'pct_ajd_prestamo_suelo', label: 'AJD: préstamo del suelo', type: 'pct', cell: 'Promoción!C21', def: 0.0075, revisar: true, help: 'Desde el 10 de noviembre de 2018 el AJD de los préstamos con hipoteca lo paga el banco (Real Decreto-ley 17/2018), así que lo normal es 0 %. Pon un porcentaje solo si el banco te lo repercute. Se calcula sobre el préstamo por la responsabilidad hipotecaria.' },
     { id: 'pct_ajd_prestamo_promotor', label: 'AJD: préstamo promotor', type: 'pct', cell: 'Promoción!C22', def: 0.0075, revisar: true, help: 'Igual que el anterior: desde 2018 lo paga el banco y lo normal es 0 %. Si lo pones, se calcula sobre el préstamo promotor por la responsabilidad hipotecaria, quitando lo ya pagado por el préstamo del suelo.' },
-    { id: 'factor_resp_hip', label: 'Responsabilidad hipotecaria sobre el préstamo', type: 'pct', sup: 'B6', def: 1.36, revisar: true, hoja: 'modelo', help: 'La hipoteca garantiza más que el préstamo (intereses de demora, costas). El AJD de los préstamos se calcula sobre el préstamo por este porcentaje. El Excel tenía el 136 % escrito en la fórmula.' },
+    { id: 'factor_resp_hip', label: 'Responsabilidad hipotecaria sobre el préstamo', type: 'pct', sup: 'B6', def: 1.36, min: 1, max: 2, revisar: true, hoja: 'modelo', help: 'No es un tipo de impuesto: es cuántas veces el préstamo garantiza la hipoteca (intereses de demora, costas). Lo normal es el 136 %. El AJD de los préstamos se calcula sobre el préstamo por este porcentaje.' },
     { id: 'pct_ajd_distribucion', label: 'AJD: distribución hipotecaria', type: 'pct', cell: 'Promoción!C23', def: 0, revisar: true, help: 'Impuesto de la escritura que reparte el préstamo promotor entre las viviendas para que los compradores puedan subrogarse. Sobre el préstamo promotor. Se paga 3 meses antes del fin de obra.' },
     { id: 'iae_m2', label: 'IAE por metro cuadrado construido', type: 'eur_m2', cell: 'Promoción!C24', def: 3, revisar: true, help: 'Impuesto de actividades económicas de la promotora, en euros por m² construido (viviendas, locales, sótanos y terrazas). Se paga al terminar la obra.' },
   ]);
@@ -225,6 +225,9 @@
       help: 'Rentabilidad mínima que se pide al dinero, al año. La VAN (valor actual neto) dice cuánto vale hoy el beneficio futuro descontado a esta tasa: si sale positiva, la promoción rinde más que esa tasa. El Excel usaba un 5 % fijo.' },
   ]);
 
-  const SCHEMA = { groups: G, fields: F, months: 84, version: 2, CCAA };
+  // Los grupos fijos (estándar del modelo o según la comunidad) no piden revisión: vienen ya bien
+  const FIJOS = new Set(G.filter((g) => g.fijo).map((g) => g.id));
+  for (const f of F) if (FIJOS.has(f.group)) f.revisar = false;
+  const SCHEMA = { groups: G, fields: F, months: 84, version: 3, CCAA };
   if (typeof module !== 'undefined' && module.exports) module.exports = SCHEMA; else root.SCHEMA = SCHEMA;
 })(typeof window !== 'undefined' ? window : globalThis);

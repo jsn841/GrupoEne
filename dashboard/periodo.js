@@ -145,6 +145,9 @@
   }
   P.bodega = bodega;
   P.direct = bodegaDirect;
+  P.perfil = (punto, fam) => (S.meta.perfiles || {})[punto + '|' + fam];
+  P.pesoDia = (punto) => (S.meta.peso_dia || {})[punto];
+  P.familias = () => S.meta.familias || [];
   P.puntoIdx = (name) => S.meta.puntos_orden.indexOf(name);
   P.bodegaIdx = (name) => S.meta.bodegas.indexOf(name);
   function inmo(a, b) {
@@ -225,17 +228,26 @@
     // productos de las cartas
     const PR = S.reparto.productos;
     const prodVals = (a, b) => {
-      const v = PR.items.map(() => ({ ing: 0, u: 0 }));
-      const tot = S.meta.puntos_orden.map(() => ({}));
+      const v = PR.items.map(() => ({ ing: 0, u: 0, co: 0 }));
       for (const [y, x, z] of byYear(a, b)) {
         const t = S.meta.puntos_orden.map((_, i) => sum(`punto.${i}.ing`, x, z));
-        PR.items.forEach((it, j) => { const ing = t[it.p] * PR.ing[y][j]; v[j].ing += ing; if (PR.precio[y][j]) v[j].u += ing / PR.precio[y][j]; });
+        const tc = S.meta.puntos_orden.map((_, i) => sum(`punto.${i}.coste`, x, z));
+        // el coste de cada producto se ajusta para que la suma cuadre con el coste del local
+        const pond = S.meta.puntos_orden.map(() => 0);
+        PR.items.forEach((it, j) => { pond[it.p] += PR.ing[y][j] * (it.coste || 0); });
+        PR.items.forEach((it, j) => {
+          const ing = t[it.p] * PR.ing[y][j]; v[j].ing += ing; if (PR.precio[y][j]) v[j].u += ing / PR.precio[y][j];
+          const k = pond[it.p] && t[it.p] ? tc[it.p] / t[it.p] / pond[it.p] : 1;
+          v[j].co += ing * (it.coste || 0) * k;
+        });
       }
       return v;
     };
     const p1 = prodVals(A, B), p2 = prodVals(a2, b2);
-    ds.hotel_productos = PR.items.map((it, j) => ({ id: it.id, punto: it.punto, tipo: it.tipo, categoria: it.categoria, producto: it.producto, precio: it.precio, precio_fuente: it.precio_fuente,
-      unidades: it.precio ? R0(p1[j].u) : null, unidades_ant: it.precio ? R0(p2[j].u) : null, variacion: it.precio ? varr(p1[j].u, p2[j].u) : null, ingresos: R0(p1[j].ing), ranking: null }));
+    ds.hotel_productos = PR.items.map((it, j) => ({ id: it.id, punto: it.punto, tipo: it.tipo, familia: it.familia || 'Otros', categoria: it.categoria, producto: it.producto, precio: it.precio, precio_fuente: it.precio_fuente,
+      ubicacion: (S.meta.puntos.find((x) => x.punto === it.punto) || {}).ubicacion,
+      unidades: it.precio ? R0(p1[j].u) : null, unidades_ant: it.precio ? R0(p2[j].u) : null, variacion: it.precio ? varr(p1[j].u, p2[j].u) : null, ingresos: R0(p1[j].ing), ingresos_ant: R0(p2[j].ing),
+      coste: R0(p1[j].co), beneficio: R0(p1[j].ing - p1[j].co), beneficio_ant: R0(p2[j].ing - p2[j].co), margen: p1[j].ing ? (p1[j].ing - p1[j].co) / p1[j].ing : null, ranking: null }));
     for (const pt of S.meta.puntos_orden) ds.hotel_productos.filter((r) => r.punto === pt && r.precio).sort((x, y) => y.ingresos - x.ingresos).forEach((r, i) => { r.ranking = i + 1; });
     // origen de los huéspedes
     const OR = S.reparto.origen;
