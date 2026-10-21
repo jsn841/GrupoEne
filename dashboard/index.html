@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400&display=swap" rel="stylesheet">
-<script src="vendor/d3.min.js?v=2026-10-21c"></script>
+<script src="vendor/d3.min.js?v=2026-10-22a"></script>
 <script>
 try { var t = localStorage.getItem('nz-theme'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
 </script>
@@ -247,9 +247,32 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
 .nz-gantt .nz-launch { stroke-width: 1.5; }
 .nz-src { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); background: color-mix(in srgb, var(--c1) 8%, transparent); border-radius: 9px; padding: 8px 12px; margin: 0 0 var(--cds-gap-md); }
 .nz-controls .nz-pl { font-size: var(--cds-font-size-caption); font-weight: 400; }
-#ch-cons-heat .nz-heat thead th, #ch-cons-local .nz-heat thead th { writing-mode: horizontal-tb; transform: none; height: auto; vertical-align: bottom; text-align: center; padding: 2px 4px 4px; }
-#ch-cons-local .nz-heat td { min-width: 5.5rem; }
+#ch-cons-heat .nz-heat thead th, #ch-cons-local .nz-heat thead th, #ch-dist-heat .nz-heat thead th { writing-mode: horizontal-tb; transform: none; height: auto; vertical-align: bottom; text-align: center; padding: 2px 4px 4px; }
+#ch-cons-local .nz-heat td, #ch-dist-heat .nz-heat td { min-width: 5.5rem; }
+#ch-dist-heat .nz-heat-wrap { max-height: none; }
+#ch-dist-heat { min-height: 0; }
+@media (max-width: 640px) { .nz-dzona { justify-content: flex-start; max-width: 100%; } }
 #ch-cons-heat .nz-chart, #ch-cons-heat, #ch-cons-local { min-height: 0; }
+.nz-seg[hidden] { display: none; }
+.nz-distgrid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: var(--cds-gap-md); margin-bottom: var(--cds-gap-md); align-items: start; }
+@media (max-width: 1100px) { .nz-distgrid { grid-template-columns: minmax(0, 1fr); } }
+#card-dist-mapa { position: sticky; top: 120px; }
+@media (max-width: 1100px) { #card-dist-mapa { position: static; } }
+.nz-dmap .nz-prov { stroke: var(--color-panel); stroke-width: .7; cursor: pointer; }
+.nz-dmap .nz-prov:hover { stroke: var(--color-fg); stroke-width: 1.2; }
+.nz-dmap .nz-zona { fill: none; stroke: var(--color-fg); stroke-width: 2.2; pointer-events: none; stroke-linejoin: round; }
+.nz-dmap .nz-hq { stroke: var(--color-panel); stroke-width: 1.5; cursor: pointer; fill: var(--color-fg-muted); }
+.nz-dmap .nz-hq.nz-on { fill: var(--color-fg); }
+.nz-dmap .nz-canbox { fill: none; stroke: var(--cds-chart-axis); stroke-dasharray: 3 3; }
+.nz-dhead { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: flex-start; }
+.nz-dzona { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; max-width: 60%; }
+.nz-dzona .nz-chip { color: var(--color-fg-muted); }
+.nz-dmini { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; margin-top: var(--cds-gap-sm); }
+.nz-dmini .nz-tile { padding: var(--cds-pad-sm) var(--cds-pad-md); }
+.nz-dmini .nz-big { font-size: 22px; }
+.nz-dcanal .nz-dbar { display: flex; height: 14px; border-radius: 4px; overflow: hidden; margin: 4px 0 6px; }
+.nz-dcanal .nz-dbar span { display: block; height: 100%; }
+.nz-dcanal .nz-legend { margin: 0; }
 @keyframes nzfade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 </style>
 
@@ -648,8 +671,10 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
       <div class="nz-seg" id="seg-bodega" role="group" aria-label="Bodega">
         <button data-v="Enate">Enate</button><button data-v="Laus">Laus</button><button data-v="Las Moradas de San Martín">Las Moradas de San Martín</button>
       </div>
+      <div class="nz-seg" id="seg-bvista" role="group" aria-label="Vista"><button data-v="bodega">Por bodega</button><button data-v="dist">Por distribuidor</button></div>
       <span class="nz-note" style="margin:0"><span class="pl-cur"></span> · comparado con <span class="pl-cmp-l"></span></span>
     </div>
+    <div id="b-clasica">
     <nav class="nz-pnav" aria-label="Apartados de la bodega">
       <a data-go="b-resumen">Resumen</a><a data-go="b-referencias">Referencias</a><a data-go="b-provincias">Ventas por provincia</a><a data-go="b-export">Exportación</a><a data-go="b-canales">Online, visitas y tienda</a>
     </nav>
@@ -738,7 +763,61 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
       <div class="nz-card" id="card-canal-visitas"><h3>Visitas a la bodega</h3><p class="nz-note">Personas.</p><div class="nz-chart nz-short" id="ch-canal-visitas" data-source="series"></div></div>
       <div class="nz-card" id="card-canal-tienda"><h3>Tienda de la bodega</h3><p class="nz-note">Facturación.</p><div class="nz-chart nz-short" id="ch-canal-tienda" data-source="series"></div></div>
     </div>
-  </section>
+      </div>
+
+    <!-- vista por distribuidor -->
+    <div id="b-dist" hidden>
+      <p class="nz-src">Las bodegas venden a restaurantes, tiendas y supermercados a través de distribuidores, cada uno con su zona. Aquí se ven las ventas nacionales de cada bodega por distribuidor (sin exportación, tienda online, visitas ni tienda propia). Los distribuidores son empresas reales de cada zona; su relación con las bodegas, las zonas y las cifras son simuladas.</p>
+      <div class="nz-controls">
+        <span class="nz-pl">Bodega</span>
+        <div class="nz-seg" id="seg-dbodega" role="group" aria-label="Bodega"><button data-v="Todas">Todas</button><button data-v="Enate">Enate</button><button data-v="Laus">Laus</button><button data-v="Las Moradas de San Martín">Las Moradas</button></div>
+        <span class="nz-pl">Colorear por</span>
+        <div class="nz-seg" id="seg-dmedida" role="group" aria-label="Colorear por"><button data-v="facturacion">Facturación</button><button data-v="variacion">Variación</button></div>
+        <label for="sel-dist">Distribuidor</label>
+        <select class="nz-select" id="sel-dist"></select>
+      </div>
+      <div class="nz-tiles" id="dist-tiles"></div>
+      <div class="nz-distgrid">
+        <div class="nz-card" id="card-dist-mapa">
+          <h3>Mapa de actuación</h3>
+          <p class="nz-note" id="n-dist-mapa">Cada provincia, coloreada por lo que se vende en ella. El borde marca la zona del distribuidor elegido. Pulsa una provincia o un punto para ver su distribuidor.</p>
+          <div class="nz-legend" id="lg-dist-mapa"></div>
+          <div class="nz-chart" id="ch-dist-mapa"></div>
+        </div>
+        <div class="nz-card nz-dpanel" id="card-dist-panel">
+          <div class="nz-dhead"><div><h3 id="h-dist">Distribuidor</h3><p class="nz-note" id="n-dist"></p></div><div class="nz-dzona" id="dist-zona"></div></div>
+          <div class="nz-tiles nz-dmini" id="dist-kpis"></div>
+          <div class="nz-tl">Por canal</div>
+          <div class="nz-dcanal" id="dist-canal"></div>
+          <div class="nz-tl" style="margin-top:var(--cds-gap-md)">Facturación por mes · el periodo elegido en cada año</div>
+          <div class="nz-legend" id="lg-dist-mes"></div>
+          <div class="nz-chart nz-short" id="ch-dist-mes"></div>
+          <div class="nz-tl" style="margin-top:var(--cds-gap-md)">Provincias de su zona</div>
+          <div class="nz-chart nz-short" id="ch-dist-prov"></div>
+        </div>
+      </div>
+      <div class="nz-card" style="margin-bottom:var(--cds-gap-md)">
+        <h3 id="h-dist-prod">Productos que vende</h3>
+        <p class="nz-note">Botellas e ingresos de la bodega por cada referencia que vende este distribuidor, frente a <span class="pl-cmp"></span>.</p>
+        <div class="nz-controls"><span class="nz-count" id="c-dist-prod"></span></div>
+        <div class="nz-tablebox nz-tall"><table class="nz-t" id="t-dist-prod" data-row-key="id">
+          <thead><tr><th data-field="referencia">Referencia</th><th data-field="bodega">Bodega</th><th data-field="tipo">Tipo</th><th data-field="botellas">Botellas</th><th data-field="botellas_ant"><span class="pl-cmp">Comparación</span></th><th data-field="variacion">Var.</th><th data-field="facturacion">Facturación</th><th data-field="cuota">% del distribuidor</th></tr></thead>
+        </table></div>
+      </div>
+      <div class="nz-card" style="margin-bottom:var(--cds-gap-md)">
+        <h3>Todos los distribuidores</h3>
+        <p class="nz-note">Pulsa una fila para verlo en el mapa. Puntos de venta = restaurantes, tiendas y supermercados que compran (estimación por la compra media de cada canal).</p>
+        <div class="nz-tablebox"><table class="nz-t" id="t-dist" data-row-key="id">
+          <thead><tr><th data-field="nombre">Distribuidor</th><th data-field="sede">Sede</th><th data-field="nprov">Provincias</th><th data-field="facturacion">Facturación</th><th data-field="facturacion_ant"><span class="pl-cmp">Comparación</span></th><th data-field="variacion">Var.</th><th data-field="botellas">Botellas</th><th data-field="cuota">Cuota</th><th data-field="hosteleria">Hostelería</th><th data-field="puntos">Puntos de venta</th><th data-field="margen">Margen</th></tr></thead>
+        </table></div>
+      </div>
+      <div class="nz-card">
+        <h3>Qué bodega mueve cada distribuidor</h3>
+        <p class="nz-note">Facturación de cada bodega por distribuidor en el periodo.</p>
+        <div class="nz-chart" id="ch-dist-heat"></div>
+      </div>
+    </div>
+</section>
 
   <!-- ================= ANÁLISIS DE PROMOCIONES ================= -->
   <section class="nz-section" id="analisis" data-page="analisis" hidden>
@@ -752,12 +831,13 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
 </div>
 
 </div>
-<script src="dash-shim.js?v=2026-10-21c"></script>
-<script src="periodo.js?v=2026-10-21c"></script>
-<script src="lib.js?v=2026-10-21c"></script>
-<script src="consumos.js?v=2026-10-21c"></script>
-<script src="marketing.js?v=2026-10-21c"></script>
-<script src="app.js?v=2026-10-21c"></script>
-<script src="theme.js?v=2026-10-21c"></script>
+<script src="dash-shim.js?v=2026-10-22a"></script>
+<script src="periodo.js?v=2026-10-22a"></script>
+<script src="lib.js?v=2026-10-22a"></script>
+<script src="consumos.js?v=2026-10-22a"></script>
+<script src="marketing.js?v=2026-10-22a"></script>
+<script src="distribuidores.js?v=2026-10-22a"></script>
+<script src="app.js?v=2026-10-22a"></script>
+<script src="theme.js?v=2026-10-22a"></script>
 </body>
 </html>

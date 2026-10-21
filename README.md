@@ -9,7 +9,7 @@ Maqueta de un panel de ventas para los tres negocios del grupo. Un menú lateral
 - **Marketing Inmobiliario**: calendario de lanzamiento de cada promoción (renders, ficha en la web, landing page, portales, redes sociales, anuncios, email…) con fecha prevista y real y avisos de lo retrasado; próximos lanzamientos; todas las promociones en el tiempo; inversión, contactos, coste por contacto y reservas del periodo; rendimiento por canal; emails; redes sociales; e histórico de las promociones cerradas. Los datos vendrían de la herramienta de marketing y las reservas del sistema de ventas, así que marketing no necesita licencia de Salesforce.
 - **Balneario de Panticosa**: Gran Hotel y Hotel Continental (ocupación, precio medio, ingresos, personas alojadas, reservas futuras), resultados por local, y consumos separados en spa, comida, bebida y punto de venta (tienda): lo más y lo menos vendido, por margen, cuándo se consume por día de la semana y hora, y recomendaciones de stock, turnos y ofertas.
 - **Análisis Promociones**: la calculadora de promociones (ver abajo), dentro del panel.
-- **Bodegas**: Enate, Laus y Las Moradas de San Martín por separado, con ventas por referencia, por provincia, exportación por país y producto, comparación con años anteriores y venta online, visitas y tienda.
+- **Bodegas**: Enate, Laus y Las Moradas de San Martín por separado, con ventas por referencia, por provincia, exportación por país y producto, comparación con años anteriores y venta online, visitas y tienda. Con el botón «Por distribuidor» se cambia a la vista de distribuidores: mapa de actuación por provincias a la izquierda y, a la derecha, la ficha del distribuidor elegido (zona, facturación, botellas, cuota, canales hostelería / tiendas / supermercados, evolución frente a años anteriores, provincias y productos que vende), además de la tabla de todos los distribuidores. Los distribuidores son empresas reales de cada zona; su relación con las bodegas, las zonas y las cifras son simuladas.
 
 **Filtro de fechas** (arriba de todos los paneles): año en curso (por defecto), trimestre, mes o fechas a elegir; comparado con el mismo periodo del año pasado, el año pasado entero, los mismos días del mes pasado o el mes pasado entero (estas dos, para periodos de un mes o menos); y de 1 a 5 años anteriores en los gráficos y en la progresión por años para ver la progresión. El filtro queda en el enlace, así que se puede compartir. Las cifras salen de series diarias desde enero de 2021 (`dashboard/data/series.json`, creadas con `scripts/generar_series.py` a partir de los datos de `scripts/generar_datos.py`); el panel suma los días del periodo elegido.
 
@@ -67,9 +67,11 @@ scripts/
   generar_series.py          series diarias para el filtro de fechas
   generar_consumos.py        tipo de consumo, coste y horario de cada producto del balneario
   generar_marketing.py       datos simulados de la herramienta de marketing
+  generar_distribuidores.py  distribuidores de las bodegas, sus zonas y canales
+  preparar_mapa_provincias.py simplifica el mapa de provincias (límites del IGN vía click_that_hood, licencia MIT)
 ```
 
-Para regenerar los datos: `python3 scripts/generar_datos.py && python3 scripts/generar_productos_hotel.py && python3 scripts/generar_series.py && python3 scripts/generar_consumos.py && python3 scripts/generar_marketing.py` (en ese orden; salen siempre las mismas cifras). Si cambias los datos, sube el número de versión (`VERSION` en `dash-shim.js` y los `?v=` de los `index.html`) para que los navegadores no usen copias antiguas.
+Para regenerar los datos: `python3 scripts/generar_datos.py && python3 scripts/generar_productos_hotel.py && python3 scripts/generar_series.py && python3 scripts/generar_consumos.py && python3 scripts/generar_marketing.py && python3 scripts/generar_distribuidores.py` (en ese orden; salen siempre las mismas cifras). Si cambias los datos, sube el número de versión (`VERSION` en `dash-shim.js` y los `?v=` de los `index.html`) para que los navegadores no usen copias antiguas.
 
 ### Pasar a datos reales
 

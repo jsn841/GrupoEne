@@ -138,6 +138,40 @@
     return out;
   }
   P.refs = refs;
+  // ventas nacionales por distribuidor: provincia de cada referencia → distribuidor(es) de esa provincia
+  function dist(a, b, bf) {
+    const DS = S.reparto.dist, R = S.reparto.prov;
+    const out = DS.items.map(() => ({ fa: 0, bot: 0, bb: 0, ref: new Map(), prov: {}, can: [0, 0, 0] }));
+    for (const [y, x, z] of byYear(a, b)) {
+      const infl = Math.pow(1.025, 2026 - +y);
+      S.meta.bodegas.forEach((_, bi) => {
+        if (bf != null && bf !== bi) return;
+        const byRef = new Map(refs(bi, x, z).map((r) => [r.j, r]));
+        const adj = DS.ajuste_canal[bi];
+        R.items.forEach((it, j) => {
+          const r = byRef.get(it.r); if (!r || !r.fa) return;
+          const f = (r.fa - r.exp) * R.fa[y][j]; if (!f) return;
+          const bot = f / (it.eur_bot / infl), m = r.bb / r.fa;
+          const dest = it.provincia === 'Resto de España' ? Object.entries(DS.resto[y][bi]) : [[it.provincia, 1]];
+          for (const [p, w] of dest) {
+            for (const [d, sh] of DS.cobertura[p] || []) {
+              const k = w * sh[y]; if (!k) continue;
+              const o = out[d], ff = f * k, bb = bot * k;
+              o.fa += ff; o.bot += bb; o.bb += ff * m;
+              const e = o.ref.get(it.r) || { fa: 0, bot: 0 }; e.fa += ff; e.bot += bb; o.ref.set(it.r, e);
+              const q = o.prov[p] || (o.prov[p] = { fa: 0, bot: 0 }); q.fa += ff; q.bot += bb;
+              const c = DS.items[d].canales[y], cw = c.map((v, i) => v * adj[i]), ct = cw[0] + cw[1] + cw[2];
+              for (let i = 0; i < 3; i++) o.can[i] += ff * cw[i] / ct;
+            }
+          }
+        });
+      });
+    }
+    return out;
+  }
+  P.dist = dist;
+  P.distInfo = () => S.reparto.dist;
+  P.refItems = () => S.reparto.refs.items;
   function bodega(bi, a, b) {
     const rr = refs(bi, a, b), d = bodegaDirect(bi, a, b);
     const may = rr.reduce((t, r) => t + r.fa, 0);

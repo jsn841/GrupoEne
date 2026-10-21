@@ -423,6 +423,12 @@
   // ---------- BODEGAS ----------
   const TIPOV = { Tinto: 0, Blanco: 2, Rosado: 4, Dulce: 3, Frizzante: 5 };
   function drawBodegas() {
+    const vista = P().bvista || 'bodega';
+    $$('#seg-bvista button').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.v === vista)));
+    $('#b-clasica').hidden = vista === 'dist';
+    $('#b-dist').hidden = vista !== 'dist';
+    $('#seg-bodega').hidden = vista === 'dist';
+    if (vista === 'dist') { if (window.DIST) DIST.draw({ ok, failed, P, setP, NZ, C }); return; }
     const b = P().bodega || 'Enate';
     $$('#seg-bodega button').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.v === b)));
     const wb = NZ.where({ bodega: b });
@@ -555,6 +561,8 @@
   }
   if (window.CONS) CONS.wire(setP);
   if (window.MKT) MKT.wire(setP);
+  if (window.DIST) DIST.wire(setP);
+  $$('#seg-bvista button').forEach((b) => b.addEventListener('click', () => setP({ bvista: b.dataset.v })));
   dash.onData(draw);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => NZ.slides());
 
