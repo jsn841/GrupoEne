@@ -111,6 +111,8 @@
     const yr = d3.scaleLinear().domain([0, d3.max(R) || 1]).nice(4).range([mid - 1, m.t]);
     const yl = d3.scaleLinear().domain([0, d3.max(L) || 1]).nice(4).range([mid + 1, m.t + ih]);
     const svg = d3.select(box).append('svg').attr('width', W).attr('height', H).attr('class', 'nz-svg nz-ciclo');
+    // reservas y leads son recuentos: enteros, salvo en «por cada 100 viviendas» (proporción)
+    const fNum = (v) => (v == null ? '—' : per100 ? fmt1(v) : Math.round(v).toLocaleString('es-ES'));
     // fases sombreadas
     const hx = hit.map((h) => Math.max(m.l, Math.min(m.l + iw, xc(h.o))));
     const bands = hx.map((x, i) => [x, i + 1 < hx.length ? hx[i + 1] : m.l + iw]);
@@ -120,7 +122,7 @@
       if (b - a > 54) svg.append('text').attr('x', (a + b) / 2).attr('y', m.t + ih - 6).attr('text-anchor', 'middle').attr('class', 'nz-tick nz-fase-t').text(FASES[i]);
     });
     // rejilla y eje Y solo a la derecha
-    yr.ticks(4).forEach((t) => { if (!t) return; svg.append('line').attr('x1', m.l).attr('x2', m.l + iw).attr('y1', yr(t)).attr('y2', yr(t)).attr('class', 'nz-grid'); svg.append('text').attr('x', m.l + iw + 6).attr('y', yr(t) + 4).attr('class', 'nz-tick').text(fmt1(t)); });
+    (per100 ? yr.ticks(4) : yr.ticks(4).filter(Number.isInteger)).forEach((t) => { if (!t) return; svg.append('line').attr('x1', m.l).attr('x2', m.l + iw).attr('y1', yr(t)).attr('y2', yr(t)).attr('class', 'nz-grid'); svg.append('text').attr('x', m.l + iw + 6).attr('y', yr(t) + 4).attr('class', 'nz-tick').text(fNum(t)); });
     yl.ticks(4).forEach((t) => { if (!t) return; svg.append('line').attr('x1', m.l).attr('x2', m.l + iw).attr('y1', yl(t)).attr('y2', yl(t)).attr('class', 'nz-grid'); svg.append('text').attr('x', m.l + iw + 6).attr('y', yl(t) + 4).attr('class', 'nz-tick').text(NZ.numC(t)); });
     svg.append('text').attr('x', m.l + iw + 6).attr('y', m.t - 8).attr('class', 'nz-tick nz-axt').text('Reservas ↑');
     svg.append('text').attr('x', m.l + iw + 6).attr('y', mid + 14).attr('class', 'nz-tick nz-axt').text('Leads ↓');
@@ -154,7 +156,7 @@
         const i = xs.indexOf(d);
         const fase = FASES[Math.max(0, hit.filter((h) => h.o <= d + 0.5).length - 1)] || FASES[0];
         tip.show(ev, [one ? mlab(s0 + d) + ' · mes ' + d + ' desde el suelo' : 'Mes ' + d + ' desde la compra del suelo', fase,
-          { color: C[0], text: 'Reservas: ' + fmt1(R[i]) + (per100 ? ' por 100 viv.' : '') }, { color: C[1], text: 'Leads: ' + fmt1(L[i]) + (per100 ? ' por 100 viv.' : '') }, ...(one ? [] : [N[i] + ' promociones en la media'])]);
+          { color: C[0], text: 'Reservas: ' + fNum(R[i]) + (per100 ? ' por 100 viv.' : '') }, { color: C[1], text: 'Leads: ' + fNum(L[i]) + (per100 ? ' por 100 viv.' : '') }, ...(one ? [] : [N[i] + ' promociones en la media'])]);
       })
       .on('mouseleave', () => tip.hide());
   }
