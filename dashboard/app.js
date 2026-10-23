@@ -164,7 +164,48 @@
   $('#sel-pais').addEventListener('change', (e) => setP({ pais: e.target.value || null }));
 
   // ---------- INICIO ----------
+  function drawObjetivos() {
+    const obj = ok('objetivos'), meta = ok('objetivos_meta');
+    const box = $('#obj-cards'); if (!box) return;
+    if (!obj) { if (NZ.fail(box, dash.data('objetivos').status)) return; box.replaceChildren(); return; }
+    if (meta && meta[0]) $('#n-objetivos').textContent = meta[0].anio + ' · ' + meta[0].transcurrido + ' % del año transcurrido';
+    const COL = { Inmobiliario: 0, Hotelero: 1, Bodegas: 2 };
+    box.replaceChildren();
+    obj.forEach((o) => {
+      // semáforo por la proyección a cierre
+      const cls = o.avance_proy >= 1 ? 'ok' : o.avance_proy >= 0.9 ? 'warn' : 'bad';
+      const sem = cls === 'ok' ? 'Va a cumplir' : cls === 'warn' ? 'Justo' : 'Se queda corto';
+      const el = NZ.el('div', 'nz-obj ' + cls);
+      const head = NZ.el('div', 'nz-obj-h');
+      const nm = NZ.el('b', null, o.negocio); nm.style.color = C()[COL[o.negocio]];
+      head.append(nm, NZ.el('span', 'nz-obj-sem', sem));
+      el.append(head);
+      el.append(NZ.el('div', 'nz-obj-big', NZ.eurC(o.real)));
+      el.append(NZ.el('div', 'nz-obj-sub', 'de ' + NZ.eurC(o.objetivo) + ' · ' + NZ.pct(o.avance, 0) + ' del objetivo'));
+      // barra: relleno = avance real, marca = proyección a cierre
+      const bar = NZ.el('div', 'nz-obj-bar');
+      const fill = NZ.el('div', 'nz-obj-fill'); fill.style.width = Math.max(0, Math.min(100, o.avance * 100)) + '%';
+      const proj = NZ.el('div', 'nz-obj-proj'); proj.style.left = Math.max(0, Math.min(100, o.avance_proy * 100)) + '%';
+      bar.append(fill, proj); el.append(bar);
+      el.append(scaleRow(NZ, o));
+      // margen
+      const rM = NZ.el('div', 'nz-obj-row');
+      rM.append(NZ.el('span', null, 'Margen'), rowVal(NZ, NZ.pct(o.margen) + ' / ' + NZ.pct(o.margen_obj), o.cumple_margen));
+      el.append(rM);
+      // KPI
+      const rK = NZ.el('div', 'nz-obj-row');
+      const krReal = o.kpi_pct ? NZ.pct(o.kpi_real, 0) : NZ.int(o.kpi_real);
+      const krObj = o.kpi_pct ? NZ.pct(o.kpi_obj, 0) : NZ.int(o.kpi_obj);
+      rK.append(NZ.el('span', null, o.kpi), rowVal(NZ, krReal + ' / ' + krObj, o.kpi_avance >= 1));
+      el.append(rK);
+      box.appendChild(el);
+    });
+  }
+  function scaleRow(NZ, o) { const d = NZ.el('div', 'nz-obj-scale'); d.append(NZ.el('span', null, 'hoy ' + NZ.pct(o.avance, 0)), NZ.el('span', null, 'proyección ' + NZ.pct(o.avance_proy, 0)), NZ.el('span', null, 'objetivo')); return d; }
+  function rowVal(NZ, text, good) { const b = NZ.el('b', good ? 'ok' : 'bad', text); return b; }
+
   function drawInicio() {
+    drawObjetivos();
     // real-estate widget with three views
     const vista = P().inmo_vista || 'escriturado';
     const V = {

@@ -296,6 +296,21 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
 .nz-res-txt { font-size: var(--cds-font-size-caption); margin: 5px 0; }
 .nz-res-chips { display: flex; flex-wrap: wrap; gap: 4px; }
 #res-list { max-height: 30rem; overflow: auto; }
+.nz-objs { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); gap: var(--cds-gap-md); margin-bottom: var(--cds-gap-md); }
+.nz-obj { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); border-top: 3px solid var(--color-border-line); }
+.nz-obj.ok { border-top-color: var(--color-ok); } .nz-obj.warn { border-top-color: var(--color-warn); } .nz-obj.bad { border-top-color: var(--color-bad); }
+.nz-obj-h { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.nz-obj-h b { font-size: 15px; } .nz-obj-sem { font-size: var(--cds-font-size-caption); font-weight: var(--cds-font-weight-medium); }
+.nz-obj.ok .nz-obj-sem { color: var(--color-ok); } .nz-obj.warn .nz-obj-sem { color: var(--color-warn); } .nz-obj.bad .nz-obj-sem { color: var(--color-bad); }
+.nz-obj-big { font-family: var(--font-anthropic-serif); font-size: 26px; margin: 6px 0 2px; }
+.nz-obj-sub { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin-bottom: 10px; }
+.nz-obj-bar { position: relative; height: 10px; border-radius: 5px; background: color-mix(in srgb, var(--color-fg) 8%, transparent); overflow: visible; margin: 4px 0 2px; }
+.nz-obj-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 5px; }
+.nz-obj.ok .nz-obj-fill { background: var(--color-ok); } .nz-obj.warn .nz-obj-fill { background: var(--color-warn); } .nz-obj.bad .nz-obj-fill { background: var(--color-bad); }
+.nz-obj-proj { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--color-fg); }
+.nz-obj-scale { display: flex; justify-content: space-between; font-size: 11px; color: var(--color-fg-muted); margin-bottom: 10px; }
+.nz-obj-row { display: flex; justify-content: space-between; font-size: var(--cds-font-size-caption); padding: 3px 0; border-top: 1px solid color-mix(in srgb, var(--color-border-line) 60%, transparent); }
+.nz-obj-row b.ok { color: var(--color-ok); } .nz-obj-row b.bad { color: var(--color-bad); }
 @keyframes nzfade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 </style>
 
@@ -336,6 +351,10 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
       <div class="nz-tile"><div class="nz-tl">Bodegas</div><div class="nz-big dash-skeleton" data-source="grupo_resumen" data-field="facturacion" data-where="negocio=Bodegas">—</div><div class="nz-meta"><span class="dash-skeleton" data-source="grupo_resumen" data-field="variacion" data-where="negocio=Bodegas">—</span><span>BB <span class="dash-skeleton" data-source="grupo_resumen" data-field="beneficio_bruto" data-where="negocio=Bodegas">—</span> · margen <span class="dash-skeleton" data-source="grupo_resumen" data-field="margen" data-where="negocio=Bodegas">—</span></span></div></div>
     </div>
     <p class="nz-note">BB = beneficio bruto: ventas menos el coste directo de lo vendido (obra y suelo en viviendas; habitaciones, comida y bebida en el hotel; uva, elaboración y botella en el vino). En inmobiliario se factura al escriturar, por eso va a saltos.</p>
+
+    <h2 class="nz-h2" id="h-objetivos">Objetivos del año <small id="n-objetivos"></small></h2>
+    <p class="nz-note">Facturación real del 1 de enero a hoy frente al objetivo del año, con la proyección a cierre si se mantiene el ritmo. No depende del filtro de fechas. Verde: va a cumplir; ámbar: justo; rojo: se queda corto.</p>
+    <div class="nz-objs" id="obj-cards"></div>
 
     <div class="nz-card" id="card-prog" style="margin-bottom:var(--cds-gap-md)">
       <h3>Progresión por años</h3>
