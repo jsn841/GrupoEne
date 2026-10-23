@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400&display=swap" rel="stylesheet">
-<script src="vendor/d3.min.js?v=2026-10-23g"></script>
+<script src="vendor/d3.min.js?v=2026-10-24a"></script>
 <script>
 try { var t = localStorage.getItem('nz-theme'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
 </script>
@@ -478,7 +478,7 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
       <p class="nz-note">Facturación = precio de las viviendas vendidas y reservadas. Pulsa una fila para ver el detalle por vivienda.</p>
       <div class="nz-tablebox">
         <table class="nz-t" id="t-promos-curso" data-source="promociones" data-row-key="id">
-          <thead><tr><th data-field="promocion">Promoción</th><th data-field="ciudad">Ciudad</th><th data-field="entrega">Entrega</th><th data-field="viviendas">Viviendas</th><th data-field="vendidas">Vendidas</th><th data-field="reservadas">Reservadas</th><th data-field="disponibles">Disponibles</th><th data-field="pct_comercializado">Comercializado</th><th data-field="facturacion">Facturación</th><th data-field="valor_disponible">Por vender</th><th data-field="precio_medio">Precio medio</th></tr></thead>
+          <thead><tr><th data-field="promocion">Promoción</th><th data-field="ciudad">Ciudad</th><th data-field="entrega">Entrega</th><th data-field="viviendas">Viviendas</th><th data-field="vendidas">Vendidas</th><th data-field="reservadas">Reservadas</th><th data-field="disponibles">Disponibles</th><th data-field="pct_comercializado">Comercializado</th><th data-field="facturacion">Facturación</th><th data-field="valor_disponible">Por vender</th><th data-field="precio_medio">Precio medio</th><th data-field="constructora_n">Constructora</th><th data-field="banco_n">Banco</th><th data-field="prestamo_vivo">Préstamo dispuesto</th><th data-field="avance_obra">Avance obra</th></tr></thead>
         </table>
       </div>
     </div>
@@ -497,12 +497,14 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
         <div class="nz-tile"><div class="nz-tl">Viviendas</div><div class="nz-big dash-skeleton" id="pt-viv">—</div><div class="nz-meta" id="pt-loc"></div></div>
         <div class="nz-tile"><div class="nz-tl">Vendidas · reservadas</div><div class="nz-big dash-skeleton"><span id="pt-ven">—</span> · <span id="pt-res">—</span></div><div class="nz-meta">disponibles: <span id="pt-dis">—</span></div></div>
         <div class="nz-tile"><div class="nz-tl">Facturación</div><div class="nz-big dash-skeleton" id="pt-fac">—</div><div class="nz-meta">precio medio <span id="pt-pm">—</span></div></div>
+        <div class="nz-tile"><div class="nz-tl">Constructora · banco</div><div class="nz-big" id="pt-cons" style="font-size:18px">—</div><div class="nz-meta" id="pt-banco"></div></div>
+        <div class="nz-tile"><div class="nz-tl">Incidencias</div><div class="nz-big" id="pt-inc">—</div><div class="nz-meta" id="pt-inc-m"></div></div>
       </div>
       <div class="nz-tl">Reservas por mes de esta promoción</div>
       <div class="nz-chart nz-short" id="ch-promo-res" data-source="series"></div>
       <div class="nz-tablebox nz-tall" style="margin-top:var(--cds-gap-md)">
         <table class="nz-t" id="t-vivs" data-source="viviendas" data-row-key="id">
-          <thead><tr><th data-field="vivienda">Vivienda</th><th data-field="tipologia">Tipología</th><th data-field="dormitorios">Dorm.</th><th data-field="m2">m²</th><th data-field="precio">Precio</th><th data-field="estado">Estado</th><th data-field="fecha_reserva">Fecha de reserva</th></tr></thead>
+          <thead><tr><th data-field="vivienda">Vivienda</th><th data-field="tipologia">Tipología</th><th data-field="dormitorios">Dorm.</th><th data-field="m2">m²</th><th data-field="precio">Precio</th><th data-field="estado">Estado</th><th data-field="fecha_reserva">Fecha de reserva</th><th data-field="incidencias">Incidencias</th></tr></thead>
         </table>
       </div>
     </div>
@@ -512,9 +514,53 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
       <p class="nz-note">Todas al 100&nbsp;% vendidas y escrituradas. Facturación = suma de los precios de escritura.</p>
       <div class="nz-tablebox">
         <table class="nz-t" id="t-promos-entregadas" data-source="promociones" data-row-key="id">
-          <thead><tr><th data-field="promocion">Promoción</th><th data-field="zona">Zona</th><th data-field="ciudad">Ciudad</th><th data-field="entrega">Entrega</th><th data-field="viviendas">Viviendas</th><th data-field="facturacion_escriturada">Facturación</th><th data-field="precio_medio">Precio medio</th></tr></thead>
+          <thead><tr><th data-field="promocion">Promoción</th><th data-field="zona">Zona</th><th data-field="ciudad">Ciudad</th><th data-field="entrega">Entrega</th><th data-field="viviendas">Viviendas</th><th data-field="constructora_n">Constructora</th><th data-field="banco_n">Banco</th><th data-field="coste_m2">Obra €/m²</th><th data-field="incidencias">Incidencias</th><th data-field="facturacion_escriturada">Facturación</th><th data-field="precio_medio">Precio medio</th></tr></thead>
         </table>
       </div>
+    </div>
+
+    <h2 class="nz-h2" id="h-bancos">Financiación por banco</h2>
+    <p class="nz-note">Préstamo promotor de cada promoción: lo que concede el banco y lo que ya se ha dispuesto (la deuda viva). Al escriturar, los compradores se subrogan o se cancela, por eso las entregadas ya no tienen deuda viva. No depende del filtro de fechas.</p>
+    <div class="nz-tiles" id="banco-tiles"></div>
+    <div class="nz-grid2">
+      <div class="nz-card"><h3>Dinero prestado por banco</h3><p class="nz-note">Promociones en curso.</p><div class="nz-legend" id="lg-banco"></div><div class="nz-chart" id="ch-banco"></div></div>
+      <div class="nz-card"><h3>Detalle por banco</h3><p class="nz-note">Cuota = parte de la deuda viva del grupo con ese banco.</p>
+        <div class="nz-tablebox"><table class="nz-t" id="t-bancos" data-row-key="id"><thead><tr><th data-field="banco">Banco</th><th data-field="promociones">Promociones</th><th data-field="en_curso">En curso</th><th data-field="concedido">Concedido (total)</th><th data-field="concedido_curso">Concedido en curso</th><th data-field="dispuesto">Dispuesto</th><th data-field="pct_dispuesto">% dispuesto</th><th data-field="cuota">Cuota</th><th data-field="tipo">Tipo medio</th></tr></thead></table></div></div>
+    </div>
+
+    <h2 class="nz-h2" id="h-cons">Constructoras</h2>
+    <p class="nz-note">Coste de la obra por m² construido (con zonas comunes y garajes), al precio de cada obra. Incidencias por cada 100 viviendas entregadas o en pre-entrega. Pulsa una constructora para ver sus incidencias abajo.</p>
+    <div class="nz-grid2">
+      <div class="nz-card"><h3>Coste medio por m²</h3><p class="nz-note">A la derecha, los m² construidos con cada una.</p><div class="nz-chart" id="ch-cons"></div></div>
+      <div class="nz-card"><h3>Incidencias por cada 100 viviendas</h3><p class="nz-note">Color: verde si resuelve el 80 % o más dentro de plazo; ámbar del 65 % al 80 %; rojo por debajo.</p><div class="nz-chart" id="ch-cons-inc"></div></div>
+    </div>
+    <div class="nz-card" style="margin-bottom:var(--cds-gap-md)">
+      <h3>Detalle por constructora</h3>
+      <div class="nz-tablebox"><table class="nz-t" id="t-cons" data-row-key="id"><thead><tr><th data-field="constructora">Constructora</th><th data-field="promociones">Promociones</th><th data-field="en_curso">En curso</th><th data-field="viviendas">Viviendas</th><th data-field="m2">m² construidos</th><th data-field="coste">Coste de obra</th><th data-field="coste_m2">€/m²</th><th data-field="incidencias">Incidencias</th><th data-field="por100">Por 100 viv.</th><th data-field="sla">En SLA</th><th data-field="dias">Días medios</th><th data-field="abiertas">Abiertas</th></tr></thead></table></div>
+    </div>
+
+    <h2 class="nz-h2" id="h-inc">Incidencias y plazos de resolución (SLA) <small class="pl-cur"></small></h2>
+    <p class="nz-note">Incidencias de posventa en viviendas entregadas y repasos de pre-entrega. El SLA es el plazo máximo según la gravedad: urgente 2 días, alta 7, media 15 y baja 30. Las cifras del periodo cuentan las incidencias abiertas (dadas de alta) en el periodo elegido.</p>
+    <div class="nz-controls">
+      <select class="nz-select" id="sel-inc-cons" aria-label="Constructora"></select>
+      <select class="nz-select" id="sel-inc-promo" aria-label="Promoción"></select>
+    </div>
+    <div class="nz-tiles" id="inc-tiles"></div>
+    <div class="nz-grid2">
+      <div class="nz-card"><h3>Incidencias nuevas por mes</h3><p class="nz-note">El periodo elegido en cada año.</p><div class="nz-legend" id="lg-inc-mes"></div><div class="nz-chart" id="ch-inc-mes"></div></div>
+      <div class="nz-card"><h3>Por tipo de incidencia</h3><p class="nz-note">A la derecha, días medios hasta resolverla y % dentro de plazo.</p><div class="nz-chart" id="ch-inc-cat"></div></div>
+    </div>
+    <div class="nz-grid2">
+      <div class="nz-card"><h3>Cumplimiento del SLA por gravedad</h3>
+        <div class="nz-tablebox"><table class="nz-t" id="t-sla" data-row-key="id"><thead><tr><th data-field="gravedad">Gravedad</th><th data-field="sla_dias">Plazo (SLA)</th><th data-field="n">Incidencias</th><th data-field="dias">Días medios</th><th data-field="sla">En plazo</th><th data-field="abiertas">Abiertas ahora</th></tr></thead></table></div></div>
+      <div class="nz-card"><h3>Por promoción</h3><p class="nz-note">Pulsa una fila para filtrar.</p><div class="nz-controls"><span class="nz-count" id="c-inc-promo"></span></div>
+        <div class="nz-tablebox"><table class="nz-t" id="t-inc-promo" data-row-key="id"><thead><tr><th data-field="promocion">Promoción</th><th data-field="constructora">Constructora</th><th data-field="n">Incidencias</th><th data-field="por_viv">Por vivienda</th><th data-field="abiertas">Abiertas</th><th data-field="sla">En plazo</th><th data-field="dias">Días medios</th></tr></thead></table></div></div>
+    </div>
+    <div class="nz-card">
+      <h3>Incidencias abiertas ahora</h3>
+      <p class="nz-note">De la más antigua a la más reciente. «Fuera de plazo» = ya ha pasado el SLA de su gravedad.</p>
+      <div class="nz-controls"><span class="nz-count" id="c-inc-abiertas"></span></div>
+      <div class="nz-tablebox"><table class="nz-t" id="t-inc-abiertas" data-row-key="id"><thead><tr><th data-field="apertura">Abierta el</th><th data-field="dias">Días</th><th data-field="promocion">Promoción</th><th data-field="vivienda">Vivienda</th><th data-field="constructora_n">Constructora</th><th data-field="categoria">Tipo</th><th data-field="gravedad">Gravedad</th><th data-field="sla_dias">SLA</th><th data-field="dentro_sla">Estado</th></tr></thead></table></div>
     </div>
   </section>
 
@@ -971,16 +1017,17 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
 
 </div>
 <script src="vendor/pdf-lib.min.js"></script>
-<script src="informe.js?v=2026-10-23g"></script>
-<script src="dash-shim.js?v=2026-10-23g"></script>
-<script src="periodo.js?v=2026-10-23g"></script>
-<script src="lib.js?v=2026-10-23g"></script>
-<script src="consumos.js?v=2026-10-23g"></script>
-<script src="hotelextra.js?v=2026-10-23g"></script>
-<script src="marketing.js?v=2026-10-23g"></script>
-<script src="distribuidores.js?v=2026-10-23g"></script>
-<script src="ciclo.js?v=2026-10-23g"></script>
-<script src="app.js?v=2026-10-23g"></script>
-<script src="theme.js?v=2026-10-23g"></script>
+<script src="informe.js?v=2026-10-24a"></script>
+<script src="dash-shim.js?v=2026-10-24a"></script>
+<script src="periodo.js?v=2026-10-24a"></script>
+<script src="lib.js?v=2026-10-24a"></script>
+<script src="consumos.js?v=2026-10-24a"></script>
+<script src="hotelextra.js?v=2026-10-24a"></script>
+<script src="marketing.js?v=2026-10-24a"></script>
+<script src="distribuidores.js?v=2026-10-24a"></script>
+<script src="ciclo.js?v=2026-10-24a"></script>
+<script src="obra.js?v=2026-10-24a"></script>
+<script src="app.js?v=2026-10-24a"></script>
+<script src="theme.js?v=2026-10-24a"></script>
 </body>
 </html>

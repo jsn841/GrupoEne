@@ -59,6 +59,25 @@
   const eurC = (v) => NZ().eurC(v), eur = (v) => NZ().eur(v), int = (v) => NZ().int(v), pct = (v, d) => NZ().pct(v, d);
 
   const MARGEN_INMO = 0.23;
+  // constructoras, bancos e incidencias (obra.json)
+  function obraRes() {
+    const o = data('obra'), promos = data('promociones') || [];
+    if (!o) return null;
+    const pr = Object.fromEntries(promos.map((p) => [p.id, p]));
+    const res = (rows) => { const c = rows.filter((x) => x.estado === 'Cerrada'); return { n: rows.length, ab: rows.length - c.length, sla: rows.length ? rows.filter((x) => x.dentro_sla).length / rows.length : null, dias: c.length ? c.reduce((t, x) => t + x.dias, 0) / c.length : null, fuera: rows.filter((x) => x.estado === 'Abierta' && !x.dentro_sla).length }; };
+    const ids = Object.keys(o.promos);
+    const bancos = o.bancos.map((b) => { const ps = ids.filter((id) => o.promos[id].banco === b.id); const cur = ps.filter((id) => (pr[id] || {}).estado === 'En curso').map((id) => o.promos[id]); const all = ps.map((id) => o.promos[id]);
+      const conc = all.reduce((t, x) => t + x.prestamo_concedido, 0); return { banco: b.nombre, n: ps.length, cur: cur.length, conc, concCur: cur.reduce((t, x) => t + x.prestamo_concedido, 0), vivo: cur.reduce((t, x) => t + x.prestamo_vivo, 0), tipo: conc ? all.reduce((t, x) => t + x.tipo_interes * x.prestamo_concedido, 0) / conc : null }; }).filter((b) => b.n);
+    const cons = o.constructoras.map((c) => { const ps = ids.filter((id) => o.promos[id].constructora === c.id); const m2 = ps.reduce((t, id) => t + o.promos[id].m2_construidos, 0), coste = ps.reduce((t, id) => t + o.promos[id].coste_obra, 0);
+      const inc = o.incidencias.filter((x) => x.constructora === c.id), vivInc = ps.filter((id) => o.incidencias.some((x) => x.promo_id === id)).reduce((t, id) => t + ((pr[id] || {}).viviendas || 0), 0);
+      const r = res(inc); return { cons: c.nombre, promos: ps.length, m2, coste_m2: m2 ? coste / m2 : null, por100: vivInc ? inc.length / vivInc * 100 : null, inc: r.n, ab: r.ab, sla: r.sla, dias: r.dias }; }).filter((c) => c.promos);
+    const y0 = o.hoy.slice(0, 4) + '-01-01', anio = o.incidencias.filter((x) => x.apertura >= y0);
+    const porGrav = ['Urgente', 'Alta', 'Media', 'Baja'].map((g) => ({ g, plazo: o.sla[g], ...res(anio.filter((x) => x.gravedad === g)), abiertas: o.incidencias.filter((x) => x.gravedad === g && x.estado === 'Abierta').length }));
+    const info = (id) => { const x = o.promos[id]; if (!x) return null; const inc = o.incidencias.filter((i) => i.promo_id === id); return { ...x, cons: (o.constructoras.find((c) => c.id === x.constructora) || {}).nombre, banco: (o.bancos.find((b) => b.id === x.banco) || {}).nombre, ...res(inc) }; };
+    return { bancos, cons, anio: res(anio), total: res(o.incidencias), porGrav, info, vivo: bancos.reduce((t, b) => t + b.vivo, 0), concCur: bancos.reduce((t, b) => t + b.concCur, 0), anioTxt: o.hoy.slice(0, 4) };
+  }
+  const num1 = (v) => (v == null || isNaN(v) ? '—' : v.toFixed(1).replace('.', ','));
+  const slaCol = (v) => (v == null ? C.mute : v >= 0.8 ? C.ok : v >= 0.65 ? C.warn : C.bad);
   const varTxt = (v) => ({ v: (v >= 0 ? '+' : '') + pct(v), c: v >= 0 ? C.ok : C.bad });
   const anio = (e) => String(e).slice(0, 4);
 
@@ -101,7 +120,19 @@
        ['Vendidas (contrato)', int(ik.vendidas), 'Reservadas', int(ik.reservadas)],
        ['Disponibles', int(ik.disponibles), 'Margen', pct(I.margen)],
        ['Cartera pendiente de escriturar', eurC(ik.cartera_pendiente), 'Beneficio bruto', eurC(I.beneficio_bruto)]]
+        .concat((() => { const ob = obraRes(); if (!ob) return [];
+          return [['Deuda viva (préstamo promotor)', eurC(ob.vivo), 'Concedido en curso', eurC(ob.concCur)],
+            ['Incidencias abiertas ahora', { v: int(ob.total.ab) + ' (' + int(ob.total.fuera) + ' fuera de plazo)', c: ob.total.fuera ? C.bad : C.ink }, 'Resueltas en SLA (' + ob.anioTxt + ')', { v: pct(ob.anio.sla, 0), c: slaCol(ob.anio.sla) }],
+            ['Días medios de resolución (' + ob.anioTxt + ')', num1(ob.anio.dias) + ' días', 'Incidencias nuevas (' + ob.anioTxt + ')', int(ob.anio.n)]]; })())
     );
+    { const ob = obraRes(); if (ob) {
+      d.h3('Constructoras y bancos');
+      d.table([{ title: 'Constructora', w: 26 }, { title: 'Promos', w: 9, align: 'r' }, { title: '€/m²', w: 11, align: 'r' }, { title: 'Incid./100 viv.', w: 15, align: 'r' }, { title: 'En SLA', w: 11, align: 'r' }, { title: 'Días medios', w: 13, align: 'r' }, { title: 'Abiertas', w: 11, align: 'r' }],
+        ob.cons.map((c) => [c.cons, int(c.promos), int(c.coste_m2) + ' €', num1(c.por100), { v: pct(c.sla, 0), c: slaCol(c.sla) }, num1(c.dias), int(c.ab)]));
+      d.skip(4);
+      d.table([{ title: 'Banco', w: 26 }, { title: 'Promos', w: 9, align: 'r' }, { title: 'En curso', w: 10, align: 'r' }, { title: 'Concedido en curso', w: 18, align: 'r' }, { title: 'Deuda viva', w: 16, align: 'r' }, { title: 'Tipo medio', w: 12, align: 'r' }],
+        ob.bancos.sort((a, b) => b.vivo - a.vivo).map((b) => [b.banco, int(b.n), int(b.cur), eurC(b.concCur), eurC(b.vivo), b.tipo == null ? '—' : pct(b.tipo / 100, 2)]));
+    } }
     d.h3('Promociones en curso (por entrega)');
     const pr = promos.map((p) => ({ ...p, esp: p.facturacion + p.valor_disponible })).sort((a, b) => anio(a.entrega).localeCompare(anio(b.entrega)) || b.esp - a.esp);
     d.table(
@@ -168,15 +199,41 @@
       { label: 'Facturación esperada', value: eurC(T.esp), sub: 'viviendas + garajes + locales' },
       { label: 'Beneficio esperado', value: eurC(T.benef), sub: 'margen ' + pct(MARGEN_INMO, 0) },
     ]);
+    const OB = obraRes();
     d.h2('Detalle por promoción');
     const cols = [{ title: 'Producto', w: 20 }, { title: 'Total', w: 9, align: 'r' }, { title: 'Vend.', w: 9, align: 'r' }, { title: 'Res.', w: 9, align: 'r' }, { title: 'Disp.', w: 9, align: 'r' }, { title: '% com.', w: 11, align: 'r' }, { title: 'Precio medio', w: 16, align: 'r' }, { title: 'Por vender', w: 17, align: 'r' }];
     rows.forEach((p) => {
       const P = p.productos;
       d.h3(p.promocion.replace(/^Residencial |^Edificio /, ''), p.ciudad + ' · entrega ' + anio(p.entrega) + ' · ' + eurC(p.esp) + ' esperado · benef. ' + eurC(p.benef));
+      const io = OB && OB.info(p.id);
+      if (io) { d.txt(`Constructora: ${io.cons} (${int(io.coste_m2)} €/m², obra al ${pct(io.avance_obra, 0)})  ·  Banco: ${io.banco}, préstamo ${eurC(io.prestamo_concedido)}, dispuesto ${eurC(io.prestamo_dispuesto)} al ${pct(io.tipo_interes / 100, 2)}  ·  Incidencias: ${io.n ? int(io.n) + ' (' + int(io.ab) + ' abiertas)' : 'ninguna'}`, M, d.y() - 4, { size: 7.5, color: C.mute, max: A4[0] - 2 * M }); d.skip(10); }
       const fila = (nombre, c) => [nombre, int(c.total), int(c.vendidos), int(c.reservados), int(c.disponibles), c.total ? pct(c.pct_com, 0) : '—', c.precio_medio ? eur(c.precio_medio) : '—', c.total ? eurC(c.por_vender) : '—'];
       d.table(cols, [fila('Viviendas', P.viviendas), fila('Garajes', P.garajes), fila('Locales comerciales', P.locales)]);
       d.skip(4);
     });
+    // financiación, constructoras e incidencias
+    if (OB) {
+      d.h2('Financiación por banco');
+      d.tiles([
+        { label: 'Deuda viva', value: eurC(OB.vivo), sub: 'préstamo promotor dispuesto', bar: C.neg[0] },
+        { label: 'Concedido en curso', value: eurC(OB.concCur), sub: pct(OB.concCur ? OB.vivo / OB.concCur : null, 0) + ' dispuesto' },
+        { label: 'Bancos', value: String(OB.bancos.length), sub: 'con promociones' },
+      ]);
+      d.table([{ title: 'Banco', w: 24 }, { title: 'Promos', w: 9, align: 'r' }, { title: 'En curso', w: 10, align: 'r' }, { title: 'Concedido (total)', w: 17, align: 'r' }, { title: 'Concedido en curso', w: 17, align: 'r' }, { title: 'Deuda viva', w: 15, align: 'r' }, { title: 'Tipo medio', w: 11, align: 'r' }],
+        OB.bancos.slice().sort((a, b) => b.vivo - a.vivo).map((b) => [b.banco, int(b.n), int(b.cur), eurC(b.conc), eurC(b.concCur), eurC(b.vivo), b.tipo == null ? '—' : pct(b.tipo / 100, 2)]));
+      d.h2('Constructoras');
+      d.table([{ title: 'Constructora', w: 22 }, { title: 'Promos', w: 8, align: 'r' }, { title: 'm² construidos', w: 14, align: 'r' }, { title: '€/m²', w: 10, align: 'r' }, { title: 'Incidencias', w: 11, align: 'r' }, { title: 'Por 100 viv.', w: 11, align: 'r' }, { title: 'En SLA', w: 9, align: 'r' }, { title: 'Días medios', w: 11, align: 'r' }, { title: 'Abiertas', w: 9, align: 'r' }],
+        OB.cons.slice().sort((a, b) => b.coste_m2 - a.coste_m2).map((c) => [c.cons, int(c.promos), int(c.m2), int(c.coste_m2) + ' €', int(c.inc), num1(c.por100), { v: pct(c.sla, 0), c: slaCol(c.sla) }, num1(c.dias), int(c.ab)]));
+      d.h2('Incidencias y SLA de resolución');
+      d.tiles([
+        { label: 'Abiertas ahora', value: int(OB.total.ab), sub: int(OB.total.fuera) + ' fuera de plazo', subcol: OB.total.fuera ? C.bad : C.mute },
+        { label: 'Nuevas en ' + OB.anioTxt, value: int(OB.anio.n), sub: 'posventa y pre-entrega' },
+        { label: 'Resueltas en plazo', value: pct(OB.anio.sla, 0), sub: 'en ' + OB.anioTxt, subcol: slaCol(OB.anio.sla) },
+        { label: 'Días medios', value: num1(OB.anio.dias), sub: 'hasta resolverlas' },
+      ]);
+      d.table([{ title: 'Gravedad', w: 20 }, { title: 'Plazo (SLA)', w: 14, align: 'r' }, { title: 'Incidencias ' + OB.anioTxt, w: 18, align: 'r' }, { title: 'Días medios', w: 14, align: 'r' }, { title: 'En plazo', w: 14, align: 'r' }, { title: 'Abiertas', w: 12, align: 'r' }],
+        OB.porGrav.map((g) => [g.g, g.plazo + ' días', int(g.n), num1(g.dias), { v: pct(g.sla, 0), c: slaCol(g.sla) }, int(g.abiertas)]));
+    }
     // suelos del trimestre
     if (suelos) {
       const q0 = suelos.trimestre_inicio, ana = suelos.suelos.filter((s) => s.fecha_analisis && s.fecha_analisis >= q0);

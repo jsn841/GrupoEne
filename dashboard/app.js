@@ -274,7 +274,8 @@
   }
   function drawInmo() {
     if (window.CICLO) CICLO.draw({ ok, failed, P, setP, NZ, C });
-    const promos = ok('promociones');
+    if (window.OBRA) OBRA.draw({ ok, failed, P, setP, NZ, C });
+    let promos = ok('promociones');
     const promo = P().promo;
     // map
     const mapBox = $('#ch-mapa');
@@ -301,6 +302,10 @@
       NZ.lines($('#ch-reservas-acum'), ac.xs, yearSeries(ac), { fmtY: NZ.int, xLabel: ac.label, tipTitle: ac.tip, height: 170, fmtTip: (v) => NZ.int(v) + ' viviendas' });
     }
     // tables
+    if (promos && window.OBRA && ok('obra')) {
+      OBRA.prep(ok('obra'), promos);
+      promos = promos.map((p) => ({ ...p, ...(OBRA.infoPromo(p.id) || {}) }));
+    }
     if (promos) {
       const mini = (td, r) => {
         const w = NZ.el('span', 'nz-mini');
@@ -315,9 +320,11 @@
       NZ.table($('#t-promos-curso'), promos, {
         viviendas: { num: true, fmt: NZ.int }, vendidas: { num: true, fmt: NZ.int }, reservadas: { num: true, fmt: NZ.int }, disponibles: { num: true, fmt: NZ.int },
         pct_comercializado: { num: true, render: mini }, facturacion: { num: true, fmt: NZ.eurC }, valor_disponible: { num: true, fmt: NZ.eurC }, precio_medio: { num: true, fmt: NZ.eur },
+        prestamo_vivo: { num: true, fmt: NZ.eurC }, avance_obra: { num: true, fmt: (v) => (v == null ? '—' : NZ.pct(v, 0)) },
       }, { key: 'id', filter: (r) => r.estado === 'En curso', sortField: 'facturacion', active: (r) => r.id === promo, onRow: (r) => { setP({ promo: r.id }); $('#card-vivs').scrollIntoView({ behavior: 'smooth' }); } });
       NZ.table($('#t-promos-entregadas'), promos, {
         viviendas: { num: true, fmt: NZ.int }, facturacion_escriturada: { num: true, fmt: NZ.eurC }, precio_medio: { num: true, fmt: NZ.eur },
+        coste_m2: { num: true, fmt: (v) => (v == null ? '—' : NZ.int(v) + ' €') }, incidencias: { num: true, fmt: NZ.int },
       }, { key: 'id', filter: (r) => r.estado === 'Entregada', sortField: 'entrega', active: (r) => r.id === promo, onRow: (r) => { setP({ promo: r.id }); $('#card-vivs').scrollIntoView({ behavior: 'smooth' }); } });
       // promo tiles
       const p = promos.find((x) => x.id === promo) || promos[0];
@@ -332,6 +339,12 @@
       NZ.mark($('#pt-pm'), 'promociones', 'precio_medio', w);
       $('#n-vivs').textContent = p.promocion + ' · ' + p.zona + ', ' + p.ciudad + ' · ' + (ent ? 'entregada ' + p.entrega : 'entrega prevista ' + p.entrega) + ' · ' + p.fuente_viviendas + '.';
       $$('#promo-tiles .nz-big').forEach((e) => e.classList.remove('dash-skeleton'));
+      if (p.constructora_n) {
+        $('#pt-cons').textContent = p.constructora_n;
+        $('#pt-banco').textContent = p.banco_n + ' · préstamo ' + NZ.eurC(p.prestamo_concedido) + (p.estado === 'En curso' ? ' (' + NZ.pct(p.avance_obra, 0) + ' dispuesto)' : '');
+        $('#pt-inc').textContent = NZ.int(p.incidencias);
+        $('#pt-inc-m').textContent = p.incidencias ? p.abiertas + ' abiertas ahora' : (p.estado === 'En curso' ? 'aún en obra' : 'sin incidencias');
+      }
       // promo reservations in the period
       const vv = ok('viviendas');
       const box = $('#ch-promo-res');
@@ -347,8 +360,9 @@
     const viv = ok('viviendas');
     if (viv) {
       const est = $('#sel-estado').value, q = $('#q-viv').value.trim().toLowerCase();
-      const all = viv.filter((v) => v.promo_id === promo);
+      const all = viv.filter((v) => v.promo_id === promo).map((v) => ({ ...v, incidencias: window.OBRA ? OBRA.porVivienda(v.id) : null }));
       NZ.table($('#t-vivs'), all, {
+        incidencias: { num: true, fmt: (v) => (v ? NZ.int(v) : '—') },
         dormitorios: { num: true, fmt: NZ.int }, m2: { num: true, fmt: NZ.int }, precio: { num: true, fmt: NZ.eur },
         estado: { render: (td, r) => { NZ.chip(td, r.estado); td.firstChild.style.color = ESTADO_COLOR()[r.estado]; } },
         fecha_reserva: { fmt: NZ.fecha },
@@ -688,6 +702,7 @@
   if (window.MKT) MKT.wire(setP);
   if (window.DIST) DIST.wire(setP);
   if (window.CICLO) CICLO.wire(setP);
+  if (window.OBRA) OBRA.wire(setP);
   if (window.HOTX) HOTX.wire(setP);
   { const bg = $('#btn-pdf-grupo'); if (bg) bg.addEventListener('click', () => window.INFORME && INFORME.grupo()); const bi = $('#btn-pdf-inmo'); if (bi) bi.addEventListener('click', () => window.INFORME && INFORME.inmo()); }
   $$('#seg-bvista button').forEach((b) => b.addEventListener('click', () => setP({ bvista: b.dataset.v })));

@@ -5,7 +5,7 @@
 Maqueta de un panel de ventas para los tres negocios del grupo. Un menú lateral lleva a cada panel (Dashboard General, Inmobiliario, Hoteles y Bodegas) y a las herramientas (Análisis Promociones y Marketing Inmobiliario):
 
 - **Inicio**: facturación y beneficio bruto del grupo y de cada negocio frente al periodo de comparación, progresión por años, facturación del periodo y últimos movimientos del día.
-- **Inmobiliario**: promociones entregadas y en curso, mapa de España, reservas por mes, ciclo de vida de una promoción (de la compra del suelo a la entrega, con los hitos y, mes a mes, reservas arriba y leads abajo; media de todas o filtrado por comunidad, provincia o promoción) y detalle de cada vivienda (precio y estado), con botón de «Informe de promociones» en PDF: promociones en curso ordenadas por entrega, desglose por viviendas, garajes y locales, y análisis de los suelos analizados en el trimestre (coste de suelo, viviendas planteadas, coste de obra y rentabilidad), con vista previa.
+- **Inmobiliario**: promociones entregadas y en curso (con su constructora y banco), mapa de España, reservas por mes, financiación por banco (préstamo concedido y deuda viva), constructoras (coste por m² e incidencias), incidencias por vivienda/promoción/constructora con su SLA de resolución, ciclo de vida de una promoción (de la compra del suelo a la entrega, con los hitos y, mes a mes, reservas arriba y leads abajo; media de todas o filtrado por comunidad, provincia o promoción) y detalle de cada vivienda (precio y estado), con botón de «Informe de promociones» en PDF: promociones en curso ordenadas por entrega, desglose por viviendas, garajes y locales, y análisis de los suelos analizados en el trimestre (coste de suelo, viviendas planteadas, coste de obra y rentabilidad), con vista previa.
 - **Panel General**: facturación y beneficio del grupo y cada negocio, objetivos del año con semáforo (real, objetivo y proyección), progresión por años y botón de «Informe para el comité» en PDF (por empresa, con KPIs de cada negocio, todas las promociones en curso y la cartera de suelos) con vista previa.
 - **Marketing Inmobiliario**: calendario de lanzamiento de cada promoción (renders, ficha en la web, landing page, portales, redes sociales, anuncios, email…) con fecha prevista y real y avisos de lo retrasado; próximos lanzamientos; todas las promociones en el tiempo; inversión, contactos, coste por contacto y reservas del periodo; rendimiento por canal; emails; redes sociales; e histórico de las promociones cerradas. Los datos vendrían de la herramienta de marketing y las reservas del sistema de ventas, así que marketing no necesita licencia de Salesforce.
 - **Balneario de Panticosa**: incluye canales de reserva (volumen y rentabilidad tras comisión) y reseñas de clientes (nota por mes, temas y sentimiento, por fuente y listado).
@@ -74,6 +74,7 @@ scripts/
   generar_extra.py           canales del hotel, stock de bodega, objetivos y reseñas
   generar_municipios.py      provincias y municipios (INE) e ICIO para la calculadora
   generar_inmo.py            desglose por producto de cada promoción y suelos ofrecidos
+  generar_obra.py            constructora, banco e incidencias (con SLA) de cada promoción
   preparar_mapa_provincias.py simplifica el mapa de provincias (límites del IGN vía click_that_hood, licencia MIT)
 ```
 
