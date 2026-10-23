@@ -25,7 +25,7 @@
  *      y pégalas abajo.
  */
 window.ENVIO = {
-  url: '',            // p. ej. 'https://abcdxyz.supabase.co'
-  key: '',            // clave pública «anon»
+  url: 'https://ejotwiulkqknbwuudplt.supabase.co',   // Project URL
+  key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVqb3R3aXVsa3FrbmJ3dXVkcGx0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3NDI5MTIsImV4cCI6MjEwODMxODkxMn0.k0qtOa-FmQ0IO_NImkwcGci4EWaZnmSbBJl1P51OZdo',   // clave pública «anon»
   tabla: 'promociones',
 };
