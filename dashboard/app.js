@@ -653,6 +653,7 @@
   if (window.DIST) DIST.wire(setP);
   if (window.CICLO) CICLO.wire(setP);
   if (window.HOTX) HOTX.wire(setP);
+  { const bg = $('#btn-pdf-grupo'); if (bg) bg.addEventListener('click', () => window.INFORME && INFORME.grupo()); const bi = $('#btn-pdf-inmo'); if (bi) bi.addEventListener('click', () => window.INFORME && INFORME.inmo()); }
   $$('#seg-bvista button').forEach((b) => b.addEventListener('click', () => setP({ bvista: b.dataset.v })));
   dash.onData(draw);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => NZ.slides());

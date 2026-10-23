@@ -311,6 +311,19 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
 .nz-obj-scale { display: flex; justify-content: space-between; font-size: 11px; color: var(--color-fg-muted); margin-bottom: 10px; }
 .nz-obj-row { display: flex; justify-content: space-between; font-size: var(--cds-font-size-caption); padding: 3px 0; border-top: 1px solid color-mix(in srgb, var(--color-border-line) 60%, transparent); }
 .nz-obj-row b.ok { color: var(--color-ok); } .nz-obj-row b.bad { color: var(--color-bad); }
+.nz-sectop { display: flex; justify-content: flex-end; margin-bottom: 8px; }
+.nz-btn-pdf { font: inherit; font-size: var(--cds-font-size-caption); font-weight: var(--cds-font-weight-medium); color: var(--color-fg); background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: 9px; padding: 7px 12px; cursor: pointer; }
+.nz-btn-pdf:hover { background: color-mix(in srgb, var(--color-fg) 5%, transparent); }
+.nz-pdf-modal { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; padding: 20px; }
+.nz-pdf-modal[hidden] { display: none; }
+.nz-pdf-box { background: var(--color-bg); border-radius: 12px; width: min(880px, 96vw); height: min(92vh, 1000px); display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,.4); }
+.nz-pdf-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--color-border-line); }
+.nz-pdf-act { display: flex; align-items: center; gap: 8px; }
+.nz-btn-x { font: inherit; background: none; border: 0; color: var(--color-fg-muted); font-size: 18px; cursor: pointer; padding: 2px 8px; }
+.nz-pdf-body { flex: 1; min-height: 0; position: relative; background: #525659; }
+.nz-pdf-body iframe { width: 100%; height: 100%; border: 0; }
+.nz-pdf-load { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-size: var(--cds-font-size-caption); }
+@media (max-width: 560px) { .nz-pdf-box { height: 94vh; width: 98vw; } }
 @keyframes nzfade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 </style>
 
@@ -343,6 +356,7 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
 
   <!-- ================= INICIO ================= -->
   <section class="nz-section" id="inicio" data-page="inicio">
+    <div class="nz-sectop"><button class="nz-btn-pdf" id="btn-pdf-grupo" type="button">📄 Informe para el comité (PDF)</button></div>
     <h2 class="nz-h2">Facturación del grupo <small><span class="pl-cur"></span> · variación frente a: <span class="pl-cmp"></span></small></h2>
     <div class="nz-tiles nz-wide" id="home-negocios">
       <div class="nz-tile nz-hero"><div class="nz-tl">Grupo Nozar</div><div class="nz-big dash-skeleton" data-source="grupo_resumen" data-field="facturacion" data-where="negocio=Grupo">—</div><div class="nz-meta"><span class="dash-skeleton" data-source="grupo_resumen" data-field="variacion" data-where="negocio=Grupo">—</span><span>BB <span class="dash-skeleton" data-source="grupo_resumen" data-field="beneficio_bruto" data-where="negocio=Grupo">—</span> · margen <span class="dash-skeleton" data-source="grupo_resumen" data-field="margen" data-where="negocio=Grupo">—</span></span></div></div>
@@ -411,6 +425,7 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
 
   <!-- ================= INMOBILIARIO ================= -->
   <section class="nz-section" id="inmobiliario" data-page="inmobiliario" hidden>
+    <div class="nz-sectop"><button class="nz-btn-pdf" id="btn-pdf-inmo" type="button">📄 Informe de promociones (PDF)</button></div>
     <h2 class="nz-h2">Promociones entregadas <small>histórico desde 2016</small></h2>
     <div class="nz-tiles">
       <div class="nz-tile"><div class="nz-tl">Promociones entregadas</div><div class="nz-big dash-skeleton" data-source="inmo_kpis" data-field="promos_entregadas" data-row="0">—</div></div>
@@ -939,6 +954,8 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
 </div>
 
 </div>
+<script src="vendor/pdf-lib.min.js"></script>
+<script src="informe.js?v=2026-10-23e"></script>
 <script src="dash-shim.js?v=2026-10-23e"></script>
 <script src="periodo.js?v=2026-10-23e"></script>
 <script src="lib.js?v=2026-10-23e"></script>
