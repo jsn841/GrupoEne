@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400&display=swap" rel="stylesheet">
-<script src="vendor/d3.min.js?v=2026-10-23a"></script>
+<script src="vendor/d3.min.js?v=2026-10-23e"></script>
 <script>
 try { var t = localStorage.getItem('nz-theme'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
 </script>
@@ -288,6 +288,14 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
 .nz-ciclo .nz-axt { font-weight: var(--cds-font-weight-medium); }
 .nz-ciclo .nz-xlab { paint-order: stroke; stroke: var(--color-panel); stroke-width: 3px; }
 .nz-ciclo .nz-today { stroke: var(--color-bad); stroke-dasharray: 3 3; }
+.nz-resena { border-top: 1px solid var(--color-border-line); padding: 10px 0; }
+.nz-resena:first-child { border-top: 0; }
+.nz-res-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: var(--cds-font-size-caption); }
+.nz-res-nota { color: #fff; border-radius: 6px; padding: 1px 7px; font-weight: var(--cds-font-weight-medium); }
+.nz-res-meta { color: var(--color-fg-muted); }
+.nz-res-txt { font-size: var(--cds-font-size-caption); margin: 5px 0; }
+.nz-res-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+#res-list { max-height: 30rem; overflow: auto; }
 @keyframes nzfade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 </style>
 
@@ -693,6 +701,41 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
         </table>
       </div>
     </div>
+
+    <h2 class="nz-h2" id="h-canales">Canales de reserva <small class="pl-cur"></small></h2>
+    <p class="nz-note">De dónde vienen las reservas del balneario (web y teléfono propios, OTAs como Booking o Expedia, agencias y turoperadores), y cuánto deja cada uno tras la comisión. Sigue el filtro de fechas.</p>
+    <div class="nz-tiles" id="canal-tiles"></div>
+    <div class="nz-grid2">
+      <div class="nz-card"><h3>Ingresos y comisión por canal</h3><p class="nz-note">Barra: ingreso bruto. La parte oscura es la comisión que se lleva el canal; el resto es lo que queda (neto).</p><div class="nz-chart nz-tall" id="ch-canal-neto"></div></div>
+      <div class="nz-card"><h3>Reparto de reservas</h3><p class="nz-note">Cuántas reservas trae cada canal. Los directos no pagan comisión.</p><div class="nz-chart nz-tall" id="ch-canal-resv"></div></div>
+    </div>
+    <div class="nz-card">
+      <h3>Detalle por canal</h3>
+      <p class="nz-note">Comisión = lo que se lleva el canal sobre el ingreso. Neto = lo que queda. Var. = ingresos frente a <span class="pl-cmp"></span>.</p>
+      <div class="nz-tablebox"><table class="nz-t" id="t-canales" data-source="hotel_canales" data-row-key="id">
+        <thead><tr><th data-field="canal">Canal</th><th data-field="tipo">Tipo</th><th data-field="reservas">Reservas</th><th data-field="noches">Noches</th><th data-field="ingresos">Ingresos</th><th data-field="comision_pct">Comisión</th><th data-field="comision">Comisión €</th><th data-field="neto">Neto</th><th data-field="ingreso_medio">Ingreso/reserva</th><th data-field="cuota">% ingresos</th><th data-field="variacion">Var.</th></tr></thead>
+      </table></div>
+    </div>
+
+    <h2 class="nz-h2" id="h-resenas">Reseñas de los clientes <small>últimos 12 meses</small></h2>
+    <p class="nz-note">Opiniones de las plataformas (Booking, Google, Tripadvisor, Expedia). No dependen del filtro de fechas de arriba.</p>
+    <div class="nz-card nz-consbar">
+      <div class="nz-controls">
+        <span class="nz-pl">Hotel</span>
+        <div class="nz-seg" id="seg-res-hotel" role="group" aria-label="Hotel"><button data-v="Total">Los dos</button><button data-v="Gran Hotel">Gran Hotel</button><button data-v="Hotel Continental">Hotel Continental</button></div>
+        <span class="nz-pl">Periodo</span>
+        <div class="nz-seg" id="seg-res-rango" role="group" aria-label="Periodo"><button data-v="12">12 meses</button><button data-v="3">3 meses</button><button data-v="24">Todo</button></div>
+      </div>
+    </div>
+    <div class="nz-tiles" id="res-tiles"></div>
+    <div class="nz-grid2">
+      <div class="nz-card"><h3>Nota media por mes</h3><p class="nz-note">Sobre 10. La línea gris es la media del periodo.</p><div class="nz-chart" id="ch-res-mes"></div></div>
+      <div class="nz-card"><h3>De qué hablan</h3><p class="nz-note">Temas más citados y qué parte de las menciones son positivas (verde) o negativas (rojo).</p><div class="nz-chart nz-tall" id="ch-res-temas"></div></div>
+    </div>
+    <div class="nz-grid2">
+      <div class="nz-card"><h3>Por fuente</h3><div class="nz-chart" id="ch-res-fuente"></div></div>
+      <div class="nz-card" id="card-res-list"><h3 id="h-res-list">Últimas reseñas</h3><p class="nz-note">Pulsa un tema arriba para filtrar.</p><div id="res-list"></div></div>
+    </div>
   </section>
 
   <!-- ================= BODEGAS ================= -->
@@ -861,14 +904,15 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
 </div>
 
 </div>
-<script src="dash-shim.js?v=2026-10-23a"></script>
-<script src="periodo.js?v=2026-10-23a"></script>
-<script src="lib.js?v=2026-10-23a"></script>
-<script src="consumos.js?v=2026-10-23a"></script>
-<script src="marketing.js?v=2026-10-23a"></script>
-<script src="distribuidores.js?v=2026-10-23a"></script>
-<script src="ciclo.js?v=2026-10-23d"></script>
-<script src="app.js?v=2026-10-23a"></script>
-<script src="theme.js?v=2026-10-23a"></script>
+<script src="dash-shim.js?v=2026-10-23e"></script>
+<script src="periodo.js?v=2026-10-23e"></script>
+<script src="lib.js?v=2026-10-23e"></script>
+<script src="consumos.js?v=2026-10-23e"></script>
+<script src="hotelextra.js?v=2026-10-23e"></script>
+<script src="marketing.js?v=2026-10-23e"></script>
+<script src="distribuidores.js?v=2026-10-23e"></script>
+<script src="ciclo.js?v=2026-10-23e"></script>
+<script src="app.js?v=2026-10-23e"></script>
+<script src="theme.js?v=2026-10-23e"></script>
 </body>
 </html>

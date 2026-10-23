@@ -195,6 +195,19 @@
     S.meta.bodegas.forEach((_, bi) => { const x = bodega(bi, a, b); bf += x.fact; bbb += x.bb; });
     return { Inmobiliario: { fact: i.fact, bb: i.bb }, Hotelero: { fact: h.fact, bb: h.bb }, Bodegas: { fact: bf, bb: bbb }, Grupo: { fact: i.fact + h.fact + bf, bb: i.bb + h.bb + bbb } };
   };
+  // reservas del hotel por canal (directo, OTAs, agencias…): reparte las noches y los ingresos de habitación del periodo
+  P.hotelCanales = (a, b) => {
+    const CH = S.reparto.canales_hotel; if (!CH) return [];
+    const items = CH.items, acc = items.map(() => ({ noches: 0, ing: 0 })), ys = Object.keys(CH.share);
+    for (const [y, x, z] of byYear(a, b)) {
+      const sh = CH.share[y] || CH.share[ys[ys.length - 1]];
+      let noches = 0, ing = 0;
+      for (const k of ['gh', 'co']) { noches += sum(`hotel.${k}.noches`, x, z); ing += sum(`hotel.${k}.ing`, x, z); }
+      const w = sh.map((s, i) => s * (items[i].tipo === 'Directo' ? CH.extra_directo : 1)), tw = w.reduce((p, c) => p + c, 0) || 1;
+      sh.forEach((s, i) => { acc[i].noches += noches * s; acc[i].ing += ing * w[i] / tw; });
+    }
+    return items.map((it, i) => { const o = acc[i], com = o.ing * it.comision; return { canal: it.canal, tipo: it.tipo, comision_pct: it.comision, estancia: it.estancia, noches: o.noches, reservas: it.estancia ? o.noches / it.estancia : 0, ingresos: o.ing, comision: com, neto: o.ing - com }; });
+  };
 
   // ---------- series para los gráficos: el periodo de cada año, por meses o por días ----------
   // fn(a, b) devuelve el valor de un tramo; devuelve { xs, label, tip, series:[{name, values}] }
@@ -349,6 +362,39 @@
     // facturación por año natural (para el gráfico anual)
     ds.vino_anual = [];
     B_.forEach((b, bi) => { for (let y = T0.getUTCFullYear(); y <= HOY.getUTCFullYear(); y++) { const a = new Date(Date.UTC(y, 0, 1)), z = y === HOY.getUTCFullYear() ? HOY : new Date(Date.UTC(y, 11, 31)); const x = bodega(bi, a, z); ds.vino_anual.push({ id: b + '|' + y, bodega: b, anio: y === HOY.getUTCFullYear() ? `${y} (hasta ${fd(HOY, false)})` : String(y), facturacion: R0(x.fact), beneficio_bruto: R0(x.bb), botellas: R0(x.bot), parcial: y === HOY.getUTCFullYear() }); } });
+    // hotel por canal de reserva
+    const hc1 = P.hotelCanales(A, B), hc2 = P.hotelCanales(a2, b2);
+    const hcT = hc1.reduce((t, c) => t + c.ingresos, 0), hcN = hc1.reduce((t, c) => t + c.reservas, 0);
+    ds.hotel_canales = hc1.map((c, i) => ({ id: c.canal, canal: c.canal, tipo: c.tipo, comision_pct: c.comision_pct, estancia_media: c.estancia,
+      reservas: R0(c.reservas), noches: R0(c.noches), ingresos: R0(c.ingresos), comision: R0(c.comision), neto: R0(c.neto),
+      ingreso_medio: c.reservas ? c.ingresos / c.reservas : null, cuota: hcT ? c.ingresos / hcT : null, cuota_reservas: hcN ? c.reservas / hcN : null,
+      variacion: varr(c.ingresos, hc2[i].ingresos), neto_ant: R0(hc2[i].neto) }));
+    // existencias de vino en bodega
+    const SK = S.reparto.stock;
+    if (SK) {
+      ds.vino_stock = SK.items.map((st) => {
+        const ref = S.reparto.refs.items[st.r], vm = st.venta_anual / 12, cob = vm ? st.botellas / vm : null;
+        const estado = cob == null ? 'ok' : cob < 2 ? 'rotura' : cob < 4 ? 'bajo' : cob > 18 ? 'exceso' : 'ok';
+        return { id: ref.referencia, referencia: ref.referencia, bodega: S.meta.bodegas[ref.b], tipo: ref.tipo, botellas: st.botellas,
+          venta_mensual: R0(vm), cobertura: cob, valor: R0(st.botellas * ref.coste_bot), entrada: st.entrada, lote: st.lote, estado };
+      });
+    }
+    // objetivos del año (1 de enero a hoy, proyectado a cierre; no depende del filtro)
+    const OBJ = S.meta.objetivos;
+    if (OBJ) {
+      const y0 = new Date(Date.UTC(HOY.getUTCFullYear(), 0, 1)), diaY = P.days(y0, HOY), frac = Math.min(1, diaY / 365);
+      const gy = P.grupo(y0, HOY), hy = hotel('Total', y0, HOY), iy = inmo(y0, HOY);
+      let bot = 0; S.meta.bodegas.forEach((_, bi) => { bot += bodega(bi, y0, HOY).bot; });
+      const kr = { Inmobiliario: iy.reservas, Hotelero: hy.disp ? hy.noches / hy.disp : null, Bodegas: bot };
+      ds.objetivos = Object.entries(OBJ.negocios).map(([n, o]) => {
+        const real = gy[n].fact, proy = frac ? real / frac : real, margen = gy[n].fact ? gy[n].bb / gy[n].fact : null, k = kr[n];
+        return { id: n, negocio: n, objetivo: o.facturacion, real: R0(real), proyeccion: R0(proy),
+          avance: o.facturacion ? real / o.facturacion : null, avance_proy: o.facturacion ? proy / o.facturacion : null,
+          margen, margen_obj: o.margen, cumple_margen: margen != null && margen >= o.margen,
+          kpi: o.kpi.nombre, kpi_obj: o.kpi.objetivo, kpi_real: k, kpi_pct: !!o.kpi.pct, kpi_avance: o.kpi.objetivo ? k / o.kpi.objetivo : null };
+      });
+      ds.objetivos_meta = [{ anio: OBJ.anio, frac, transcurrido: Math.round(frac * 100) }];
+    }
     return ds;
   }
 

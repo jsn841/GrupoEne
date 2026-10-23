@@ -2,14 +2,14 @@
 // Loads the JSON files in ./data, runs the derived calculations and redraws on resize.
 (function () {
   // Lo que no depende de las fechas se carga tal cual; el resto se calcula con las series diarias (periodo.js)
-  const DATASETS = ['promociones', 'viviendas', 'hotel_reservas_futuras', 'hotel_pickup', 'actividad_hoy', 'series', 'marketing', 'provincias', 'ciclo'];
+  const DATASETS = ['promociones', 'viviendas', 'hotel_reservas_futuras', 'hotel_pickup', 'actividad_hoy', 'series', 'marketing', 'provincias', 'ciclo', 'resenas'];
   const DEFAULT_PARAMS = { inmo_vista: 'escriturado', promo: 'avda-america', hotel: 'Total', punto: 'Termas de Tiberio', bodega: 'Enate', ref: null, pais: null };
 
   const store = {};
   const calcs = {};
   const listeners = [];
   let params = { ...DEFAULT_PARAMS };
-  const VERSION = '2026-10-23a';
+  const VERSION = '2026-10-23e';
   const errors = {};
   let loaded = false;
 

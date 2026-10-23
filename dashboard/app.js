@@ -419,6 +419,7 @@
         ingresos: { num: true, fmt: NZ.eur }, margen: { num: true, fmt: (v) => NZ.pct(v) },
       }, { key: 'id', filter: (r) => r.punto === punto, sortField: 'ingresos', count: $('#c-carta') });
     } else failed($('#t-carta'), 'hotel_productos');
+    if (window.HOTX) { HOTX.drawCanales({ ok, failed, P, setP, NZ, C }); HOTX.drawResenas({ ok, failed, P, setP, NZ, C }); }
   }
 
   // ---------- BODEGAS ----------
@@ -564,6 +565,7 @@
   if (window.MKT) MKT.wire(setP);
   if (window.DIST) DIST.wire(setP);
   if (window.CICLO) CICLO.wire(setP);
+  if (window.HOTX) HOTX.wire(setP);
   $$('#seg-bvista button').forEach((b) => b.addEventListener('click', () => setP({ bvista: b.dataset.v })));
   dash.onData(draw);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => NZ.slides());
