@@ -41,16 +41,36 @@
       return { p, s0, h, end, res, led };
     });
     if (!rows.length) { NZ.clear($('#ch-ciclo')); $('#ch-ciclo').appendChild(NZ.el('div', 'nz-empty', 'Sin promociones con este filtro')); return; }
-    const maxEnd = one ? Math.max(rows[0].end, rows[0].h.entrega + 2) : Math.max(...rows.map((r) => r.end));
-    const minN = one ? 1 : Math.max(1, Math.ceil(rows.length * 0.25)); // no enseñar meses con muy pocas promociones
-    const xs = [], R = [], L = [], N = [];
-    for (let o = 0; o <= maxEnd; o++) {
-      const have = rows.filter((r) => o <= r.end);
-      if (!one && have.length < minN) break;
-      xs.push(o); N.push(have.length);
-      R.push(mean(have.map((r) => r.res[o]))); L.push(mean(have.map((r) => r.led[o])));
+    // Hitos en el mes en que ocurren. En la media, cada promoción se estira o encoge por fases para que sus hitos
+    // caigan en el mes medio de cada hito: así ninguna reserva queda antes de la comercialización.
+    const KS = HITOS.map(([k]) => k);
+    const Hm = KS.map((k) => Math.round(mean(rows.map((r) => r.h[k]))));
+    for (let i = 1; i < Hm.length; i++) if (Hm[i] < Hm[i - 1]) Hm[i] = Hm[i - 1];
+    const warp = (r, o) => { // posición (en meses) del inicio del mes o de la promoción r
+      const h = KS.map((k) => r.h[k]);
+      if (o >= h[3]) return Hm[3] + (o - h[3]);
+      for (let i = 2; i >= 0; i--) if (o >= h[i]) return h[i + 1] > h[i] ? Hm[i] + ((o - h[i]) * (Hm[i + 1] - Hm[i])) / (h[i + 1] - h[i]) : Hm[i + 1];
+      return o;
+    };
+    let xs = [], R = [], L = [], N = [];
+    if (one) {
+      const r = rows[0], maxEnd = Math.max(r.end, r.h.entrega + 2);
+      for (let o = 0; o <= maxEnd; o++) { xs.push(o); N.push(1); R.push(o <= r.end ? r.res[o] : null); L.push(o <= r.end ? r.led[o] : null); }
+    } else {
+      const maxB = Math.ceil(Math.max(...rows.map((r) => warp(r, r.end + 1))));
+      const SR = new Array(maxB).fill(0), SL = new Array(maxB).fill(0), CN = new Array(maxB).fill(0);
+      rows.forEach((r) => {
+        for (let o = 0; o <= r.end; o++) {
+          const a0 = warp(r, o), a1 = warp(r, o + 1), w = a1 - a0;
+          if (w <= 0) { const bb = Math.min(maxB - 1, Math.floor(a0)); SR[bb] += r.res[o]; SL[bb] += r.led[o]; continue; }
+          for (let bb = Math.floor(a0); bb < Math.ceil(a1) && bb < maxB; bb++) { const f = (Math.min(a1, bb + 1) - Math.max(a0, bb)) / w; SR[bb] += r.res[o] * f; SL[bb] += r.led[o] * f; }
+        }
+        const e = warp(r, r.end + 1); for (let bb = 0; bb < Math.min(maxB, Math.round(e)); bb++) CN[bb]++;
+      });
+      const minN = Math.max(1, Math.ceil(rows.length * 0.25)); // no enseñar meses con muy pocas promociones
+      for (let bb = 0; bb < maxB; bb++) { if (CN[bb] < minN) break; xs.push(bb); N.push(CN[bb]); R.push(SR[bb] / CN[bb]); L.push(SL[bb] / CN[bb]); }
     }
-    const hit = HITOS.map(([k, t]) => ({ k, t, o: mean(rows.map((r) => r.h[k])), prev: rows.every((r) => (k === 'entrega' ? r.p.entrega_prevista : k === 'obra' ? r.p.obra_prevista : false)) }));
+    const hit = HITOS.map(([k, t], i) => ({ k, t, o: one ? rows[0].h[k] : Hm[i], prev: rows.every((r) => (k === 'entrega' ? r.p.entrega_prevista : k === 'obra' ? r.p.obra_prevista : false)) }));
 
     chart($('#ch-ciclo'), { xs, R, L, N, hit, one, s0: one ? rows[0].s0 : 0, C, NZ, per100, hoyO: one ? hoy - rows[0].s0 : null });
 
@@ -58,7 +78,7 @@
     const ent = sel.filter((p) => p.estado === 'Entregada').length;
     $('#n-ciclo').textContent = one
       ? `${sel[0].promocion} (${sel[0].ciudad}) · ${sel[0].viviendas} viviendas · ${sel[0].estado === 'Entregada' ? 'entregada' : 'en curso: lo que falta es la previsión'}.`
-      : `Media de ${sel.length} promociones (${ent} entregadas y ${sel.length - ent} en curso), alineadas en el mes de compra del suelo. Cada mes promedia las promociones que ya han llegado a él.`;
+      : `Media de ${sel.length} promociones (${ent} entregadas y ${sel.length - ent} en curso), con los hitos alineados en el mes medio de cada uno (cada promoción se ajusta por fases). Cada mes promedia las promociones que ya han llegado a él.`;
     const sold = (r, o) => r.res.slice(0, o + 1).reduce((t, v) => t + v, 0) / (per100 ? 100 : r.p.viviendas);
     const dur = (a, b) => mean(rows.map((r) => r.h[b] - r.h[a]));
     const atObra = rows.filter((r) => r.h.obra <= r.end).map((r) => sold(r, r.h.obra));
@@ -86,7 +106,7 @@
     const m = { l: 8, r: narrow ? 44 : 56, t: 44, b: 26 }, H = narrow ? 360 : 420;
     const iw = W - m.l - m.r, ih = H - m.t - m.b, mid = m.t + ih * 0.5;
     const x = d3.scaleBand().domain(xs).range([m.l, m.l + iw]).paddingInner(xs.length > 60 ? 0.12 : 0.2);
-    const xc = (v) => m.l + (v + 0.5) * (iw / xs.length); // posición continua (hitos con decimales)
+    const xc = (v) => m.l + v * (iw / xs.length) + (iw / xs.length) * (x.paddingInner() / 2); // inicio del mes v
     const yr = d3.scaleLinear().domain([0, d3.max(R) || 1]).nice(4).range([mid - 1, m.t]);
     const yl = d3.scaleLinear().domain([0, d3.max(L) || 1]).nice(4).range([mid + 1, m.t + ih]);
     const svg = d3.select(box).append('svg').attr('width', W).attr('height', H).attr('class', 'nz-svg nz-ciclo');
