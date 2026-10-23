@@ -32,6 +32,9 @@ for pi, mp in enumerate(mk['promociones']):
         if ent <= HOY: ent = add_m(HOY, rnd.randint(2, 6))
     obra = max(add_m(com, rnd.randint(3, 8)), add_m(ent, -rnd.randint(22, 30)))
     if obra >= ent: obra = add_m(ent, -18)
+    # licencia de obra: concedida entre la comercialización y el comienzo de obra (la obra no puede empezar sin ella)
+    lic = add_m(obra, -rnd.randint(1, 3)) - dt.timedelta(days=rnd.randint(0, 20))
+    if not (com < lic < obra): lic = com + (obra - com) // 2
     meses = {}
     def put(k, i, v):
         meses.setdefault(k, [0, 0])[i] += v
@@ -48,8 +51,8 @@ for pi, mp in enumerate(mk['promociones']):
         if r[0] == pi: o = dict(zip(fe, r)); put(o['fecha'][:7], 1, o['contactos'])
     meses = {k: [v[0], round(v[1], 1)] for k, v in sorted(meses.items())}
     out.append(dict(id=p['id'], promocion=p['promocion'], ciudad=p['ciudad'], provincia=p['provincia'], ccaa=CCAA[p['provincia']],
-                    viviendas=p['viviendas'], estado=p['estado'], hitos=dict(suelo=suelo.isoformat(), comercial=com.isoformat(), obra=obra.isoformat(), entrega=ent.isoformat()),
-                    entrega_prevista=prevista, obra_prevista=obra > HOY, meses=meses))
-json.dump(dict(hoy=HOY.isoformat(), nota='Compra del suelo y comienzo de obra simulados; reservas del sistema de ventas; leads de la herramienta de marketing.', promociones=out),
+                    viviendas=p['viviendas'], estado=p['estado'], hitos=dict(suelo=suelo.isoformat(), comercial=com.isoformat(), licencia=lic.isoformat(), obra=obra.isoformat(), entrega=ent.isoformat()),
+                    entrega_prevista=prevista, obra_prevista=obra > HOY, licencia_prevista=lic > HOY, meses=meses))
+json.dump(dict(hoy=HOY.isoformat(), nota='Compra del suelo, licencia y comienzo de obra simulados; reservas del sistema de ventas; leads de la herramienta de marketing.', promociones=out),
           open(os.path.join(D, 'ciclo.json'), 'w'), ensure_ascii=False, separators=(',', ':'))
 print(len(out), 'promociones', os.path.getsize(os.path.join(D, 'ciclo.json')) // 1024, 'KB')

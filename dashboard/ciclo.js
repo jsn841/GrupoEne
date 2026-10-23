@@ -4,8 +4,8 @@
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-  const HITOS = [['suelo', 'Compra del suelo'], ['comercial', 'Comercialización'], ['obra', 'Comienzo de obra'], ['entrega', 'Entrega']];
-  const FASES = ['Preparación', 'Preventa', 'Obra', 'Tras la entrega'];
+  const HITOS = [['suelo', 'Compra del suelo'], ['comercial', 'Comercialización'], ['licencia', 'Licencia de obra'], ['obra', 'Comienzo de obra'], ['entrega', 'Entrega']];
+  const FASES = ['Preparación', 'Preventa', 'Previo a obra', 'Obra', 'Tras la entrega'];
   const mi = (s) => { const d = new Date(s); return d.getUTCFullYear() * 12 + d.getUTCMonth(); }; // índice de mes
   const mlab = (i) => MES[i % 12] + ' ' + String(Math.floor(i / 12)).slice(2);
   const mean = (a) => (a.length ? a.reduce((t, v) => t + v, 0) / a.length : null);
@@ -46,10 +46,11 @@
     const KS = HITOS.map(([k]) => k);
     const Hm = KS.map((k) => Math.round(mean(rows.map((r) => r.h[k]))));
     for (let i = 1; i < Hm.length; i++) if (Hm[i] < Hm[i - 1]) Hm[i] = Hm[i - 1];
+    const last = KS.length - 1;
     const warp = (r, o) => { // posición (en meses) del inicio del mes o de la promoción r
       const h = KS.map((k) => r.h[k]);
-      if (o >= h[3]) return Hm[3] + (o - h[3]);
-      for (let i = 2; i >= 0; i--) if (o >= h[i]) return h[i + 1] > h[i] ? Hm[i] + ((o - h[i]) * (Hm[i + 1] - Hm[i])) / (h[i + 1] - h[i]) : Hm[i + 1];
+      if (o >= h[last]) return Hm[last] + (o - h[last]);
+      for (let i = last - 1; i >= 0; i--) if (o >= h[i]) return h[i + 1] > h[i] ? Hm[i] + ((o - h[i]) * (Hm[i + 1] - Hm[i])) / (h[i + 1] - h[i]) : Hm[i + 1];
       return o;
     };
     let xs = [], R = [], L = [], N = [];
@@ -70,7 +71,7 @@
       const minN = Math.max(1, Math.ceil(rows.length * 0.25)); // no enseñar meses con muy pocas promociones
       for (let bb = 0; bb < maxB; bb++) { if (CN[bb] < minN) break; xs.push(bb); N.push(CN[bb]); R.push(SR[bb] / CN[bb]); L.push(SL[bb] / CN[bb]); }
     }
-    const hit = HITOS.map(([k, t], i) => ({ k, t, o: one ? rows[0].h[k] : Hm[i], prev: rows.every((r) => (k === 'entrega' ? r.p.entrega_prevista : k === 'obra' ? r.p.obra_prevista : false)) }));
+    const hit = HITOS.map(([k, t], i) => ({ k, t, o: one ? rows[0].h[k] : Hm[i], prev: rows.every((r) => (k === 'entrega' ? r.p.entrega_prevista : k === 'obra' ? r.p.obra_prevista : k === 'licencia' ? r.p.licencia_prevista : false)) }));
 
     chart($('#ch-ciclo'), { xs, R, L, N, hit, one, s0: one ? rows[0].s0 : 0, C, NZ, per100, hoyO: one ? hoy - rows[0].s0 : null });
 
@@ -112,7 +113,7 @@
     const svg = d3.select(box).append('svg').attr('width', W).attr('height', H).attr('class', 'nz-svg nz-ciclo');
     // fases sombreadas
     const hx = hit.map((h) => Math.max(m.l, Math.min(m.l + iw, xc(h.o))));
-    const bands = [[hx[0], hx[1]], [hx[1], hx[2]], [hx[2], hx[3]], [hx[3], m.l + iw]];
+    const bands = hx.map((x, i) => [x, i + 1 < hx.length ? hx[i + 1] : m.l + iw]);
     bands.forEach(([a, b], i) => {
       if (b - a < 2) return;
       svg.append('rect').attr('x', a).attr('y', m.t).attr('width', b - a).attr('height', ih).attr('class', 'nz-fase nz-fase' + i);
