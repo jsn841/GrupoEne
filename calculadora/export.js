@@ -90,9 +90,9 @@
     ];
   }
   function decision(res, values) {
-    const k = res.kpis, min = Number(values && values.margen_minimo) || 0;
+    const k = res.kpis, t = CALC.tramoMargen(k.margen, values || {}), min = t.min;
     const suelo = res.capitulos[0].importe, obra = res.capitulos[4].importe;
-    return { min, ok: k.margen >= min, suelo, obra, pesoSuelo: k.costes ? suelo / k.costes : 0, pesoObra: k.costes ? obra / k.costes : 0 };
+    return { min, hol: t.hol, tramo: t, ok: k.margen >= min, suelo, obra, pesoSuelo: k.costes ? suelo / k.costes : 0, pesoObra: k.costes ? obra / k.costes : 0 };
   }
   const dateRows = (k) => [['Compra del suelo (mes 1)', k.fechas.compra], ['Inicio de obra', k.fechas.inicioObra], ['Fin de obra', k.fechas.finObra], ['Entrega de llaves', k.fechas.llaves]];
 
@@ -108,7 +108,7 @@
     if (pend) r.push([{ v: `Hay ${pend} datos con valores habituales sin revisar. Están marcados en la hoja «Datos de entrada».`, s: 'warn' }, { v: '', s: 'warn' }]), r.push([]);
     const dec = decision(res, values);
     r.push([H('Decisión'), HR('Valor')]);
-    r.push([{ v: 'Margen sobre ventas', s: 'b' }, { v: k.margen, s: 'pctb' }], ['Margen mínimo para hacer la operación', { v: dec.min, s: 'pct' }], ['Resultado', dec.ok ? 'Supera el margen mínimo' : k.margen < 0 ? { v: 'Pérdidas', s: 'warn' } : { v: 'Por debajo del margen mínimo', s: 'warn' }]);
+    r.push([{ v: 'Margen sobre ventas', s: 'b' }, { v: k.margen, s: 'pctb' }], ['Margen mínimo (por debajo no financian los bancos)', { v: dec.min, s: 'pct' }], ['Margen a partir del cual se hace sin mirar', { v: dec.hol, s: 'pct' }], ['Resultado', dec.tramo.cls === 'bad' ? { v: dec.tramo.texto, s: 'warn' } : dec.tramo.texto]);
     r.push([], [H('Suelo y construcción'), HR('Importe'), HR('% de los costes')]);
     r.push(['Coste del suelo', { v: dec.suelo, s: 'eur' }, { v: dec.pesoSuelo, s: 'pct' }], ['Coste de construcción', { v: dec.obra, s: 'eur' }, { v: dec.pesoObra, s: 'pct' }]);
     r.push([], [H('Indicador'), HR('Valor')]);
@@ -227,18 +227,20 @@
     // fichas
     // recuadro del margen: es lo que decide si la operación se hace
     const dec = decision(res, values);
-    const tone = k.margen < 0 ? [rgb(0.99, 0.91, 0.9), rgb(0.71, 0.14, 0.09), 'Pérdidas: la operación no cubre sus costes'] : dec.ok ? [rgb(0.89, 0.96, 0.92), rgb(0.07, 0.48, 0.24), 'Supera el margen mínimo del ' + fmtPct(dec.min, 1)] : [rgb(1, 0.95, 0.84), rgb(0.54, 0.35, 0), 'Por debajo del margen mínimo del ' + fmtPct(dec.min, 1)];
+    const tone = k.margen < 0 ? [rgb(0.99, 0.91, 0.9), rgb(0.71, 0.14, 0.09), 'Pérdidas: la operación no cubre sus costes'] : dec.tramo.cls === 'ok' ? [rgb(0.89, 0.96, 0.92), rgb(0.07, 0.48, 0.24), dec.tramo.texto] : dec.tramo.cls === 'warn' ? [rgb(1, 0.95, 0.84), rgb(0.54, 0.35, 0), dec.tramo.texto] : [rgb(0.99, 0.91, 0.9), rgb(0.71, 0.14, 0.09), dec.tramo.texto];
     const mbw = W - 2 * M, mbh = 74;
     page.drawRectangle({ x: M, y: y - mbh + 10, width: mbw, height: mbh, color: tone[0], borderColor: tone[1], borderWidth: 1.2 });
     text('Margen sobre ventas', M + 12, y - 6, { size: 9, bold: true, color: C.mute });
     text(fmtPct(k.margen, 2), M + 12, y - 36, { size: 28, bold: true, color: k.margen < 0 ? C.neg : C.ink });
     text(tone[2], W - M - 12, y - 8, { size: 10, bold: true, color: tone[1], right: true });
     text(`Resultado de ${fmtEur(k.resultado)} sobre ${fmtEur(k.ingresos)} de ventas`, W - M - 12, y - 22, { size: 8.5, color: C.mute, right: true });
-    const gx0 = M + 200, gx1 = W - M - 12, gyy = y - 48, esc = Math.max(0.3, dec.min * 2, k.margen * 1.15), gp = (v) => gx0 + Math.max(0, Math.min(1, v / esc)) * (gx1 - gx0);
+    const gx0 = M + 200, gx1 = W - M - 12, gyy = y - 48, esc = Math.max(0.2, dec.hol * 1.6, k.margen * 1.15), gp = (v) => gx0 + Math.max(0, Math.min(1, v / esc)) * (gx1 - gx0);
     page.drawRectangle({ x: gx0, y: gyy, width: gx1 - gx0, height: 8, color: rgb(1, 1, 1), borderColor: C.line, borderWidth: 0.6 });
     if (k.margen > 0) page.drawRectangle({ x: gx0, y: gyy, width: gp(k.margen) - gx0, height: 8, color: tone[1] });
     page.drawLine({ start: { x: gp(dec.min), y: gyy - 3 }, end: { x: gp(dec.min), y: gyy + 11 }, thickness: 1.5, color: C.ink });
-    text('mínimo ' + fmtPct(dec.min, 0), gp(dec.min) + 3, gyy - 10, { size: 7, color: C.mute });
+    text('mínimo bancos ' + fmtPct(dec.min, 0), gp(dec.min) + 3, gyy - 10, { size: 7, color: C.mute });
+    page.drawLine({ start: { x: gp(dec.hol), y: gyy - 3 }, end: { x: gp(dec.hol), y: gyy + 11 }, thickness: 1.5, color: C.ink });
+    text(fmtPct(dec.hol, 0) + ' sin mirar', gp(dec.hol) + 3, gyy - 10, { size: 7, color: C.mute });
     y -= mbh + 8;
     const tiles = [['Coste del suelo', fmtEur(dec.suelo), fmtPct(dec.pesoSuelo, 1) + ' de los costes'], ['Coste de construcción', fmtEur(dec.obra), fmtPct(dec.pesoObra, 1) + ' de los costes'], ['Resultado', fmtEur(k.resultado), 'antes de impuestos'], ['Ingresos', fmtEur(k.ingresos), 'sin IVA'],
       ['Costes totales', fmtEur(k.costes), 'sin IVA'], ['TIR del proyecto', fmtPct(k.tirOperativa, 2), 'sin financiación'], ['TIR con financiación', fmtPct(k.tirFinanciera, 2), ''], ['Saldo de caja más bajo', fmtEur(k.peorSaldo), 'mes ' + k.mesPeorSaldo]];

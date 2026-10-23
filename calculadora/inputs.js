@@ -64,6 +64,8 @@
       const x = Number(v[f.id]);
       if ((f.min !== undefined && x < f.min) || (f.max !== undefined && x > f.max)) warn.push([f.id, `«${f.label}» está en ${(x * 100).toFixed(2).replace('.', ',')} %: tiene que estar entre el ${f.min * 100} % y el ${f.max * 100} % (lo normal es el ${(f.def * 100).toFixed(0)} %).`]);
     }
+    const MU = (typeof window !== 'undefined' && window.MUNI) || null;
+    if (MU && v.ccaa && v.provincia && MU.prov[v.provincia] && MU.prov[v.provincia][1] !== v.ccaa) warn.push(['provincia', 'La provincia no es de la comunidad autónoma elegida.']);
     if (!near(sum([v.cobro_contrato, v.cobro_obra, v.cobro_llaves]), 1)) warn.push(['cobro_contrato', 'Los cobros a los compradores tienen que sumar el 100 %.']);
     if (!near(sum([v.pct_com_contrato, v.pct_com_escritura]), 1)) warn.push(['pct_com_contrato', 'Los pagos de la comisión de venta tienen que sumar el 100 %.']);
     if (!near(sum([v.arq_anteproyecto, v.arq_basico, v.arq_ejecucion, v.arq_licencia, v.arq_obra, v.arq_cfo, v.arq_cedula]), 1)) warn.push(['arq_anteproyecto', 'Los pagos al arquitecto tienen que sumar el 100 %.']);
@@ -107,6 +109,16 @@
   function fmtInt(n) { return Math.round(n).toLocaleString('es-ES'); }
   function visible(f, v) { if (!f.when) return true; return Object.entries(f.when).every(([k, x]) => String(v[k]) === String(x)); }
 
-  const API = { apply, check, withDefaults, visible, dateToSerial, spread, curveS, curveFlat };
+  // Tramo del margen sobre ventas según el criterio de la empresa (por defecto: menos del 10 % no financian los bancos; 10-12 % lo normal; desde el 12 % se hace sin mirar)
+  function tramoMargen(m, v) {
+    const min = Number(v && v.margen_minimo) || 0.1, hol = Math.max(min, Number(v && v.margen_holgado) || 0.12);
+    const p = (x) => (x * 100).toLocaleString('es-ES', { maximumFractionDigits: 1 }) + ' %';
+    if (m < 0) return { cls: 'bad', ok: false, min, hol, corto: 'Pérdidas', texto: 'Pérdidas: la operación no cubre sus costes' };
+    if (m < min) return { cls: 'bad', ok: false, min, hol, corto: 'No financiable', texto: `Por debajo del ${p(min)}: los bancos no la financian` };
+    if (m < hol) return { cls: 'warn', ok: true, min, hol, corto: 'Normal', texto: `Entre el ${p(min)} y el ${p(hol)}: margen normal, se estudia` };
+    return { cls: 'ok', ok: true, min, hol, corto: 'Sin mirar', texto: `Desde el ${p(hol)}: se hace sin mirar` };
+  }
+
+  const API = { apply, check, withDefaults, visible, dateToSerial, spread, curveS, curveFlat, tramoMargen };
   if (typeof module !== 'undefined' && module.exports) module.exports = API; else root.CALC = API;
 })(typeof window !== 'undefined' ? window : globalThis);

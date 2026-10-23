@@ -10,7 +10,7 @@
   const FIELDS = Object.fromEntries(SCHEMA.fields.map((f) => [f.id, f]));
   const SALES = FIELDS.plan_ventas.rows; // [key,label,row,unitsField]
   const LIBKEY = 'calcpromo.biblioteca.v1';
-  const VERSION = '2026-10-21a';
+  const VERSION = '2026-10-23a';
 
   // ---------------- biblioteca ----------------
   let lib = null;
@@ -84,6 +84,10 @@
     let ctrl;
     if (f.calc) {
       ctrl = h('div', { class: 'inp' }, h('input', { id, readonly: true, tabindex: -1, value: '' }));
+    } else if (f.dyn) {
+      const sel = h('select', { id, onchange: (e) => setValue(f, e.target.value || null) });
+      for (const [val, lab] of dynOptions(f, v)) sel.append(h('option', { value: val, selected: String(v[f.id] ?? '') === String(val) }, lab));
+      ctrl = h('div', { class: 'inp' }, sel);
     } else if (f.type === 'select' && f.options.length === 2) {
       const seg = h('div', { class: 'seg', role: 'group', 'aria-label': f.label });
       for (const [val, lab] of f.options) seg.append(h('button', { type: 'button', 'data-val': val, 'aria-pressed': String(String(v[f.id]) === String(val)), onclick: () => setValue(f, val) }, lab));
@@ -112,7 +116,31 @@
     wrap.append(h('div', { class: 'ctrl' }, ctrl, h('div', { class: 'flags' })));
     wrap.append(helpEl(f));
     if (f.preset) wrap.append(h('div', { class: 'presetnote', id: 'ccaaNote' }, ccaaNoteText()));
+    if (f.dyn === 'mun') wrap.append(h('div', { class: 'presetnote', id: 'muniNote' }, muniNoteText()));
     return wrap;
+  }
+  // provincias de la comunidad elegida y municipios de la provincia elegida
+  function dynOptions(f, v) {
+    const MU = window.MUNI; if (!MU) return f.options;
+    if (f.dyn === 'prov') {
+      if (!v.ccaa) return [['', 'Elige antes la comunidad autónoma']];
+      return [['', 'Elige una provincia…'], ...Object.entries(MU.prov).filter(([, x]) => x[1] === v.ccaa).sort((a, b) => a[1][0].localeCompare(b[1][0], 'es')).map(([c, x]) => [c, x[0]])];
+    }
+    if (!v.provincia || !MU.mun[v.provincia]) return [['', 'Elige antes la provincia']];
+    return [['', 'Elige un municipio…'], ...MU.mun[v.provincia].map((n) => [n, n])];
+  }
+  function muniNoteText() {
+    const d = promo().data, MU = window.MUNI;
+    if (!MU || !d.municipio || !d.provincia) return '';
+    const t = MU.icio[d.provincia + '|' + d.municipio];
+    if (t) return `ICIO de ${d.municipio}: ${fmtPct(t[0], 2)} (${t[1]}). Rellenado en «Impuestos y tasas». La tasa de licencia, la plusvalía y la primera ocupación dependen de su ordenanza fiscal: compruébalas.`;
+    return `No tenemos el ICIO de ${d.municipio}: comprueba su ordenanza fiscal y cámbialo en «Impuestos y tasas» si hace falta (máximo legal, 4 %).`;
+  }
+  function applyMunicipio() {
+    const p = promo(), MU = window.MUNI;
+    const t = MU && p.data.provincia && p.data.municipio ? MU.icio[p.data.provincia + '|' + p.data.municipio] : null;
+    if (t) { p.data.pct_icio = t[0]; p.revisados = (p.revisados || []).filter((id) => id !== 'pct_icio'); toast('ICIO de ' + p.data.municipio + ': ' + fmtPct(t[0], 2)); }
+    touch(); renderForm();
   }
 
   function helpEl(f) {
@@ -127,7 +155,7 @@
   }
   function applyCcaa() {
     const p = promo(), c = SCHEMA.CCAA.find((x) => x[0] === p.data.ccaa);
-    if (!c) { const n = $('#ccaaNote'); if (n) n.textContent = ''; return; }
+    if (!c) { touch(); renderForm(); return; }
     const set = { pct_ajd_obra_nueva: c[2], pct_ajd_prestamo_suelo: 0, pct_ajd_prestamo_promotor: 0 };
     if (Number(values().vendedor_suelo) !== 1) set.pct_ajd_compra = c[2];
     Object.assign(p.data, set);
@@ -144,6 +172,9 @@
     if (['meses_inicio', 'meses_obra', 'meses_llaves', 'fecha_compra', 'forma_pago_suelo'].includes(f.id) || SALES.some((r) => r[3] === f.id)) renderPlan($('#planEditor'));
     if (['meses_obra', 'reparto_obra'].includes(f.id)) renderCurve($('#curveEditor'));
     if (f.id === 'n_viviendas') { for (const s of SCHEMA.fields.filter((x) => x.sync === 'n_viviendas')) { const i = $('#in-' + s.id); if (i) i.placeholder = 'Igual que ' + FIELDS.n_viviendas.label.toLowerCase() + (val ? ' (' + fmtNum(val) + ')' : ''); } }
+    if (f.id === 'ccaa') { const MU = window.MUNI; if (MU && p.data.provincia && (!MU.prov[p.data.provincia] || MU.prov[p.data.provincia][1] !== val)) { delete p.data.provincia; delete p.data.municipio; } }
+    if (f.id === 'provincia') { delete p.data.municipio; touch(); renderForm(); schedule(); return; }
+    if (f.id === 'municipio') { applyMunicipio(); schedule(); return; }
     if (f.preset) { applyCcaa(); schedule(); return; }
     if (f.id === 'vendedor_suelo') { if (Number(val) === 1) toast('Escribe el ITP de tu comunidad en «Impuesto de la compra del suelo»'); else if (p.data.ccaa) { applyCcaa(); schedule(); return; } const n = $('#ccaaNote'); if (n) n.textContent = ccaaNoteText(); }
     refreshStates();
@@ -347,22 +378,23 @@
   }
   // El margen decide si la operación se hace: recuadro propio, comparado con el margen mínimo
   function margenCard(k, v) {
-    const min = Number(v.margen_minimo) || 0, m = k.margen;
-    const estado = m < 0 ? ['bad', 'Pérdidas: la operación no cubre sus costes'] : m >= min ? ['ok', `Supera el margen mínimo del ${fmtPct(min, 1)}`] : ['warn', `Por debajo del margen mínimo del ${fmtPct(min, 1)}`];
-    const escala = Math.max(0.3, min * 2, m * 1.15), pos = (x) => Math.max(0, Math.min(100, (x / escala) * 100));
+    const m = k.margen, t = CALC.tramoMargen(m, v), min = t.min, hol = t.hol;
+    const escala = Math.max(0.2, hol * 1.6, m * 1.15), pos = (x) => Math.max(0, Math.min(100, (x / escala) * 100));
     const tip = h('div', { class: 'kinfo', hidden: true }, KPI_HELP['Margen sobre ventas']);
-    return h('div', { class: 'card margen ' + estado[0] },
+    return h('div', { class: 'card margen ' + t.cls },
       h('div', { class: 'm-top' },
         h('div', {}, h('div', { class: 'l' }, 'Margen sobre ventas', h('button', { class: 'ibtn', type: 'button', 'aria-label': '¿Qué es el margen sobre ventas?', 'aria-expanded': 'false', onclick: (e) => { tip.hidden = !tip.hidden; e.currentTarget.setAttribute('aria-expanded', String(!tip.hidden)); } }, 'i')),
           h('div', { class: 'm-v' + (m < 0 ? ' neg' : '') }, fmtPct(m, 2))),
-        h('div', { class: 'm-verdict' }, h('span', { class: 'chip ' + estado[0] }, estado[0] === 'ok' ? '✓ ' : '⚠ ', estado[1]),
+        h('div', { class: 'm-verdict' }, h('span', { class: 'chip ' + t.cls }, t.cls === 'ok' ? '✓ ' : t.cls === 'warn' ? '• ' : '⚠ ', t.texto),
           h('div', { class: 'm-sub' }, `Resultado de ${fmtEur(k.resultado)} sobre ${fmtEur(k.ingresos)} de ventas`),
-          h('a', { class: 'm-edit', onclick: () => goField('margen_minimo') }, 'Cambiar el margen mínimo'))),
-      h('div', { class: 'm-gauge', role: 'img', 'aria-label': `Margen ${fmtPct(m, 1)}; mínimo ${fmtPct(min, 1)}` },
-        h('div', { class: 'm-track' }, h('i', { class: 'm-fill', style: `width:${pos(Math.max(0, m))}%` }), h('i', { class: 'm-min', style: `left:${pos(min)}%` })),
-        h('div', { class: 'm-scale' }, h('span', {}, '0 %'), h('span', { style: `left:${pos(min)}%` }, 'mínimo ' + fmtPct(min, 0)), h('span', { style: 'left:100%' }, fmtPct(escala, 0)))),
+          h('a', { class: 'm-edit', onclick: () => goField('margen_minimo') }, 'Ver el criterio de margen'))),
+      h('div', { class: 'm-gauge', role: 'img', 'aria-label': `Margen ${fmtPct(m, 1)}; los bancos no financian por debajo del ${fmtPct(min, 0)}; desde el ${fmtPct(hol, 0)} se hace sin mirar` },
+        h('div', { class: 'm-track' }, h('i', { class: 'm-zone z-bad', style: `left:0;width:${pos(min)}%` }), h('i', { class: 'm-zone z-mid', style: `left:${pos(min)}%;width:${pos(hol) - pos(min)}%` }), h('i', { class: 'm-zone z-ok', style: `left:${pos(hol)}%;width:${100 - pos(hol)}%` }),
+          h('i', { class: 'm-fill', style: `width:${pos(Math.max(0, m))}%` }), h('i', { class: 'm-min', style: `left:${pos(min)}%` }), h('i', { class: 'm-min', style: `left:${pos(hol)}%` })),
+        h('div', { class: 'm-scale' }, h('span', {}, '0 %'), h('span', { style: `left:${pos(min)}%` }, fmtPct(min, 0) + ' mínimo bancos'), h('span', { style: `left:${pos(hol)}%` }, fmtPct(hol, 0) + ' sin mirar'), h('span', { style: 'left:100%' }, fmtPct(escala, 0)))),
       tip);
   }
+
   const KPI_HELP = {
     'Margen sobre ventas': 'Resultado dividido entre los ingresos por ventas. Con un 15 %, de cada 100 € vendidos quedan 15 € de beneficio antes de impuestos. Es la cifra que decide si la operación se hace: se compara con el margen mínimo del grupo «Cálculo de la rentabilidad».',
     'Coste del suelo': 'Precio del solar más los gastos de la compra (notaría, registro e intermediación), sin IVA. El porcentaje es su peso sobre los costes totales; el €/m² es lo que cuesta el suelo por cada metro que se puede construir (repercusión).',
@@ -689,7 +721,7 @@
     } else {
       card.append(h('div', { class: 'pbody' + (fresh ? '' : ' stale') },
         h('div', { class: 'plabel' }, 'Resultado'),
-        h('div', { class: 'pbig ' + (s.resultado < 0 ? 'neg' : '') }, fmtMill(s.resultado), h('span', { class: 'chip ' + (s.margen >= Number(CALC.withDefaults(p.data).margen_minimo) ? 'ok' : s.margen >= 0 ? 'warn' : 'bad'), title: 'Margen sobre ventas' }, 'Margen ' + fmtPct(s.margen, 1))),
+        h('div', { class: 'pbig ' + (s.resultado < 0 ? 'neg' : '') }, fmtMill(s.resultado), h('span', { class: 'chip ' + CALC.tramoMargen(s.margen, CALC.withDefaults(p.data)).cls, title: CALC.tramoMargen(s.margen, CALC.withDefaults(p.data)).texto }, 'Margen ' + fmtPct(s.margen, 1))),
         sparkline(s.saldo),
         h('div', { class: 'pstats' },
           h('div', {}, h('span', {}, 'Ingresos'), h('b', {}, fmtMill(s.ingresos))),
@@ -757,8 +789,8 @@
   // ---------- asistente ----------
   const wizDlg = $('#wiz');
   const wiz = { step: 1, base: 'blank', copyId: null, nombre: '', data: {}, gen: { mes: 3, pct: 25, desde: 4, hasta: 0 }, req: 0, prev: null };
-  const WIZ_FIELDS = ['ccaa', 'fecha_compra', 'precio_suelo', 'edif_residencial', 'sup_viviendas', 'n_viviendas', 'precio_m2_viv', 'coste_m2_viv', 'meses_inicio', 'meses_obra'];
-  const WIZ_HELP = { ccaa: 'Para los impuestos autonómicos.', fecha_compra: 'Es el mes 1.', precio_suelo: 'Sin IVA ni gastos.', edif_residencial: 'm² de vivienda que permite la normativa.', sup_viviendas: 'm² construidos de todas las viviendas.', n_viviendas: 'Una plaza de garaje y un trastero por vivienda; se cambia después.', precio_m2_viv: 'Precio medio de venta, sin IVA.', coste_m2_viv: 'Precio de la constructora, sin IVA.', meses_inicio: 'Proyecto y licencia.', meses_obra: 'Hasta el certificado final de obra.' };
+  const WIZ_FIELDS = ['ccaa', 'provincia', 'municipio', 'fecha_compra', 'precio_suelo', 'edif_residencial', 'sup_viviendas', 'n_viviendas', 'precio_m2_viv', 'coste_m2_viv', 'meses_inicio', 'meses_obra'];
+  const WIZ_HELP = { ccaa: 'Obligatorio: pone los impuestos autonómicos.', provincia: 'De la comunidad elegida.', municipio: 'Pone el ICIO de su ayuntamiento, si lo tenemos.', fecha_compra: 'Es el mes 1.', precio_suelo: 'Sin IVA ni gastos.', edif_residencial: 'm² de vivienda que permite la normativa.', sup_viviendas: 'm² construidos de todas las viviendas.', n_viviendas: 'Una plaza de garaje y un trastero por vivienda; se cambia después.', precio_m2_viv: 'Precio medio de venta, sin IVA.', coste_m2_viv: 'Precio de la constructora, sin IVA.', meses_inicio: 'Proyecto y licencia.', meses_obra: 'Hasta el certificado final de obra.' };
   function openWizard() {
     Object.assign(wiz, { step: 1, base: 'blank', copyId: null, nombre: 'Promoción ' + (lib.promociones.length + 1), data: {}, gen: { mes: 3, pct: 25, desde: 4, hasta: 0 }, prev: null });
     renderWizard(); wizDlg.showModal();
@@ -779,6 +811,7 @@
     const d = JSON.parse(JSON.stringify(wiz.data));
     if (wiz.base !== 'copy' || wiz.replan) d.plan_ventas = wizPlan();
     const c = SCHEMA.CCAA.find((x) => x[0] === d.ccaa);
+    const ti = window.MUNI && d.provincia && d.municipio ? window.MUNI.icio[d.provincia + '|' + d.municipio] : null; if (ti) d.pct_icio = ti[0];
     if (c && (wiz.base !== 'copy' || wiz.ccaaChanged)) { d.pct_ajd_obra_nueva = c[2]; d.pct_ajd_prestamo_suelo = 0; d.pct_ajd_prestamo_promotor = 0; if (Number(CALC.withDefaults(d).vendedor_suelo) !== 1) d.pct_ajd_compra = c[2]; }
     return d;
   }
@@ -802,8 +835,10 @@
     const f = FIELDS[id], v = CALC.withDefaults(wiz.data);
     const wrap = h('label', { class: 'wfield' }, h('span', { class: 'wl' }, f.label));
     let ctrl;
-    if (f.type === 'select') {
-      ctrl = h('select', { onchange: (e) => { const x = typeof f.options[0][0] === 'number' ? Number(e.target.value) : e.target.value; if (x === '' ) delete wiz.data[id]; else wiz.data[id] = x; if (id === 'ccaa') wiz.ccaaChanged = true; if (id === 'meses_inicio' || id === 'meses_obra') wiz.replan = true; wizSchedulePreview(); } }, f.options.map(([val, lab]) => h('option', { value: val, selected: String(v[id] ?? '') === String(val) }, lab)));
+    if (f.dyn) {
+      ctrl = h('select', { onchange: (e) => { if (e.target.value) wiz.data[id] = e.target.value; else delete wiz.data[id]; if (id === 'provincia') delete wiz.data.municipio; renderWizard(); wizSchedulePreview(); } }, dynOptions(f, v).map(([val, lab]) => h('option', { value: val, selected: String(v[id] ?? '') === String(val) }, lab)));
+    } else if (f.type === 'select') {
+      ctrl = h('select', { onchange: (e) => { const x = typeof f.options[0][0] === 'number' ? Number(e.target.value) : e.target.value; if (x === '' ) delete wiz.data[id]; else wiz.data[id] = x; if (id === 'ccaa') { wiz.ccaaChanged = true; delete wiz.data.provincia; delete wiz.data.municipio; renderWizard(); } if (id === 'meses_inicio' || id === 'meses_obra') wiz.replan = true; wizSchedulePreview(); } }, f.options.map(([val, lab]) => h('option', { value: val, selected: String(v[id] ?? '') === String(val) }, lab)));
     } else if (f.type === 'date') {
       ctrl = h('input', { type: 'date', value: v[id] || '', onchange: (e) => { if (e.target.value) wiz.data[id] = e.target.value; else delete wiz.data[id]; wizSchedulePreview(); } });
     } else {

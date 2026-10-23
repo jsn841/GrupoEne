@@ -6,6 +6,7 @@
                     si es un supuesto que el Excel tenía escrito dentro de las fórmulas o en la hoja de caja. */
 (function (root) {
   const G = [
+    { id: 'ubicacion', title: 'Ubicación', note: 'Obligatorio. La comunidad autónoma pone los impuestos autonómicos y el municipio, el ICIO de su ayuntamiento.' },
     { id: 'suelo', title: 'Suelo', note: 'Compra del solar y gastos de la compra.' },
     { id: 'superficies', title: 'Superficies', note: 'En metros cuadrados construidos, salvo que se diga otra cosa.' },
     { id: 'producto', title: 'Producto y precios de venta', note: 'Unidades a la venta y a qué precio. Todos los precios, sin IVA.' },
@@ -13,14 +14,14 @@
     { id: 'obra', title: 'Coste de la obra', note: 'Lo que cobra la constructora, por metro cuadrado y en partidas sueltas. Sin IVA.' },
     { id: 'plazos', title: 'Plazos', note: 'Calendario de la promoción, contado en meses desde la compra del suelo (mes 1).' },
     { id: 'ventas', title: 'Calendario de ventas', note: 'Cuántas unidades se venden (se firma el contrato de compraventa) cada mes.' },
-    { id: 'tributos', title: 'Impuestos y tasas', fijo: 'comunidad', note: 'Vienen con los tipos habituales. Al elegir la comunidad autónoma se ponen los impuestos autonómicos de esa comunidad; los municipales (licencia, ICIO, plusvalía) dependen del ayuntamiento.' },
+    { id: 'tributos', title: 'Impuestos y tasas', fijo: 'comunidad', note: 'Se rellenan con la ubicación: los impuestos autonómicos según la comunidad y el ICIO según el municipio, si lo tenemos. La licencia, la plusvalía y la primera ocupación dependen de cada ayuntamiento.' },
     { id: 'notaria', title: 'Notaría, registro y seguros', fijo: 'estandar', note: 'Porcentajes fijos del modelo, iguales para todas las promociones. Se pueden cambiar si hace falta.' },
     { id: 'proyectos', title: 'Proyectos y estudios', fijo: 'estandar', note: 'Honorarios y estudios con los valores fijos del modelo. Se pueden cambiar si hace falta.' },
     { id: 'financieros', title: 'Préstamos y gastos financieros', note: 'Préstamo del suelo, intereses, comisiones y avales.' },
-    { id: 'iva', title: 'IVA y retenciones', note: 'El IVA no es un coste: se paga y se recupera, pero mueve la caja.' },
+    { id: 'iva', title: 'IVA y retenciones', fijo: 'estandar', note: 'El IVA no es un coste: se paga y se recupera, pero mueve la caja.' },
     { id: 'comercial', title: 'Comercialización y gastos de gestión', note: 'Comisión de venta y gastos de estructura de la empresa.' },
     { id: 'calendario', title: 'Momento de los pagos', fijo: 'financiero', note: 'Cuándo se paga cada gasto. Es un supuesto para el equipo financiero: viene con los valores estándar del modelo.' },
-    { id: 'rentabilidad', title: 'Cálculo de la rentabilidad', note: 'Margen mínimo exigido y tasa para la VAN.' },
+    { id: 'rentabilidad', title: 'Cálculo de la rentabilidad', fijo: 'estandar', note: 'Criterio de la empresa para todas las promociones: menos del 10 % de margen sobre ventas no lo financian los bancos; del 10 % al 12 % es lo normal; desde el 12 % se hace sin mirar.' },
   ];
 
   // Impuesto de actos jurídicos documentados (AJD), tipo general en escrituras notariales, por comunidad.
@@ -36,6 +37,16 @@
 
   const F = [];
   const add = (group, hoja, list) => list.forEach((f) => F.push({ group, hoja, ...f }));
+
+  add('ubicacion', 'modelo', [
+    { id: 'ccaa', label: 'Comunidad autónoma', type: 'select', cell: null, def: null, preset: true, hoja: 'modelo',
+      options: [['', 'Elige una comunidad…'], ...CCAA.map(([id, n]) => [id, n])],
+      help: 'Al elegirla se rellenan los impuestos autonómicos: el impuesto de actos jurídicos documentados (AJD) de la compra y de la obra nueva con el tipo de esa comunidad, y el AJD de los préstamos a 0 %. Son valores orientativos consultados en octubre de 2026: compruébalos. Es obligatoria: sin ella no se calculan bien los impuestos.' },
+    { id: 'provincia', label: 'Provincia', type: 'select', dyn: 'prov', cell: null, def: null, hoja: 'modelo', options: [['', 'Elige una provincia…']],
+      help: 'Solo salen las provincias de la comunidad elegida.' },
+    { id: 'municipio', label: 'Municipio', type: 'select', dyn: 'mun', cell: null, def: null, hoja: 'modelo', options: [['', 'Elige un municipio…']],
+      help: 'El ayuntamiento fija el ICIO, la tasa de licencia, la plusvalía y la licencia de primera ocupación. Si tenemos su ICIO, se rellena solo; si no, compruébalo en su ordenanza fiscal (máximo legal, 4 %).' },
+  ]);
 
   add('suelo', 'Resumen', [
     { id: 'precio_suelo', label: 'Precio de compra del suelo', type: 'eur', cell: 'Resumen!D20', def: null,
@@ -127,9 +138,6 @@
       rows: [['viviendas', 'Viviendas', 'Ventas!4', 'n_viviendas'], ['garajes1', 'Primeras plazas de garaje', 'Ventas!5', 'n_garajes1'], ['garajes2', 'Segundas plazas de garaje', 'Ventas!6', 'n_garajes2'], ['trasteros', 'Trasteros', 'Ventas!7', 'n_trasteros'], ['aportacion', 'Viviendas en aportación', 'Ventas!8', 'n_aportacion'], ['locales', 'Locales', 'Ventas!9', 'n_locales']] },
   ]);
   add('tributos', 'Promoción', [
-    { id: 'ccaa', label: 'Comunidad autónoma', type: 'select', cell: null, def: '', preset: true, hoja: 'modelo',
-      options: [['', 'Elige una comunidad…'], ...CCAA.map(([id, n]) => [id, n])],
-      help: 'Al elegirla se rellenan los impuestos autonómicos: el impuesto de actos jurídicos documentados (AJD) de la compra y de la obra nueva con el tipo de esa comunidad, y el AJD de los préstamos a 0 %. Son valores orientativos consultados en octubre de 2026: compruébalos. Los impuestos municipales (licencia, ICIO, plusvalía) dependen del ayuntamiento y no se rellenan.' },
     { id: 'pct_tasa_licencia', label: 'Tasa de licencia de obras y demolición', type: 'pct', cell: 'Promoción!C14', def: 0.003, revisar: true, help: 'Tasa municipal por tramitar la licencia de obras, sobre el presupuesto de ejecución material (PEM). La fija cada ayuntamiento. Se paga al pedir la licencia.' },
     { id: 'pct_icio', label: 'Impuesto de construcciones (ICIO)', type: 'pct', cell: 'Promoción!C15', def: 0.0375, revisar: true, help: 'Impuesto municipal sobre el coste de la obra (PEM). Cada ayuntamiento fija su tipo, con un máximo legal del 4 %. Se paga con la licencia.' },
     { id: 'plusvalia', label: 'Plusvalía municipal', type: 'eur', cell: 'Promoción!D16', def: 0, revisar: true, help: 'Impuesto municipal sobre el aumento de valor del suelo (IIVTNU) que paga la promotora como vendedora al vender las viviendas. Importe total en euros; depende del ayuntamiento y del valor catastral del suelo.' },
@@ -219,8 +227,10 @@
     { id: 'arq_cedula', label: 'Arquitecto: cédula de habitabilidad', type: 'pct', cell: 'CF!D93', def: 0.25, revisar: true, help: 'Parte que se paga con la licencia de primera ocupación.' },
   ]);
   add('rentabilidad', 'modelo', [
-    { id: 'margen_minimo', label: 'Margen mínimo para hacer la operación', type: 'pct', cell: null, def: 0.15, revisar: true,
-      help: 'Margen sobre ventas por debajo del cual no se hace la promoción. No cambia ningún cálculo: solo sirve para que el resumen diga si la operación lo supera. El 15 % es una referencia habitual; pon el que use la empresa.' },
+    { id: 'margen_minimo', label: 'Margen mínimo: por debajo no financian los bancos', type: 'pct', cell: null, def: 0.10, revisar: true,
+      help: 'Margen sobre ventas (beneficio antes de impuestos entre ingresos). Con menos del 10 % los bancos no dan el préstamo promotor, así que la operación no se hace. No cambia ningún cálculo: el resumen dice en qué tramo cae la promoción.' },
+    { id: 'margen_holgado', label: 'Margen a partir del cual se hace sin mirar', type: 'pct', cell: null, def: 0.12, revisar: true,
+      help: 'Entre el mínimo (10 %) y este margen (12 %) es lo normal: se estudia como cualquier operación. A partir del 12 %, la operación se hace sin más vueltas.' },
     { id: 'tasa_van', label: 'Tasa de descuento para la VAN', type: 'pct', sup: 'B12', def: 0.05, revisar: true,
       help: 'Rentabilidad mínima que se pide al dinero, al año. La VAN (valor actual neto) dice cuánto vale hoy el beneficio futuro descontado a esta tasa: si sale positiva, la promoción rinde más que esa tasa. El Excel usaba un 5 % fijo.' },
   ]);
@@ -228,6 +238,6 @@
   // Los grupos fijos (estándar del modelo o según la comunidad) no piden revisión: vienen ya bien
   const FIJOS = new Set(G.filter((g) => g.fijo).map((g) => g.id));
   for (const f of F) if (FIJOS.has(f.group)) f.revisar = false;
-  const SCHEMA = { groups: G, fields: F, months: 84, version: 3, CCAA };
+  const SCHEMA = { groups: G, fields: F, months: 84, version: 4, CCAA };
   if (typeof module !== 'undefined' && module.exports) module.exports = SCHEMA; else root.SCHEMA = SCHEMA;
 })(typeof window !== 'undefined' ? window : globalThis);
