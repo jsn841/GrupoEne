@@ -109,14 +109,14 @@
   function fmtInt(n) { return Math.round(n).toLocaleString('es-ES'); }
   function visible(f, v) { if (!f.when) return true; return Object.entries(f.when).every(([k, x]) => String(v[k]) === String(x)); }
 
-  // Tramo del margen sobre ventas según el criterio de la empresa (por defecto: menos del 10 % no financian los bancos; 10-12 % lo normal; desde el 12 % se hace sin mirar)
+  // Tramo del margen sobre ventas según el criterio de la empresa (por defecto: menos del 10 % no financian los bancos; 10-12 % lo normal; desde el 12 % es la viabilidad deseada)
   function tramoMargen(m, v) {
     const min = Number(v && v.margen_minimo) || 0.1, hol = Math.max(min, Number(v && v.margen_holgado) || 0.12);
     const p = (x) => (x * 100).toLocaleString('es-ES', { maximumFractionDigits: 1 }) + ' %';
     if (m < 0) return { cls: 'bad', ok: false, min, hol, corto: 'Pérdidas', texto: 'Pérdidas: la operación no cubre sus costes' };
-    if (m < min) return { cls: 'bad', ok: false, min, hol, corto: 'No financiable', texto: `Por debajo del ${p(min)}: los bancos no la financian` };
+    if (m < min) return { cls: 'bad', ok: false, min, hol, corto: 'No financiable', texto: `Por debajo de la viabilidad mínima del ${p(min)}: los bancos no la financian` };
     if (m < hol) return { cls: 'warn', ok: true, min, hol, corto: 'Normal', texto: `Entre el ${p(min)} y el ${p(hol)}: margen normal, se estudia` };
-    return { cls: 'ok', ok: true, min, hol, corto: 'Sin mirar', texto: `Desde el ${p(hol)}: se hace sin mirar` };
+    return { cls: 'ok', ok: true, min, hol, corto: 'Deseada', texto: `Desde la viabilidad deseada del ${p(hol)}` };
   }
 
   const API = { apply, check, withDefaults, visible, dateToSerial, spread, curveS, curveFlat, tramoMargen };

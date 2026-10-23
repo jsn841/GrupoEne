@@ -108,7 +108,7 @@
     if (pend) r.push([{ v: `Hay ${pend} datos con valores habituales sin revisar. Están marcados en la hoja «Datos de entrada».`, s: 'warn' }, { v: '', s: 'warn' }]), r.push([]);
     const dec = decision(res, values);
     r.push([H('Decisión'), HR('Valor')]);
-    r.push([{ v: 'Margen sobre ventas', s: 'b' }, { v: k.margen, s: 'pctb' }], ['Margen mínimo (por debajo no financian los bancos)', { v: dec.min, s: 'pct' }], ['Margen a partir del cual se hace sin mirar', { v: dec.hol, s: 'pct' }], ['Resultado', dec.tramo.cls === 'bad' ? { v: dec.tramo.texto, s: 'warn' } : dec.tramo.texto]);
+    r.push([{ v: 'Margen sobre ventas', s: 'b' }, { v: k.margen, s: 'pctb' }], ['Viabilidad mínima (por debajo no financian los bancos)', { v: dec.min, s: 'pct' }], ['Viabilidad deseada', { v: dec.hol, s: 'pct' }], ['Resultado', dec.tramo.cls === 'bad' ? { v: dec.tramo.texto, s: 'warn' } : dec.tramo.texto]);
     r.push([], [H('Suelo y construcción'), HR('Importe'), HR('% de los costes')]);
     r.push(['Coste del suelo', { v: dec.suelo, s: 'eur' }, { v: dec.pesoSuelo, s: 'pct' }], ['Coste de construcción', { v: dec.obra, s: 'eur' }, { v: dec.pesoObra, s: 'pct' }]);
     r.push([], [H('Indicador'), HR('Valor')]);
@@ -238,9 +238,9 @@
     page.drawRectangle({ x: gx0, y: gyy, width: gx1 - gx0, height: 8, color: rgb(1, 1, 1), borderColor: C.line, borderWidth: 0.6 });
     if (k.margen > 0) page.drawRectangle({ x: gx0, y: gyy, width: gp(k.margen) - gx0, height: 8, color: tone[1] });
     page.drawLine({ start: { x: gp(dec.min), y: gyy - 3 }, end: { x: gp(dec.min), y: gyy + 11 }, thickness: 1.5, color: C.ink });
-    text('mínimo bancos ' + fmtPct(dec.min, 0), gp(dec.min) + 3, gyy - 10, { size: 7, color: C.mute });
+    text(fmtPct(dec.min, 0) + ' viab. mínima', gp(dec.min) + 3, gyy - 10, { size: 7, color: C.mute });
     page.drawLine({ start: { x: gp(dec.hol), y: gyy - 3 }, end: { x: gp(dec.hol), y: gyy + 11 }, thickness: 1.5, color: C.ink });
-    text(fmtPct(dec.hol, 0) + ' sin mirar', gp(dec.hol) + 3, gyy - 10, { size: 7, color: C.mute });
+    text(fmtPct(dec.hol, 0) + ' viab. deseada', gp(dec.hol) + 3, gyy - 22, { size: 7, color: C.mute });
     y -= mbh + 8;
     const tiles = [['Coste del suelo', fmtEur(dec.suelo), fmtPct(dec.pesoSuelo, 1) + ' de los costes'], ['Coste de construcción', fmtEur(dec.obra), fmtPct(dec.pesoObra, 1) + ' de los costes'], ['Resultado', fmtEur(k.resultado), 'antes de impuestos'], ['Ingresos', fmtEur(k.ingresos), 'sin IVA'],
       ['Costes totales', fmtEur(k.costes), 'sin IVA'], ['TIR del proyecto', fmtPct(k.tirOperativa, 2), 'sin financiación'], ['TIR con financiación', fmtPct(k.tirFinanciera, 2), ''], ['Saldo de caja más bajo', fmtEur(k.peorSaldo), 'mes ' + k.mesPeorSaldo]];

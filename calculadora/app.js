@@ -388,10 +388,12 @@
         h('div', { class: 'm-verdict' }, h('span', { class: 'chip ' + t.cls }, t.cls === 'ok' ? '✓ ' : t.cls === 'warn' ? '• ' : '⚠ ', t.texto),
           h('div', { class: 'm-sub' }, `Resultado de ${fmtEur(k.resultado)} sobre ${fmtEur(k.ingresos)} de ventas`),
           h('a', { class: 'm-edit', onclick: () => goField('margen_minimo') }, 'Ver el criterio de margen'))),
-      h('div', { class: 'm-gauge', role: 'img', 'aria-label': `Margen ${fmtPct(m, 1)}; los bancos no financian por debajo del ${fmtPct(min, 0)}; desde el ${fmtPct(hol, 0)} se hace sin mirar` },
+      h('div', { class: 'm-gauge', role: 'img', 'aria-label': `Margen ${fmtPct(m, 1)}; viabilidad mínima ${fmtPct(min, 0)} (por debajo los bancos no financian); viabilidad deseada ${fmtPct(hol, 0)}` },
         h('div', { class: 'm-track' }, h('i', { class: 'm-zone z-bad', style: `left:0;width:${pos(min)}%` }), h('i', { class: 'm-zone z-mid', style: `left:${pos(min)}%;width:${pos(hol) - pos(min)}%` }), h('i', { class: 'm-zone z-ok', style: `left:${pos(hol)}%;width:${100 - pos(hol)}%` }),
           h('i', { class: 'm-fill', style: `width:${pos(Math.max(0, m))}%` }), h('i', { class: 'm-min', style: `left:${pos(min)}%` }), h('i', { class: 'm-min', style: `left:${pos(hol)}%` })),
-        h('div', { class: 'm-scale' }, h('span', {}, '0 %'), h('span', { style: `left:${pos(min)}%` }, fmtPct(min, 0) + ' mínimo bancos'), h('span', { style: `left:${pos(hol)}%` }, fmtPct(hol, 0) + ' sin mirar'), h('span', { style: 'left:100%' }, fmtPct(escala, 0)))),
+        h('div', { class: 'm-scale' }, h('span', {}, '0 %'), h('span', { style: 'left:100%' }, fmtPct(escala, 0)),
+          h('span', { class: 'm-thr', style: `left:${pos(min)}%;transform:translateX(-100%)` }, fmtPct(min, 0) + ' viabilidad mínima'),
+          h('span', { class: 'm-thr lo', style: `left:${pos(hol)}%` }, fmtPct(hol, 0) + ' viabilidad deseada'))),
       tip);
   }
 
