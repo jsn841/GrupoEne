@@ -20,7 +20,7 @@
       ['Ingreso neto', NZ.eurC(tot.neto), 'tras comisiones'],
       ['Venta directa', NZ.pct(tot.ing ? directo / tot.ing : null), 'sin comisión'],
     ];
-    const tb = $('#canal-tiles'); tb.replaceChildren();
+    const tb = $('#hcanal-tiles'); tb.replaceChildren();
     tiles.forEach(([t, v, m]) => tb.append(tileEl(NZ, t, v, m)));
 
     // ingresos con comisión (apilado): neto + comisión

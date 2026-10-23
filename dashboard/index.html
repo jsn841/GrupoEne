@@ -704,7 +704,7 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
 
     <h2 class="nz-h2" id="h-canales">Canales de reserva <small class="pl-cur"></small></h2>
     <p class="nz-note">De dónde vienen las reservas del balneario (web y teléfono propios, OTAs como Booking o Expedia, agencias y turoperadores), y cuánto deja cada uno tras la comisión. Sigue el filtro de fechas.</p>
-    <div class="nz-tiles" id="canal-tiles"></div>
+    <div class="nz-tiles" id="hcanal-tiles"></div>
     <div class="nz-grid2">
       <div class="nz-card"><h3>Ingresos y comisión por canal</h3><p class="nz-note">Barra: ingreso bruto. La parte oscura es la comisión que se lleva el canal; el resto es lo que queda (neto).</p><div class="nz-chart nz-tall" id="ch-canal-neto"></div></div>
       <div class="nz-card"><h3>Reparto de reservas</h3><p class="nz-note">Cuántas reservas trae cada canal. Los directos no pagan comisión.</p><div class="nz-chart nz-tall" id="ch-canal-resv"></div></div>
@@ -749,7 +749,7 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
     </div>
     <div id="b-clasica">
     <nav class="nz-pnav" aria-label="Apartados de la bodega">
-      <a data-go="b-resumen">Resumen</a><a data-go="b-referencias">Referencias</a><a data-go="b-provincias">Ventas por provincia</a><a data-go="b-export">Exportación</a><a data-go="b-canales">Online, visitas y tienda</a>
+      <a data-go="b-resumen">Resumen</a><a data-go="b-referencias">Referencias</a><a data-go="b-provincias">Ventas por provincia</a><a data-go="b-export">Exportación</a><a data-go="b-canales">Online, visitas y tienda</a><a data-go="b-stock">Stock en bodega</a>
     </nav>
 
     <h2 class="nz-h2" id="b-resumen">Resumen</h2>
@@ -835,6 +835,22 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
       <div class="nz-card" id="card-canal-online"><h3>Tienda online</h3><p class="nz-note">Facturación.</p><div class="nz-chart nz-short" id="ch-canal-online" data-source="series"></div></div>
       <div class="nz-card" id="card-canal-visitas"><h3>Visitas a la bodega</h3><p class="nz-note">Personas.</p><div class="nz-chart nz-short" id="ch-canal-visitas" data-source="series"></div></div>
       <div class="nz-card" id="card-canal-tienda"><h3>Tienda de la bodega</h3><p class="nz-note">Facturación.</p><div class="nz-chart nz-short" id="ch-canal-tienda" data-source="series"></div></div>
+    </div>
+
+    <h2 class="nz-h2" id="b-stock">Stock en bodega <small>a día de hoy</small></h2>
+    <p class="nz-note">Botellas guardadas de cada referencia y para cuántos meses de venta dan (cobertura). No depende del filtro de fechas: es una foto de hoy.</p>
+    <div class="nz-tiles" id="stock-tiles"></div>
+    <div class="nz-grid2">
+      <div class="nz-card"><h3>Cobertura por referencia</h3><p class="nz-note">Meses de venta que cubre el stock. Rojo: menos de 2 meses (riesgo de rotura). Ámbar: 2 a 4. Gris claro: más de 18 (exceso).</p><div class="nz-chart nz-tall" id="ch-stock-cob"></div></div>
+      <div class="nz-card" id="card-stock-avisos"><h3>Avisos</h3><p class="nz-note">Referencias a reponer y referencias con demasiado stock parado.</p><div id="stock-avisos"></div></div>
+    </div>
+    <div class="nz-card">
+      <h3>Detalle de existencias</h3>
+      <p class="nz-note">Cobertura = botellas entre la venta media mensual. Valor a coste. «Última entrada» es el embotellado más reciente.</p>
+      <div class="nz-controls"><span class="nz-count" id="c-stock"></span></div>
+      <div class="nz-tablebox nz-tall"><table class="nz-t" id="t-stock" data-row-key="id">
+        <thead><tr><th data-field="referencia">Referencia</th><th data-field="tipo">Tipo</th><th data-field="botellas">Botellas</th><th data-field="venta_mensual">Venta/mes</th><th data-field="cobertura">Cobertura</th><th data-field="valor">Valor (coste)</th><th data-field="entrada">Última entrada</th><th data-field="lote">Lote</th><th data-field="estado">Estado</th></tr></thead>
+      </table></div>
     </div>
       </div>
 

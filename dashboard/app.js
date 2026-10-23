@@ -546,6 +546,52 @@
         NZ.lines($(sel), ch.xs, yearSeries(ch), { fmtY: fm, fmtTip: ft, xLabel: ch.label, tipTitle: ch.tip, height: 170 });
       });
     }
+    drawStock(b);
+  }
+
+  // ---------- stock en bodega ----------
+  const ESTS = { rotura: ['nz-bad', 'Riesgo de rotura'], bajo: ['nz-warn', 'Bajo'], ok: ['nz-ok', 'Correcto'], exceso: ['', 'Exceso'] };
+  const num1 = (v) => (v == null || isNaN(v) ? "—" : v.toLocaleString("es-ES", { minimumFractionDigits: 1, maximumFractionDigits: 1 }));
+  function drawStock(b) {
+    const st = ok('vino_stock');
+    if (!st) { failed($('#ch-stock-cob'), 'vino_stock'); return; }
+    const rows = st.filter((r) => r.bodega === b);
+    const bot = rows.reduce((t, r) => t + r.botellas, 0), val = rows.reduce((t, r) => t + r.valor, 0);
+    const cobMedia = bot && rows.reduce((t, r) => t + r.venta_mensual, 0) ? bot / rows.reduce((t, r) => t + r.venta_mensual, 0) : null;
+    const bajas = rows.filter((r) => r.estado === 'rotura' || r.estado === 'bajo').length;
+    const tiles = [
+      ['Botellas en bodega', NZ.int(bot), rows.length + ' referencias'],
+      ['Valor del stock', NZ.eurC(val), 'a coste'],
+      ['Cobertura media', cobMedia == null ? '—' : num1(cobMedia) + ' meses', 'de venta'],
+      ['A reponer', String(bajas), 'menos de 4 meses'],
+      ['En exceso', String(rows.filter((r) => r.estado === 'exceso').length), 'más de 18 meses'],
+    ];
+    const tb = $('#stock-tiles'); tb.replaceChildren();
+    tiles.forEach(([t, v, m]) => { const el = NZ.el('div', 'nz-tile'); el.append(NZ.el('div', 'nz-tl', t), NZ.el('div', 'nz-big', v), NZ.el('div', 'nz-meta', m)); tb.appendChild(el); });
+    const colEst = (r) => (r.estado === 'rotura' ? 'var(--color-bad)' : r.estado === 'bajo' ? 'var(--color-warn)' : r.estado === 'exceso' ? 'var(--cds-chart-muted)' : C()[2]);
+    NZ.hbars($('#ch-stock-cob'), rows.slice().sort((a, z) => a.cobertura - z.cobertura), {
+      label: (r) => r.referencia, value: (r) => Math.min(r.cobertura, 30), fmt: (v, r) => (r ? num1(r.cobertura) + ' m' : num1(v)), color: colEst,
+      sub: (r) => ({ text: NZ.int(r.botellas) + ' bot.' }),
+    });
+    const av = $('#stock-avisos'); av.replaceChildren();
+    const rep = rows.filter((r) => r.estado === 'rotura' || r.estado === 'bajo').sort((a, z) => a.cobertura - z.cobertura);
+    const exc = rows.filter((r) => r.estado === 'exceso').sort((a, z) => z.cobertura - a.cobertura);
+    const block = (titulo, arr, verbo) => {
+      if (!arr.length) return;
+      av.append(NZ.el('div', 'nz-tl', titulo));
+      const ul = NZ.el('ul', 'nz-ins');
+      arr.slice(0, 6).forEach((r) => { const li = NZ.el('li'); li.append(NZ.el('b', ESTS[r.estado][0], r.referencia + ': '), document.createTextNode(`${num1(r.cobertura)} meses (${NZ.int(r.botellas)} bot.). ${verbo}`)); ul.appendChild(li); });
+      av.appendChild(ul);
+    };
+    block('Reponer pronto', rep, 'Planifica embotellado o compra.');
+    block('Demasiado stock', exc, 'Empujar en promociones o canal directo.');
+    if (!rep.length && !exc.length) av.append(NZ.el('p', 'nz-note', 'Todo el stock de esta bodega está en niveles correctos.'));
+    NZ.table($('#t-stock'), rows, {
+      botellas: { num: true, fmt: NZ.int }, venta_mensual: { num: true, fmt: NZ.int },
+      cobertura: { num: true, fmt: (v) => (v == null ? '—' : num1(v) + ' m') }, valor: { num: true, fmt: NZ.eurC },
+      entrada: { fmt: (v) => { const d = new Date(v); return d.getUTCDate() + ' ' + NZ.MESES[d.getUTCMonth()] + ' ' + d.getUTCFullYear(); } },
+      estado: { render: (td, r) => NZ.chip(td, ESTS[r.estado][1], ESTS[r.estado][0]) },
+    }, { key: 'id', filter: (r) => r.bodega === b, sortField: 'cobertura', sortDir: 1, count: $('#c-stock') });
   }
 
   // ---------- main ----------
