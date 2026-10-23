@@ -15,12 +15,13 @@ viv = json.load(open(os.path.join(D, 'viviendas.json')))
 HOY = dt.date(2026, 10, 19)
 
 # constructora: nombre, coste base €/m² (precios de 2026), calidad (multiplica incidencias y días de resolución)
-CONS = [('cons-atlas', 'Constructora Atlas', 1390, 0.75), ('cons-meridiano', 'Obras Meridiano', 1250, 1.25),
-        ('cons-cimbra', 'Grupo Cimbra', 1460, 0.85), ('cons-edifica', 'Edifica Norte', 1290, 1.05),
-        ('cons-levante', 'Levante Construcción', 1210, 1.4)]
+CONS = [('cons-sanjose', 'San José', 1390, 0.85), ('cons-dragados', 'Dragados', 1460, 0.8),
+        ('cons-sanmartin', 'San Martín', 1270, 1.1), ('cons-ferrovial', 'Ferrovial', 1480, 0.75),
+        ('cons-acciona', 'Acciona', 1450, 0.8), ('cons-avintia', 'Avintia', 1180, 1.3), ('cons-fcc', 'FCC', 1410, 0.95)]
 # banco: nombre, diferencial sobre Euribor
-BANC = [('banco-orion', 'Banco Orión', 1.15), ('banco-vertice', 'Banco Vértice', 1.35), ('caja-altamira', 'Caja Altamira', 1.25),
-        ('banco-ponto', 'Banco Ponto', 1.45), ('banca-lumen', 'Banca Lumen', 1.05)]
+BANC = [('banco-bbva', 'BBVA', 1.2), ('banco-santander', 'Santander', 1.25), ('banco-abanca', 'Abanca', 1.35),
+        ('banco-cajarural', 'Caja Rural', 1.4), ('banco-bankinter', 'Bankinter', 1.15),
+        ('banco-ing', 'ING', 1.1), ('banco-caixa', 'CaixaBank', 1.2)]
 EURIBOR = {2017: -0.15, 2018: -0.17, 2019: -0.2, 2020: -0.3, 2021: -0.5, 2022: 1.1, 2023: 3.6, 2024: 3.3, 2025: 2.3, 2026: 2.2, 2027: 2.3, 2028: 2.4, 2029: 2.4}
 SLA = {'Urgente': 2, 'Alta': 7, 'Media': 15, 'Baja': 30}
 CATS = [('Humedades y filtraciones', 'Alta', 0.16), ('Carpintería y ventanas', 'Media', 0.17), ('Fontanería', 'Alta', 0.13),
@@ -34,9 +35,18 @@ def entrega_fecha(p):
 out = {}
 incid = []
 nid = 0
+# reparto garantizando que todas las constructoras y bancos tengan al menos una promoción
+def reparte(lista, n, pesos=None):
+    base = list(range(len(lista)))                      # una de cada una primero
+    extra = rnd.choices(range(len(lista)), weights=pesos, k=max(0, n - len(lista)))
+    idx = base + extra
+    rnd.shuffle(idx)
+    return idx
+asig_c = reparte(CONS, len(promos), [3, 2, 3, 2, 2, 3, 2])
+asig_b = reparte(BANC, len(promos))
 for i, p in enumerate(promos):
-    c = CONS[rnd.choices(range(len(CONS)), weights=[3, 3, 2, 3, 2])[0]]
-    b = BANC[rnd.randrange(len(BANC))]
+    c = CONS[asig_c[i]]
+    b = BANC[asig_b[i]]
     vs = [v for v in viv if v['promo_id'] == p['id']]
     m2_util = sum(v['m2'] for v in vs) or p['viviendas'] * 100
     m2 = round(m2_util * rnd.uniform(1.32, 1.48))  # con zonas comunes, garajes y trasteros
@@ -83,7 +93,7 @@ for i, p in enumerate(promos):
                           'dentro_sla': (HOY - ab).days <= sla if abierta else dias <= sla})
 json.dump({'hoy': HOY.isoformat(), 'sla': SLA, 'constructoras': [{'id': c[0], 'nombre': c[1]} for c in CONS],
            'bancos': [{'id': b[0], 'nombre': b[1]} for b in BANC], 'promos': out, 'incidencias': incid,
-           'nota': 'Constructoras, bancos e incidencias simulados (nombres ficticios).'},
+           'nota': 'Datos simulados. Los bancos y constructoras son empresas reales pero su relación con el grupo, la financiación, el coste por m2 y las incidencias son INVENTADOS (maqueta).'},
           open(os.path.join(D, 'obra.json'), 'w'), ensure_ascii=False, separators=(',', ':'))
 ab = sum(1 for x in incid if x['estado'] == 'Abierta')
 print(len(out), 'promociones ·', len(incid), 'incidencias (', ab, 'abiertas) ·', os.path.getsize(os.path.join(D, 'obra.json')) // 1024, 'KB')
