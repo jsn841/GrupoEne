@@ -23,6 +23,18 @@
   let saveOk = true;
   function saveLib() { const ok = store.set(LIBKEY, JSON.stringify(lib)); if (!ok && saveOk) toast('No se ha podido guardar en este navegador (modo privado o sin espacio). Los cambios se perderán al cerrar.'); saveOk = ok; }
   function newPromo(nombre, data) { const now = new Date().toISOString(); const p = { id: 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), nombre, creada: now, modificada: now, data: data || {}, revisados: [] }; lib.promociones.push(p); return p; }
+  // Envío de la promoción a la base de datos (Supabase) para el análisis del equipo.
+  // Inactivo mientras config.js no tenga url y key: entonces el botón sigue siendo «Crear promoción».
+  function envioActivo() { const C = window.ENVIO; return !!(C && C.url && C.key); }
+  async function enviarPromo(p) {
+    const C = window.ENVIO; if (!C || !C.url || !C.key) return { skip: true };
+    try {
+      const body = { nombre: p.nombre, creada: p.creada, datos: CALC.withDefaults(p.data), resultados: p.resumen || null };
+      const r = await fetch(C.url.replace(/\/$/, '') + '/rest/v1/' + (C.tabla || 'promociones'),
+        { method: 'POST', headers: { apikey: C.key, Authorization: 'Bearer ' + C.key, 'Content-Type': 'application/json', Prefer: 'return=minimal' }, body: JSON.stringify(body) });
+      return { ok: r.ok, status: r.status };
+    } catch (e) { return { ok: false, error: String(e) }; }
+  }
   const promo = () => lib.promociones.find((p) => p.id === lib.activa);
   function touch() { promo().modificada = new Date().toISOString(); saveLib(); }
 
@@ -864,7 +876,7 @@
   function renderWizard() {
     const b = $('#wizBody'); b.innerHTML = '';
     $$('#wizSteps li').forEach((li, i) => { li.classList.toggle('on', i + 1 === wiz.step); li.classList.toggle('done', i + 1 < wiz.step); });
-    $('#wizBack').hidden = wiz.step === 1; $('#wizNext').textContent = wiz.step === 3 ? 'Crear promoción' : 'Siguiente';
+    $('#wizBack').hidden = wiz.step === 1; $('#wizNext').textContent = wiz.step === 3 ? (envioActivo() ? 'Crear y enviar para el análisis' : 'Crear promoción') : 'Siguiente';
     if (wiz.step === 1) {
       const name = h('input', { id: 'wizName', value: wiz.nombre, maxlength: 80, oninput: (e) => { wiz.nombre = e.target.value; } });
       b.append(h('label', { class: 'wfield wide' }, h('span', { class: 'wl' }, 'Nombre de la promoción'), name, h('span', { class: 'wh' }, 'Por ejemplo, la calle o el nombre comercial.')));
@@ -896,13 +908,17 @@
         if (wiz.gen.hasta >= L) b.append(h('p', { class: 'help' }, 'Hay ventas después de la entrega de llaves: se cobran enteras en el mes de la venta.'));
       }
       b.append(h('div', { class: 'wprev', id: 'wizPrev' })); wizSchedulePreview();
+      if (envioActivo()) b.append(h('p', { class: 'help' }, 'Al crear, se envía una copia de la promoción al equipo para su análisis.'));
     }
   }
   $('#wizNext').addEventListener('click', (e) => {
     e.preventDefault();
     if (wiz.step === 1) { if (!wiz.nombre.trim()) { toast('Escribe un nombre'); $('#wizName').focus(); return; } wiz.data = wizBaseData(); wiz.replan = false; wiz.ccaaChanged = false; wiz.step = 2; }
     else if (wiz.step === 2) { const miss = CALC.check(wiz.data).missing; if (miss.length) { toast('Faltan: ' + miss.map((f) => f.label.toLowerCase()).join(', ')); return; } wiz.step = 3; }
-    else { const src = wiz.base === 'copy' && lib.promociones.find((x) => x.id === wiz.copyId); const p = newPromo(wiz.nombre.trim(), wizFinalData()); if (src) p.revisados = [...(src.revisados || [])]; if (wiz.base === 'example') p.ejemplo = true; saveLib(); wizDlg.close(); openEditor(p.id); toast('Promoción creada. Revisa los datos en amarillo.'); return; }
+    else { const src = wiz.base === 'copy' && lib.promociones.find((x) => x.id === wiz.copyId); const p = newPromo(wiz.nombre.trim(), wizFinalData()); if (src) p.revisados = [...(src.revisados || [])]; if (wiz.base === 'example') p.ejemplo = true; saveLib(); wizDlg.close(); openEditor(p.id);
+      if (envioActivo()) enviarPromo(p).then((r) => toast(r.ok ? 'Promoción creada y enviada para el análisis.' : 'Promoción creada. No se pudo enviar para el análisis; vuelve a intentarlo más tarde.'));
+      else toast('Promoción creada. Revisa los datos en amarillo.');
+      return; }
     renderWizard();
   });
   $('#wizBack').addEventListener('click', (e) => { e.preventDefault(); wiz.step = Math.max(1, wiz.step - 1); renderWizard(); });
