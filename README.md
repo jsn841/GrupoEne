@@ -5,7 +5,7 @@
 Maqueta de un panel de ventas para los tres negocios del grupo. Un menú lateral lleva a cada panel (Dashboard General, Inmobiliario, Hoteles y Bodegas) y a las herramientas (Análisis Promociones y Marketing Inmobiliario):
 
 - **Inicio**: facturación y beneficio bruto del grupo y de cada negocio frente al periodo de comparación, progresión por años, facturación del periodo y últimos movimientos del día.
-- **Inmobiliario**: promociones entregadas y en curso, mapa de España, reservas por mes y detalle de cada vivienda (precio y estado).
+- **Inmobiliario**: promociones entregadas y en curso, mapa de España, reservas por mes, ciclo de vida de una promoción (de la compra del suelo a la entrega, con los hitos y, mes a mes, reservas arriba y leads abajo; media de todas o filtrado por comunidad, provincia o promoción) y detalle de cada vivienda (precio y estado).
 - **Marketing Inmobiliario**: calendario de lanzamiento de cada promoción (renders, ficha en la web, landing page, portales, redes sociales, anuncios, email…) con fecha prevista y real y avisos de lo retrasado; próximos lanzamientos; todas las promociones en el tiempo; inversión, contactos, coste por contacto y reservas del periodo; rendimiento por canal; emails; redes sociales; e histórico de las promociones cerradas. Los datos vendrían de la herramienta de marketing y las reservas del sistema de ventas, así que marketing no necesita licencia de Salesforce.
 - **Balneario de Panticosa**: Gran Hotel y Hotel Continental (ocupación, precio medio, ingresos, personas alojadas, reservas futuras), resultados por local, y consumos separados en spa, comida, bebida y punto de venta (tienda): lo más y lo menos vendido, por margen, cuándo se consume por día de la semana y hora, y recomendaciones de stock, turnos y ofertas.
 - **Análisis Promociones**: la calculadora de promociones (ver abajo), dentro del panel.
@@ -68,10 +68,11 @@ scripts/
   generar_consumos.py        tipo de consumo, coste y horario de cada producto del balneario
   generar_marketing.py       datos simulados de la herramienta de marketing
   generar_distribuidores.py  distribuidores de las bodegas, sus zonas y canales
+  generar_ciclo.py           hitos de cada promoción y reservas y leads por mes
   preparar_mapa_provincias.py simplifica el mapa de provincias (límites del IGN vía click_that_hood, licencia MIT)
 ```
 
-Para regenerar los datos: `python3 scripts/generar_datos.py && python3 scripts/generar_productos_hotel.py && python3 scripts/generar_series.py && python3 scripts/generar_consumos.py && python3 scripts/generar_marketing.py && python3 scripts/generar_distribuidores.py` (en ese orden; salen siempre las mismas cifras). Si cambias los datos, sube el número de versión (`VERSION` en `dash-shim.js` y los `?v=` de los `index.html`) para que los navegadores no usen copias antiguas.
+Para regenerar los datos: `python3 scripts/generar_datos.py && python3 scripts/generar_productos_hotel.py && python3 scripts/generar_series.py && python3 scripts/generar_consumos.py && python3 scripts/generar_marketing.py && python3 scripts/generar_distribuidores.py && python3 scripts/generar_ciclo.py` (en ese orden; salen siempre las mismas cifras). Si cambias los datos, sube el número de versión (`VERSION` en `dash-shim.js` y los `?v=` de los `index.html`) para que los navegadores no usen copias antiguas.
 
 ### Pasar a datos reales
 

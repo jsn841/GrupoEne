@@ -232,6 +232,7 @@
     sel.value = P().promo || '';
   }
   function drawInmo() {
+    if (window.CICLO) CICLO.draw({ ok, failed, P, setP, NZ, C });
     const promos = ok('promociones');
     const promo = P().promo;
     // map
@@ -562,6 +563,7 @@
   if (window.CONS) CONS.wire(setP);
   if (window.MKT) MKT.wire(setP);
   if (window.DIST) DIST.wire(setP);
+  if (window.CICLO) CICLO.wire(setP);
   $$('#seg-bvista button').forEach((b) => b.addEventListener('click', () => setP({ bvista: b.dataset.v })));
   dash.onData(draw);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => NZ.slides());

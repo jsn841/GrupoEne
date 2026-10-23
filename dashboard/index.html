@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400&display=swap" rel="stylesheet">
-<script src="vendor/d3.min.js?v=2026-10-22a"></script>
+<script src="vendor/d3.min.js?v=2026-10-23a"></script>
 <script>
 try { var t = localStorage.getItem('nz-theme'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
 </script>
@@ -273,6 +273,20 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
 .nz-dcanal .nz-dbar { display: flex; height: 14px; border-radius: 4px; overflow: hidden; margin: 4px 0 6px; }
 .nz-dcanal .nz-dbar span { display: block; height: 100%; }
 .nz-dcanal .nz-legend { margin: 0; }
+.nz-ctiles { grid-template-columns: repeat(auto-fit, minmax(min(100%, 10.5rem), 1fr)); }
+.nz-ctiles .nz-big { font-size: 22px; }
+.nz-ciclo .nz-fase { fill: transparent; }
+.nz-ciclo .nz-fase0 { fill: color-mix(in srgb, var(--color-fg) 3%, transparent); }
+.nz-ciclo .nz-fase1 { fill: color-mix(in srgb, var(--c1) 5%, transparent); }
+.nz-ciclo .nz-fase2 { fill: color-mix(in srgb, var(--c2) 6%, transparent); }
+.nz-ciclo .nz-fase-t { fill: var(--color-fg-muted); font-size: 11px; }
+.nz-ciclo .nz-hito { stroke: var(--color-fg); stroke-width: 1.2; }
+.nz-ciclo .nz-hito-prev { stroke-dasharray: 4 3; }
+.nz-ciclo .nz-hito-dot { fill: var(--color-fg); }
+.nz-ciclo .nz-hito-t { fill: var(--color-fg); font-weight: var(--cds-font-weight-medium); }
+.nz-ciclo .nz-axt { font-weight: var(--cds-font-weight-medium); }
+.nz-ciclo .nz-xlab { paint-order: stroke; stroke: var(--color-panel); stroke-width: 3px; }
+.nz-ciclo .nz-today { stroke: var(--color-bad); stroke-dasharray: 3 3; }
 @keyframes nzfade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 </style>
 
@@ -399,6 +413,21 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
         <div class="nz-tl" style="margin-top:var(--cds-gap-md)" id="h-reservas-acum">Reservas acumuladas dentro del periodo</div>
         <div class="nz-chart nz-short" id="ch-reservas-acum" data-source="series"></div>
       </div>
+    </div>
+
+    <h2 class="nz-h2" id="h-ciclo">Ciclo de vida de una promoción <small>del suelo a la entrega</small></h2>
+    <div class="nz-card" id="card-ciclo" style="margin-bottom:var(--cds-gap-md)">
+      <div class="nz-controls">
+        <select class="nz-select" id="sel-ciclo-ccaa" aria-label="Comunidad autónoma"></select>
+        <select class="nz-select" id="sel-ciclo-prov" aria-label="Provincia"></select>
+        <select class="nz-select" id="sel-ciclo-promo" aria-label="Promoción"></select>
+        <div class="nz-seg" id="seg-ciclo-medida" role="group" aria-label="Medida"><button data-v="media">Número</button><button data-v="cien">Por cada 100 viviendas</button></div>
+      </div>
+      <p class="nz-note" id="n-ciclo"></p>
+      <div class="nz-tiles nz-ctiles" id="ciclo-tiles"></div>
+      <div class="nz-legend" id="lg-ciclo"></div>
+      <div class="nz-chart" id="ch-ciclo"></div>
+      <p class="nz-note" style="margin-top:6px">Eje horizontal: meses desde la compra del suelo (o fechas reales si eliges una promoción). Arriba, reservas de vivienda por mes; abajo, contactos recibidos (leads). Las líneas marcan los hitos; en la media, el mes medio de cada hito. No depende del filtro de fechas.</p>
     </div>
 
     <div class="nz-card" id="card-promos-curso" style="margin-bottom:var(--cds-gap-md)">
@@ -831,13 +860,14 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
 </div>
 
 </div>
-<script src="dash-shim.js?v=2026-10-22a"></script>
-<script src="periodo.js?v=2026-10-22a"></script>
-<script src="lib.js?v=2026-10-22a"></script>
-<script src="consumos.js?v=2026-10-22a"></script>
-<script src="marketing.js?v=2026-10-22a"></script>
-<script src="distribuidores.js?v=2026-10-22a"></script>
-<script src="app.js?v=2026-10-22a"></script>
-<script src="theme.js?v=2026-10-22a"></script>
+<script src="dash-shim.js?v=2026-10-23a"></script>
+<script src="periodo.js?v=2026-10-23a"></script>
+<script src="lib.js?v=2026-10-23a"></script>
+<script src="consumos.js?v=2026-10-23a"></script>
+<script src="marketing.js?v=2026-10-23a"></script>
+<script src="distribuidores.js?v=2026-10-23a"></script>
+<script src="ciclo.js?v=2026-10-23a"></script>
+<script src="app.js?v=2026-10-23a"></script>
+<script src="theme.js?v=2026-10-23a"></script>
 </body>
 </html>
