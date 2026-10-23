@@ -62,7 +62,27 @@ for j, r in enumerate(refs):
         ent = dt.date(HOY.year if HOY.month >= 3 else HOY.year - 1, rnd.choice([2, 3, 4]), rnd.randint(1, 28))
     else:
         ent = dt.date(HOY.year - (2 if 'Reserva' in r['referencia'] else 1), rnd.choice([3, 4, 5, 9, 10]), rnd.randint(1, 28))
-    stock.append({'r': j, 'botellas': bot, 'venta_anual': int(anual), 'entrada': ent.isoformat(), 'lote': f"L{ent.year}{ent.month:02d}"})
+    # añadas anteriores aún en bodega (vino viejo que no se ha vendido o se guarda como reserva).
+    # Los tintos (sobre todo crianza/reserva) guardan más años; blancos, rosados y frizzante, poco o nada.
+    anada_actual = ent.year
+    if r['tipo'] == 'Tinto':
+        n_ant = rnd.choices([1, 2, 3, 4], weights=[3, 4, 3, 2])[0]
+    elif r['tipo'] == 'Dulce':
+        n_ant = rnd.choices([1, 2, 3], weights=[2, 3, 3])[0]
+    else:  # Blanco, Rosado, Frizzante: casi todo es del año
+        n_ant = rnd.choices([0, 1, 2], weights=[5, 3, 1])[0]
+    anteriores, resto = [], anual / 12  # base mensual de venta
+    for k in range(1, n_ant + 1):
+        # cada añada más vieja suele tener menos botellas; algo de reserva en las muy viejas de tinto
+        frac = rnd.uniform(0.04, 0.22) * (0.8 ** (k - 1))
+        if r['tipo'] == 'Tinto' and 'Reserva' in r['referencia'] and k >= 2:
+            frac *= rnd.uniform(1.4, 2.2)  # reserva: se guarda vino viejo a propósito
+        b = int(anual * frac)
+        if b > 0:
+            anteriores.append({'anada': anada_actual - k, 'botellas': b})
+    total_ant = sum(a['botellas'] for a in anteriores)
+    stock.append({'r': j, 'botellas': bot, 'venta_anual': int(anual), 'entrada': ent.isoformat(), 'lote': f"L{ent.year}{ent.month:02d}",
+                  'anada_actual': anada_actual, 'anteriores': anteriores, 'botellas_anteriores': total_ant})
 S['reparto']['stock'] = {'items': stock, 'hoy': HOY.isoformat(),
  'nota': 'Botellas en bodega hoy y última entrada (embotellado). La cobertura es el stock dividido entre la venta media mensual.'}
 

@@ -633,6 +633,42 @@
       entrada: { fmt: (v) => { const d = new Date(v); return d.getUTCDate() + ' ' + NZ.MESES[d.getUTCMonth()] + ' ' + d.getUTCFullYear(); } },
       estado: { render: (td, r) => NZ.chip(td, ESTS[r.estado][1], ESTS[r.estado][0]) },
     }, { key: 'id', filter: (r) => r.bodega === b, sortField: 'cobertura', sortDir: 1, count: $('#c-stock') });
+    drawAnadas(rows);
+  }
+
+  // ---------- añadas anteriores en bodega ----------
+  function drawAnadas(rows) {
+    const tot = rows.reduce((t, r) => t + (r.botellas_anteriores || 0), 0);
+    const val = rows.reduce((t, r) => t + (r.valor_anteriores || 0), 0);
+    const conAnt = rows.filter((r) => r.botellas_anteriores > 0);
+    let masVieja = null; rows.forEach((r) => (r.anteriores || []).forEach((a) => { if (masVieja == null || a.anada < masVieja) masVieja = a.anada; }));
+    const tiles = [
+      ['Botellas de añadas anteriores', NZ.int(tot), 'en bodega'],
+      ['Valor', NZ.eurC(val), 'a coste'],
+      ['Referencias con añadas viejas', String(conAnt.length), 'de ' + rows.length],
+      ['Añada más antigua', masVieja == null ? '—' : String(masVieja), 'en bodega'],
+    ];
+    const tb = $('#anadas-tiles'); tb.replaceChildren();
+    tiles.forEach(([t, v, m]) => { const el = NZ.el('div', 'nz-tile'); el.append(NZ.el('div', 'nz-tl', t), NZ.el('div', 'nz-big', v), NZ.el('div', 'nz-meta', m)); tb.appendChild(el); });
+    // botellas por añada (suma de todas las referencias), separando la añada en venta
+    const acc = new Map();
+    const add = (anada, campo, n) => { const e = acc.get(anada) || { venta: 0, ant: 0 }; e[campo] += n; acc.set(anada, e); };
+    rows.forEach((r) => { if (r.anada_actual != null) add(r.anada_actual, 'venta', r.botellas || 0); (r.anteriores || []).forEach((a) => add(a.anada, 'ant', a.botellas)); });
+    const anadas = [...acc.keys()].sort((a, z) => a - z);
+    NZ.cols($('#ch-anadas'), anadas.map(String), [
+      { name: 'En venta', color: C()[2], values: anadas.map((y) => acc.get(y).venta) },
+      { name: 'Añadas anteriores', color: C()[3], values: anadas.map((y) => acc.get(y).ant) },
+    ], { fmtY: NZ.numC, fmtTip: (v) => NZ.int(v) + ' botellas', xLabel: (x) => x, tipTitle: (x) => 'Añada ' + x });
+    NZ.legend($('#lg-anadas'), [{ name: 'En venta', color: C()[2] }, { name: 'Añadas anteriores', color: C()[3] }]);
+    NZ.hbars($('#ch-anadas-ref'), conAnt.slice().sort((a, z) => z.botellas_anteriores - a.botellas_anteriores), {
+      label: (r) => r.referencia, value: (r) => r.botellas_anteriores, fmt: NZ.int, color: () => C()[3],
+      sub: (r) => ({ text: (r.anteriores || []).map((a) => a.anada).join(', ') }),
+    });
+    NZ.table($('#t-anadas'), rows, {
+      anada_actual: { num: true, fmt: (v) => (v == null ? '—' : String(v)) }, botellas: { num: true, fmt: NZ.int },
+      detalle_ant: { render: (td, r) => { td.textContent = (r.anteriores && r.anteriores.length) ? r.anteriores.map((a) => a.anada + ': ' + NZ.int(a.botellas)).join(' · ') : '—'; } },
+      botellas_anteriores: { num: true, fmt: NZ.int }, valor_anteriores: { num: true, fmt: NZ.eurC },
+    }, { key: 'id', filter: (r) => true, sortField: 'botellas_anteriores', count: $('#c-anadas') });
   }
 
   // ---------- main ----------

@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400&display=swap" rel="stylesheet">
-<script src="vendor/d3.min.js?v=2026-10-23f"></script>
+<script src="vendor/d3.min.js?v=2026-10-23g"></script>
 <script>
 try { var t = localStorage.getItem('nz-theme'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
 </script>
@@ -783,7 +783,7 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
     </div>
     <div id="b-clasica">
     <nav class="nz-pnav" aria-label="Apartados de la bodega">
-      <a data-go="b-resumen">Resumen</a><a data-go="b-referencias">Referencias</a><a data-go="b-provincias">Ventas por provincia</a><a data-go="b-export">Exportación</a><a data-go="b-canales">Online, visitas y tienda</a><a data-go="b-stock">Stock en bodega</a>
+      <a data-go="b-resumen">Resumen</a><a data-go="b-referencias">Referencias</a><a data-go="b-provincias">Ventas por provincia</a><a data-go="b-export">Exportación</a><a data-go="b-canales">Online, visitas y tienda</a><a data-go="b-stock">Stock en bodega</a><a data-go="b-anadas">Añadas anteriores</a>
     </nav>
 
     <h2 class="nz-h2" id="b-resumen">Resumen</h2>
@@ -886,6 +886,22 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
         <thead><tr><th data-field="referencia">Referencia</th><th data-field="tipo">Tipo</th><th data-field="botellas">Botellas</th><th data-field="venta_mensual">Venta/mes</th><th data-field="cobertura">Cobertura</th><th data-field="valor">Valor (coste)</th><th data-field="entrada">Última entrada</th><th data-field="lote">Lote</th><th data-field="estado">Estado</th></tr></thead>
       </table></div>
     </div>
+
+    <h2 class="nz-h2" id="b-anadas">Añadas anteriores en bodega</h2>
+    <p class="nz-note">Botellas de añadas (cosechas) anteriores a la que está en venta, que siguen guardadas en bodega: reserva, vino de guarda o stock sin vender. La añada en venta es la del detalle de arriba.</p>
+    <div class="nz-tiles" id="anadas-tiles"></div>
+    <div class="nz-grid2">
+      <div class="nz-card"><h3>Botellas por añada</h3><p class="nz-note">Suma de todas las referencias de la bodega. La añada en venta va aparte.</p><div class="nz-legend" id="lg-anadas"></div><div class="nz-chart" id="ch-anadas"></div></div>
+      <div class="nz-card"><h3>Referencias con más añadas anteriores</h3><p class="nz-note">Botellas de cosechas pasadas guardadas, por referencia.</p><div class="nz-chart nz-tall" id="ch-anadas-ref"></div></div>
+    </div>
+    <div class="nz-card">
+      <h3>Detalle de añadas anteriores</h3>
+      <p class="nz-note">Por cada referencia, la añada en venta y las cosechas anteriores guardadas, con sus botellas.</p>
+      <div class="nz-controls"><span class="nz-count" id="c-anadas"></span></div>
+      <div class="nz-tablebox nz-tall"><table class="nz-t" id="t-anadas" data-row-key="id">
+        <thead><tr><th data-field="referencia">Referencia</th><th data-field="tipo">Tipo</th><th data-field="anada_actual">Añada en venta</th><th data-field="botellas">Botellas en venta</th><th data-field="detalle_ant">Añadas anteriores</th><th data-field="botellas_anteriores">Botellas anteriores</th><th data-field="valor_anteriores">Valor (coste)</th></tr></thead>
+      </table></div>
+    </div>
       </div>
 
     <!-- vista por distribuidor -->
@@ -955,16 +971,16 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
 
 </div>
 <script src="vendor/pdf-lib.min.js"></script>
-<script src="informe.js?v=2026-10-23f"></script>
-<script src="dash-shim.js?v=2026-10-23f"></script>
-<script src="periodo.js?v=2026-10-23f"></script>
-<script src="lib.js?v=2026-10-23f"></script>
-<script src="consumos.js?v=2026-10-23f"></script>
-<script src="hotelextra.js?v=2026-10-23f"></script>
-<script src="marketing.js?v=2026-10-23f"></script>
-<script src="distribuidores.js?v=2026-10-23f"></script>
-<script src="ciclo.js?v=2026-10-23f"></script>
-<script src="app.js?v=2026-10-23f"></script>
-<script src="theme.js?v=2026-10-23f"></script>
+<script src="informe.js?v=2026-10-23g"></script>
+<script src="dash-shim.js?v=2026-10-23g"></script>
+<script src="periodo.js?v=2026-10-23g"></script>
+<script src="lib.js?v=2026-10-23g"></script>
+<script src="consumos.js?v=2026-10-23g"></script>
+<script src="hotelextra.js?v=2026-10-23g"></script>
+<script src="marketing.js?v=2026-10-23g"></script>
+<script src="distribuidores.js?v=2026-10-23g"></script>
+<script src="ciclo.js?v=2026-10-23g"></script>
+<script src="app.js?v=2026-10-23g"></script>
+<script src="theme.js?v=2026-10-23g"></script>
 </body>
 </html>

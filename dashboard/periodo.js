@@ -376,7 +376,9 @@
         const ref = S.reparto.refs.items[st.r], vm = st.venta_anual / 12, cob = vm ? st.botellas / vm : null;
         const estado = cob == null ? 'ok' : cob < 2 ? 'rotura' : cob < 4 ? 'bajo' : cob > 18 ? 'exceso' : 'ok';
         return { id: ref.referencia, referencia: ref.referencia, bodega: S.meta.bodegas[ref.b], tipo: ref.tipo, botellas: st.botellas,
-          venta_mensual: R0(vm), cobertura: cob, valor: R0(st.botellas * ref.coste_bot), entrada: st.entrada, lote: st.lote, estado };
+          venta_mensual: R0(vm), cobertura: cob, valor: R0(st.botellas * ref.coste_bot), entrada: st.entrada, lote: st.lote, estado,
+          anada_actual: st.anada_actual, anteriores: st.anteriores || [], botellas_anteriores: st.botellas_anteriores || 0,
+          valor_anteriores: R0((st.botellas_anteriores || 0) * ref.coste_bot) };
       });
     }
     // objetivos del año (1 de enero a hoy, proyectado a cierre; no depende del filtro)

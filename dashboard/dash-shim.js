@@ -9,7 +9,7 @@
   const calcs = {};
   const listeners = [];
   let params = { ...DEFAULT_PARAMS };
-  const VERSION = '2026-10-23f';
+  const VERSION = '2026-10-23g';
   const errors = {};
   let loaded = false;
 
