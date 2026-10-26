@@ -79,11 +79,11 @@ html, body { margin: 0; background: var(--color-bg); color: var(--color-fg); }
       Iniciar sesión con Microsoft 365
     </button>
     <div class="nz-login-sep"><span>o con el acceso del equipo</span></div>
-    <form id="nz-login-form" autocomplete="off">
+    <form id="nz-login-form" autocomplete="on">
       <label for="nz-login-user">Usuario</label>
-      <input id="nz-login-user" type="text" autocapitalize="none" spellcheck="false" placeholder="usuario">
+      <input id="nz-login-user" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="usuario">
       <label for="nz-login-pass">Contraseña</label>
-      <input id="nz-login-pass" type="password" placeholder="contraseña">
+      <input id="nz-login-pass" name="password" type="password" autocomplete="current-password" placeholder="contraseña">
       <p class="nz-login-err" id="nz-login-err" hidden>Usuario o contraseña incorrectos.</p>
       <button type="submit" class="nz-login-go">Entrar</button>
     </form>
