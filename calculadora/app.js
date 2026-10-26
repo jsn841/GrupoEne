@@ -10,7 +10,7 @@
   const FIELDS = Object.fromEntries(SCHEMA.fields.map((f) => [f.id, f]));
   const SALES = FIELDS.plan_ventas.rows; // [key,label,row,unitsField]
   const LIBKEY = 'calcpromo.biblioteca.v1';
-  const VERSION = '2026-10-26b';
+  const VERSION = '2026-10-26c';
 
   // ---------------- biblioteca ----------------
   let lib = null;
@@ -338,7 +338,7 @@
     const { id, ok, res, error } = e.data;
     if (id !== reqId) return;
     setBusy(false);
-    if (!ok) { ui.res = null; ui.error = error; } else { ui.res = res; ui.error = null; ui.check = CALC.check(promo().data, res.permuta); updatePlanFootGlobal(); const pp = promo(); pp.resumen = summaryOf(res); saveLib(); }
+    if (!ok) { ui.res = null; ui.error = error; } else { ui.res = res; ui.error = null; ui.check = CALC.check(promo().data, res.permuta); updatePlanFootGlobal(); const pp = promo(); pp.resumen = summaryOf(res, pp.data); saveLib(); }
     renderResults(); refreshStates();
   }
   function setBusy(b) { ui.busy = b; const s = $('#calcState'); if (s) { s.classList.toggle('busy', b); $('span', s).textContent = b ? 'Calculando…' : 'Calculado'; } }
@@ -364,7 +364,10 @@
     else if (ui.tab === 'ingresos') renderIngresos(body);
     else if (ui.tab === 'flujo') renderFlujo(body);
     if (ui.tab === 'notas') renderNotas(body);
-    $('#xlsxBtn').disabled = $('#pdfBtn').disabled = !ui.res;
+    const bl = ui.res && ui.check ? CALC.bloqueos(ui.check, ui.res) : [];
+    if (bl.length && !(ui.check && ui.check.missing.length)) body.prepend(bloqueoCard(bl));
+    $('#xlsxBtn').disabled = $('#pdfBtn').disabled = !ui.res || bl.length > 0;
+    for (const id of ['xlsxBtn', 'pdfBtn']) $('#' + id).title = bl.length ? 'Corrige primero lo que no cuadra' : '';
     window.scrollTo(0, sx);
   }
   function goField(id) {
@@ -380,6 +383,10 @@
     const ul = h('ul');
     for (const f of m) ul.append(h('li', {}, h('a', { onclick: () => goField(f.id) }, f.label), ' · ', SCHEMA.groups.find((g) => g.id === f.group).title));
     return h('div', { class: 'alert bad' }, h('b', {}, `Faltan ${m.length} ${m.length === 1 ? 'dato' : 'datos'} para poder calcular`), 'Son datos propios de cada promoción y no tienen un valor habitual:', ul);
+  }
+  function bloqueoCard(bl) {
+    const ul = h('ul'); for (const [id, t] of bl) ul.append(h('li', {}, id ? h('a', { onclick: () => goField(id) }, t) : t));
+    return h('div', { class: 'alert bad' }, h('b', {}, 'Este resultado no es válido: hay datos que no cuadran'), 'Hasta corregirlo, las cifras no son fiables y no se pueden descargar.', ul);
   }
   function warnBox(limit) {
     const w = ui.check.warn; if (!w.length) return null;
@@ -606,6 +613,7 @@
   const VER = { nueva: ['Nueva versión', 'nueva-version'], imp1: ['Imprimir (1)', 'imprimir-1'], imp2: ['Imprimir (2)', 'imprimir-2'] };
   async function exportar(fmt, ver) {
     if (!ui.res) return;
+    if (CALC.bloqueos(ui.check, ui.res).length) { toast('Corrige primero lo que no cuadra'); return; }
     const btn = $('#' + fmt + 'Btn'); btn.disabled = true;
     const name = slug(promo().nombre) + '-' + VER[ver][1] + '.' + fmt;
     try {
@@ -681,9 +689,9 @@
     return fmtDate(iso.slice(0, 10));
   }
   function pendientes(p) { const v = CALC.withDefaults(p.data); let r = 0; for (const f of SCHEMA.fields) if (CALC.visible(f, v) && fieldState(f, p, v) === 'revisar') r++; return r; }
-  function summaryOf(res) {
+  function summaryOf(res, data) {
     const k = res.kpis, saldo = res.mensual.find((f) => f.label === 'Saldo acumulado').valores.slice(0, res.ultimoMes);
-    return { at: new Date().toISOString(), ingresos: k.ingresos, costes: k.costes, resultado: k.resultado, margen: k.margen, tirO: k.tirOperativa, tirF: k.tirFinanciera, peor: k.peorSaldo, llaves: k.fechas.llaves, compra: k.fechas.compra, saldo: saldo.map((x) => Math.round(x / 1000)) };
+    return { at: new Date().toISOString(), noCuadra: CALC.bloqueos(CALC.check(data || {}, res.permuta), res).length, ingresos: k.ingresos, costes: k.costes, resultado: k.resultado, margen: k.margen, tirO: k.tirOperativa, tirF: k.tirFinanciera, peor: k.peorSaldo, llaves: k.fechas.llaves, compra: k.fechas.compra, saldo: saldo.map((x) => Math.round(x / 1000)) };
   }
   // cálculo en segundo plano de los resúmenes de la biblioteca (y de la vista previa del asistente)
   let bg = null; const bgQueue = []; let bgBusy = false;
@@ -693,7 +701,7 @@
   function bgDone(e) {
     bgBusy = false;
     const { id, ok, res } = e.data;
-    if (String(id).startsWith('s:')) { const p = lib.promociones.find((x) => x.id === id.slice(2)); if (p && ok) { p.resumen = summaryOf(res); saveLib(); if (ui.mode === 'lib') renderLibrary(); } }
+    if (String(id).startsWith('s:')) { const p = lib.promociones.find((x) => x.id === id.slice(2)); if (p && ok) { p.resumen = summaryOf(res, p.data); saveLib(); if (ui.mode === 'lib') renderLibrary(); } }
     if (String(id).startsWith('w:') && ok && +id.slice(2) === wiz.req) wizPreview(res);
     if (printWaits[id]) { const w = printWaits[id]; delete printWaits[id]; if (ok) w.ok(res); else w.ko(new Error(e.data.error || 'error al calcular')); }
     bgPump();
@@ -701,7 +709,7 @@
   function refreshSummaries() {
     for (const p of lib.promociones) {
       if (CALC.check(p.data).missing.length) continue;
-      if (!p.resumen || p.resumen.at < p.modificada) if (!bgQueue.some((j) => j.id === 's:' + p.id)) bgRun('s:' + p.id, p.data);
+      if (!p.resumen || p.resumen.noCuadra === undefined || p.resumen.at < p.modificada) if (!bgQueue.some((j) => j.id === 's:' + p.id)) bgRun('s:' + p.id, p.data);
     }
   }
 
@@ -742,7 +750,7 @@
     } else {
       card.append(h('div', { class: 'pbody' + (fresh ? '' : ' stale') },
         h('div', { class: 'plabel' }, 'Resultado'),
-        h('div', { class: 'pbig ' + (s.resultado < 0 ? 'neg' : '') }, fmtMill(s.resultado), h('span', { class: 'chip ' + CALC.tramoMargen(s.margen, CALC.withDefaults(p.data)).cls, title: CALC.tramoMargen(s.margen, CALC.withDefaults(p.data)).texto }, 'Margen ' + fmtPct(s.margen, 1))),
+        h('div', { class: 'pbig ' + (s.resultado < 0 ? 'neg' : '') }, fmtMill(s.resultado), s.noCuadra ? h('span', { class: 'chip bad', title: 'Hay datos que no cuadran: el resultado no es válido' }, 'No cuadra') : h('span', { class: 'chip ' + CALC.tramoMargen(s.margen, CALC.withDefaults(p.data)).cls, title: CALC.tramoMargen(s.margen, CALC.withDefaults(p.data)).texto }, 'Margen ' + fmtPct(s.margen, 1))),
         sparkline(s.saldo),
         h('div', { class: 'pstats' },
           h('div', {}, h('span', {}, 'Ingresos'), h('b', {}, fmtMill(s.ingresos))),

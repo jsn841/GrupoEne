@@ -119,6 +119,15 @@
     return { cls: 'ok', ok: true, min, hol, corto: 'Deseada', texto: `Desde la viabilidad deseada del ${p(hol)}` };
   }
 
-  const API = { apply, check, withDefaults, visible, dateToSerial, spread, curveS, curveFlat, tramoMargen };
+  // Problemas que hacen que el resultado NO sea válido: el reparto no suma el total o la caja no cuadra con los costes.
+  const BLOQUEAN = ['plan_ventas', 'forma_pago_suelo', 'cobro_contrato', 'pct_com_contrato', 'arq_anteproyecto', 'curva_obra'];
+  const fmtE = (x) => Math.round(x).toLocaleString('es-ES') + ' €';
+  function bloqueos(chk, res) {
+    const out = (chk ? chk.warn : []).filter((w) => BLOQUEAN.includes(w[0]));
+    if (res && res.cuadre) for (const c of res.cuadre) out.push([null, `${c.capitulo}: el flujo de caja paga ${fmtE(Math.abs(c.diferencia))} ${c.diferencia > 0 ? 'menos' : 'más'} de lo que suma el capítulo.`]);
+    if (res && res.kpis && Math.abs(res.kpis.descuadre) > 1 && !(res.cuadre || []).length) out.push([null, `La caja final no coincide con el resultado: diferencia de ${fmtE(res.kpis.descuadre)}.`]);
+    return out;
+  }
+  const API = { apply, check, withDefaults, visible, dateToSerial, spread, curveS, curveFlat, tramoMargen, bloqueos };
   if (typeof module !== 'undefined' && module.exports) module.exports = API; else root.CALC = API;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -64,6 +64,9 @@
     saldo.forEach((v, i) => { if (v < peor) { peor = v; mesPeor = i + 1; } });
     const años = Array.from({ length: 7 }, (_, i) => ({ n: i + 1, desde: isoFromSerial(n('CF!' + colAt('E', i) + '683')) }));
     const anual = ANUAL.map(([label, row, kind]) => (row === null ? { label, seccion: true } : { label, kind, previo: n('CF!D' + row), valores: años.map((a, i) => n('CF!' + colAt('E', i) + row)), total: n('CF!L' + row) }));
+    // Comprobación del propio modelo: lo que suma cada capítulo debe pagarse entero en el flujo de caja (CF-Resumen, columna CL)
+    const cuadre = [];
+    capitulos.forEach((c, i) => { const d = n('CF-Resumen!CL' + (4 + i)); if (Math.abs(d) > 1) cuadre.push({ capitulo: c.label, diferencia: d }); });
     const errores = [];
     for (const ref of ['Resumen!C13', 'Resumen!C14', 'Resumen!C15', 'CF!F710', 'CF!F716']) if (FX.isErr(g(ref))) errores.push(ref);
     const tir = (ref) => { const v = g(ref); return typeof v === 'number' && isFinite(v) ? v : null; };
@@ -78,7 +81,7 @@
         fechas: { compra: isoFromSerial(n('Resumen!F5')), inicioObra: isoFromSerial(n('Resumen!F8')), finObra: isoFromSerial(n('Resumen!F11')), llaves: isoFromSerial(n('Resumen!F15')) },
       },
       permuta: g('Resumen!G22') === 'a' ? { pct: n('Resumen!M15'), viviendas: n('Resumen!M16'), garajes1: n('Resumen!M17'), garajes2: n('Resumen!M18'), trasteros: n('Resumen!M19'), aportacion: 0, locales: n('Resumen!M21') } : null,
-      capitulos, detalle, ingresos, meses, mensual, ultimoMes: Math.min(84, last), años, anual, errores,
+      capitulos, detalle, ingresos, meses, mensual, ultimoMes: Math.min(84, last), años, anual, errores, cuadre,
     };
   }
   const API = { read };
