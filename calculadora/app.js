@@ -10,7 +10,7 @@
   const FIELDS = Object.fromEntries(SCHEMA.fields.map((f) => [f.id, f]));
   const SALES = FIELDS.plan_ventas.rows; // [key,label,row,unitsField]
   const LIBKEY = 'calcpromo.biblioteca.v1';
-  const VERSION = '2026-10-23a';
+  const VERSION = '2026-10-26a';
 
   // ---------------- biblioteca ----------------
   let lib = null;
@@ -19,6 +19,13 @@
     if (!lib || !Array.isArray(lib.promociones)) lib = { v: 1, activa: null, promociones: [] };
     if (!lib.promociones.length) { const p = newPromo(EJEMPLO.nombre, EJEMPLO.ejemplo()); lib.activa = p.id; }
     if (!lib.promociones.some((p) => p.id === lib.activa)) lib.activa = lib.promociones[0].id;
+    // Corrección: antes el AJD de los préstamos se ponía a 0 % al elegir la comunidad. Como en el Excel,
+    // va al tipo de AJD de la comunidad. Solo se toca si el 0 venía del relleno automático (dato no revisado a mano).
+    for (const p of lib.promociones) {
+      const c = p.data && SCHEMA.CCAA.find((x) => x[0] === p.data.ccaa); if (!c) continue;
+      for (const id of ['pct_ajd_prestamo_suelo', 'pct_ajd_prestamo_promotor'])
+        if (Number(p.data[id]) === 0 && !(p.revisados || []).includes(id)) p.data[id] = c[2];
+    }
   }
   let saveOk = true;
   function saveLib() { const ok = store.set(LIBKEY, JSON.stringify(lib)); if (!ok && saveOk) toast('No se ha podido guardar en este navegador (modo privado o sin espacio). Los cambios se perderán al cerrar.'); saveOk = ok; }
@@ -163,12 +170,12 @@
     const c = SCHEMA.CCAA.find((x) => x[0] === promo().data.ccaa);
     if (!c) return '';
     const v = values();
-    return `Rellenado con ${c[1]}: AJD del ${fmtPct(c[2], 2)} en ${Number(v.vendedor_suelo) === 1 ? 'la obra nueva (la compra a un particular paga ITP: escríbelo a mano)' : 'la compra del suelo y la obra nueva'}; AJD de los préstamos a 0 %, porque lo paga el banco.${c[3] ? ' ' + c[3] : ''} Revisa los valores.`;
+    return `Rellenado con ${c[1]}: AJD del ${fmtPct(c[2], 2)} en ${Number(v.vendedor_suelo) === 1 ? 'la obra nueva (la compra a un particular paga ITP: escríbelo a mano)' : 'la compra del suelo y la obra nueva'}; AJD de los préstamos del suelo y promotor también al ${fmtPct(c[2], 2)}, sobre el 136 % del préstamo (como en el Excel).${c[3] ? ' ' + c[3] : ''} Revisa los valores.`;
   }
   function applyCcaa() {
     const p = promo(), c = SCHEMA.CCAA.find((x) => x[0] === p.data.ccaa);
     if (!c) { touch(); renderForm(); return; }
-    const set = { pct_ajd_obra_nueva: c[2], pct_ajd_prestamo_suelo: 0, pct_ajd_prestamo_promotor: 0 };
+    const set = { pct_ajd_obra_nueva: c[2], pct_ajd_prestamo_suelo: c[2], pct_ajd_prestamo_promotor: c[2] };
     if (Number(values().vendedor_suelo) !== 1) set.pct_ajd_compra = c[2];
     Object.assign(p.data, set);
     p.revisados = (p.revisados || []).filter((id) => !(id in set));
@@ -826,7 +833,7 @@
     if (wiz.base !== 'copy' || wiz.replan) d.plan_ventas = wizPlan();
     const c = SCHEMA.CCAA.find((x) => x[0] === d.ccaa);
     const ti = window.MUNI && d.provincia && d.municipio ? window.MUNI.icio[d.provincia + '|' + d.municipio] : null; if (ti) d.pct_icio = ti[0];
-    if (c && (wiz.base !== 'copy' || wiz.ccaaChanged)) { d.pct_ajd_obra_nueva = c[2]; d.pct_ajd_prestamo_suelo = 0; d.pct_ajd_prestamo_promotor = 0; if (Number(CALC.withDefaults(d).vendedor_suelo) !== 1) d.pct_ajd_compra = c[2]; }
+    if (c && (wiz.base !== 'copy' || wiz.ccaaChanged)) { d.pct_ajd_obra_nueva = c[2]; d.pct_ajd_prestamo_suelo = c[2]; d.pct_ajd_prestamo_promotor = c[2]; if (Number(CALC.withDefaults(d).vendedor_suelo) !== 1) d.pct_ajd_compra = c[2]; }
     return d;
   }
   function wizSchedulePreview() {
