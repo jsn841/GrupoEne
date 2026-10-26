@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400&display=swap" rel="stylesheet">
+<script src="login.js?v=2026-10-26a"></script>
 <script src="vendor/d3.min.js?v=2026-10-24a"></script>
 <script>
 try { var t = localStorage.getItem('nz-theme'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
@@ -65,8 +66,54 @@ html, body { margin: 0; background: var(--color-bg); color: var(--color-fg); }
 </style>
 </head>
 <body>
+<div id="nz-login" class="nz-login" hidden>
+  <div class="nz-login-card">
+    <div class="nz-login-top">
+      <img src="logo-nozar.png" alt="Nozar" class="nz-login-logo">
+      <span class="nz-login-beta">BETA</span>
+    </div>
+    <h1 class="nz-login-h">Panel de ventas del Grupo Nozar</h1>
+    <p class="nz-login-sub">Acceso restringido · versión en pruebas (beta). Los datos son una maqueta y no son reales.</p>
+    <button type="button" class="nz-login-ms" id="nz-login-ms">
+      <svg viewBox="0 0 23 23" width="18" height="18" aria-hidden="true"><path fill="#f25022" d="M1 1h10v10H1z"/><path fill="#7fba00" d="M12 1h10v10H12z"/><path fill="#00a4ef" d="M1 12h10v10H1z"/><path fill="#ffb900" d="M12 12h10v10H12z"/></svg>
+      Iniciar sesión con Microsoft 365
+    </button>
+    <div class="nz-login-sep"><span>o con el acceso del equipo</span></div>
+    <form id="nz-login-form" autocomplete="off">
+      <label for="nz-login-user">Usuario</label>
+      <input id="nz-login-user" type="text" autocapitalize="none" spellcheck="false" placeholder="usuario">
+      <label for="nz-login-pass">Contraseña</label>
+      <input id="nz-login-pass" type="password" placeholder="contraseña">
+      <p class="nz-login-err" id="nz-login-err" hidden>Usuario o contraseña incorrectos.</p>
+      <button type="submit" class="nz-login-go">Entrar</button>
+    </form>
+    <p class="nz-login-foot">Maqueta con datos simulados · Grupo Nozar</p>
+  </div>
+</div>
 <div id="dash-root">
 <style>
+.nz-login { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; background: #7a0f16; background: linear-gradient(135deg, #8d1420, #5c0b12); font-family: var(--font-anthropic-sans); }
+.nz-login[hidden] { display: none; }
+html.nz-locked, html.nz-locked body { overflow: hidden; }
+.nz-login-card { width: min(400px, 100%); background: #fff; border-radius: 16px; padding: 30px 28px; box-shadow: 0 20px 60px rgba(0,0,0,.35); color: #16191d; }
+.nz-login-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+.nz-login-logo { height: 46px; width: auto; }
+.nz-login-beta { font-size: 11px; font-weight: 700; letter-spacing: .08em; color: #8d1420; background: #f6e4e5; border: 1px solid #e3b7bb; border-radius: 999px; padding: 3px 9px; }
+.nz-login-h { font-size: 19px; margin: 0 0 4px; font-weight: 600; }
+.nz-login-sub { font-size: 12.5px; color: #6b7178; margin: 0 0 20px; line-height: 1.45; }
+.nz-login-ms { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; background: #fff; color: #3b3b3b; border: 1px solid #c8c8c8; border-radius: 8px; padding: 11px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.nz-login-ms:hover { background: #f5f5f5; }
+.nz-login-ms.off { opacity: .55; cursor: default; }
+.nz-login-msnote { font-size: 12px; color: #8d1420; margin: 8px 0 0; text-align: center; }
+.nz-login-sep { display: flex; align-items: center; gap: 10px; margin: 18px 0; color: #9aa0a6; font-size: 12px; }
+.nz-login-sep::before, .nz-login-sep::after { content: ''; flex: 1; height: 1px; background: #e6e6e6; }
+.nz-login-form label, #nz-login-form label { display: block; font-size: 12px; color: #6b7178; margin: 10px 0 4px; font-weight: 600; }
+#nz-login-form input { width: 100%; box-sizing: border-box; font: inherit; font-size: 14px; padding: 10px 12px; border: 1px solid #cfd3d7; border-radius: 8px; }
+#nz-login-form input:focus { outline: 2px solid #8d1420; outline-offset: 0; border-color: #8d1420; }
+.nz-login-err { color: #b4231a; font-size: 12.5px; margin: 10px 0 0; }
+.nz-login-go { width: 100%; margin-top: 16px; background: #8d1420; color: #fff; border: 0; border-radius: 8px; padding: 12px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.nz-login-go:hover { background: #76111b; }
+.nz-login-foot { text-align: center; font-size: 11px; color: #9aa0a6; margin: 18px 0 0; }
 #dash-root { --dash-gutter: clamp(12px, 3vw, 32px); }
 .nz { font-family: var(--font-anthropic-sans); color: var(--color-fg); max-width: 1320px; margin-inline: auto; font-variant-numeric: tabular-nums; }
 .nz-brand { display: flex; align-items: center; gap: var(--cds-gap-md); }
