@@ -10,7 +10,7 @@
   const FIELDS = Object.fromEntries(SCHEMA.fields.map((f) => [f.id, f]));
   const SALES = FIELDS.plan_ventas.rows; // [key,label,row,unitsField]
   const LIBKEY = 'calcpromo.biblioteca.v1';
-  const VERSION = '2026-10-26a';
+  const VERSION = '2026-10-26b';
 
   // ---------------- biblioteca ----------------
   let lib = null;
@@ -24,7 +24,7 @@
     for (const p of lib.promociones) {
       const c = p.data && SCHEMA.CCAA.find((x) => x[0] === p.data.ccaa); if (!c) continue;
       for (const id of ['pct_ajd_prestamo_suelo', 'pct_ajd_prestamo_promotor'])
-        if (Number(p.data[id]) === 0 && !(p.revisados || []).includes(id)) p.data[id] = c[2];
+        if (Number(p.data[id]) === 0 && !(p.revisados || []).includes(id)) { p.data[id] = c[2]; delete p.resumen; } // sin resumen: la biblioteca lo recalcula
     }
   }
   let saveOk = true;
