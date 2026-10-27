@@ -10,7 +10,7 @@
   const FIELDS = Object.fromEntries(SCHEMA.fields.map((f) => [f.id, f]));
   const SALES = FIELDS.plan_ventas.rows; // [key,label,row,unitsField]
   const LIBKEY = 'calcpromo.biblioteca.v1';
-  const VERSION = '2026-10-27a';
+  const VERSION = '2026-10-27b';
 
   // ---------------- biblioteca ----------------
   let lib = null;
@@ -697,7 +697,7 @@
   function pendientes(p) { const v = CALC.withDefaults(p.data); let r = 0; for (const f of SCHEMA.fields) if (CALC.visible(f, v) && fieldState(f, p, v) === 'revisar') r++; return r; }
   function summaryOf(res, data) {
     const k = res.kpis, saldo = res.mensual.find((f) => f.label === 'Saldo acumulado').valores.slice(0, res.ultimoMes);
-    return { at: new Date().toISOString(), noCuadra: CALC.bloqueos(CALC.check(data || {}, res.permuta), res).length, ingresos: k.ingresos, costes: k.costes, resultado: k.resultado, margen: k.margen, tirO: k.tirOperativa, tirF: k.tirFinanciera, peor: k.peorSaldo, llaves: k.fechas.llaves, compra: k.fechas.compra, saldo: saldo.map((x) => Math.round(x / 1000)) };
+    return { at: new Date().toISOString(), noCuadra: CALC.bloqueos(CALC.check(data || {}, res.permuta), res).length, ingresos: k.ingresos, suelo: res.capitulos[0].importe, obra: res.capitulos[4].importe, costes: k.costes, resultado: k.resultado, margen: k.margen, tirO: k.tirOperativa, tirF: k.tirFinanciera, peor: k.peorSaldo, llaves: k.fechas.llaves, compra: k.fechas.compra, saldo: saldo.map((x) => Math.round(x / 1000)) };
   }
   // cálculo en segundo plano de los resúmenes de la biblioteca (y de la vista previa del asistente)
   let bg = null; const bgQueue = []; let bgBusy = false;
