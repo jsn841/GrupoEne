@@ -8,7 +8,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400&display=swap" rel="stylesheet">
-<script src="login.js?v=2026-10-26a"></script>
+<script src="login.js?v=2026-10-27a"></script>
+<script src="../calculadora/config.js?v=2026-10-27a"></script>
+<script src="uso.js?v=2026-10-27a"></script>
 <script src="vendor/d3.min.js?v=2026-10-24a"></script>
 <script>
 try { var t = localStorage.getItem('nz-theme'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
@@ -88,6 +90,7 @@ html, body { margin: 0; background: var(--color-bg); color: var(--color-fg); }
       <button type="submit" class="nz-login-go">Entrar</button>
     </form>
     <p class="nz-login-foot">Maqueta con datos simulados · Grupo Nozar</p>
+    <p class="nz-login-foot nz-login-uso">Para medir el uso de la beta se registra de forma anónima (sin nombre ni correo) cuándo se entra y cuánto tiempo se usa cada sección.</p>
   </div>
 </div>
 <div id="dash-root">
@@ -114,6 +117,7 @@ html.nz-locked, html.nz-locked body { overflow: hidden; }
 .nz-login-go { width: 100%; margin-top: 16px; background: #8d1420; color: #fff; border: 0; border-radius: 8px; padding: 12px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
 .nz-login-go:hover { background: #76111b; }
 .nz-login-foot { text-align: center; font-size: 11px; color: #9aa0a6; margin: 18px 0 0; }
+.nz-login-uso { margin-top: 8px; line-height: 1.4; }
 #dash-root { --dash-gutter: clamp(12px, 3vw, 32px); }
 .nz { font-family: var(--font-anthropic-sans); color: var(--color-fg); max-width: 1320px; margin-inline: auto; font-variant-numeric: tabular-nums; }
 .nz-brand { display: flex; align-items: center; gap: var(--cds-gap-md); }
@@ -1074,7 +1078,7 @@ table.nz-heat { border-collapse: separate; border-spacing: 2px; font-size: var(-
 <script src="distribuidores.js?v=2026-10-24a"></script>
 <script src="ciclo.js?v=2026-10-24a"></script>
 <script src="obra.js?v=2026-10-24a"></script>
-<script src="app.js?v=2026-10-24a"></script>
+<script src="app.js?v=2026-10-27a"></script>
 <script src="theme.js?v=2026-10-24a"></script>
 </body>
 </html>

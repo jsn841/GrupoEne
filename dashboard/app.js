@@ -136,6 +136,7 @@
   let tab = 'inicio';
   function showTab(t, scrollTo) {
     tab = t;
+    if (window.USO) window.USO.seccion(t);
     TABS.forEach((x) => {
       $('#' + x).hidden = x !== t;
       $('#tab-' + x).setAttribute('aria-selected', String(x === t));

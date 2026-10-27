@@ -30,6 +30,7 @@
       if (u === USER && p === PASS) {
         try { localStorage.setItem(KEY, '1'); } catch (x) {}
         abrir();
+        if (window.USO) window.USO.login();
       } else {
         err.hidden = false;
         document.getElementById('nz-login-pass').value = '';
