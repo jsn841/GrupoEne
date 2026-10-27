@@ -10,7 +10,7 @@
   const FIELDS = Object.fromEntries(SCHEMA.fields.map((f) => [f.id, f]));
   const SALES = FIELDS.plan_ventas.rows; // [key,label,row,unitsField]
   const LIBKEY = 'calcpromo.biblioteca.v1';
-  const VERSION = '2026-10-26c';
+  const VERSION = '2026-10-27a';
 
   // ---------------- biblioteca ----------------
   let lib = null;
@@ -41,6 +41,11 @@
         { method: 'POST', headers: { apikey: C.key, Authorization: 'Bearer ' + C.key, 'Content-Type': 'application/json', Prefer: 'return=minimal' }, body: JSON.stringify(body) });
       return { ok: r.ok, status: r.status };
     } catch (e) { return { ok: false, error: String(e) }; }
+  }
+  function enviarPendiente(p) {
+    if (!p || !p.pendienteEnvio) return;
+    delete p.pendienteEnvio; saveLib();
+    enviarPromo(p).then((r) => toast(r.ok ? 'Promoción creada y enviada para el análisis.' : 'Promoción creada. No se pudo enviar para el análisis; vuelve a intentarlo más tarde.'));
   }
   const promo = () => lib.promociones.find((p) => p.id === lib.activa);
   function touch() { promo().modificada = new Date().toISOString(); saveLib(); }
@@ -340,6 +345,7 @@
     setBusy(false);
     if (!ok) { ui.res = null; ui.error = error; } else { ui.res = res; ui.error = null; ui.check = CALC.check(promo().data, res.permuta); updatePlanFootGlobal(); const pp = promo(); pp.resumen = summaryOf(res, pp.data); saveLib(); }
     renderResults(); refreshStates();
+    if (promo().pendienteEnvio) enviarPendiente(promo());
   }
   function setBusy(b) { ui.busy = b; const s = $('#calcState'); if (s) { s.classList.toggle('busy', b); $('span', s).textContent = b ? 'Calculando…' : 'Calculado'; } }
 
@@ -931,7 +937,8 @@
     if (wiz.step === 1) { if (!wiz.nombre.trim()) { toast('Escribe un nombre'); $('#wizName').focus(); return; } wiz.data = wizBaseData(); wiz.replan = false; wiz.ccaaChanged = false; wiz.step = 2; }
     else if (wiz.step === 2) { const miss = CALC.check(wiz.data).missing; if (miss.length) { toast('Faltan: ' + miss.map((f) => f.label.toLowerCase()).join(', ')); return; } wiz.step = 3; }
     else { const src = wiz.base === 'copy' && lib.promociones.find((x) => x.id === wiz.copyId); const p = newPromo(wiz.nombre.trim(), wizFinalData()); if (src) p.revisados = [...(src.revisados || [])]; if (wiz.base === 'example') p.ejemplo = true; saveLib(); wizDlg.close(); openEditor(p.id);
-      if (envioActivo()) enviarPromo(p).then((r) => toast(r.ok ? 'Promoción creada y enviada para el análisis.' : 'Promoción creada. No se pudo enviar para el análisis; vuelve a intentarlo más tarde.'));
+      // se envía en cuanto termina su primer cálculo, para que la copia lleve también los resultados
+      if (envioActivo()) { p.pendienteEnvio = true; saveLib(); setTimeout(() => enviarPendiente(p), 15000); }
       else toast('Promoción creada. Revisa los datos en amarillo.');
       return; }
     renderWizard();
