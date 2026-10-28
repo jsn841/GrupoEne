@@ -10,7 +10,7 @@
   const FIELDS = Object.fromEntries(SCHEMA.fields.map((f) => [f.id, f]));
   const SALES = FIELDS.plan_ventas.rows; // [key,label,row,unitsField]
   const LIBKEY = 'calcpromo.biblioteca.v1';
-  const VERSION = '2026-10-27b';
+  const VERSION = '2026-10-28a';
 
   // ---------------- biblioteca ----------------
   let lib = null;
@@ -372,8 +372,8 @@
     if (ui.tab === 'notas') renderNotas(body);
     const bl = ui.res && ui.check ? CALC.bloqueos(ui.check, ui.res) : [];
     if (bl.length && !(ui.check && ui.check.missing.length)) body.prepend(bloqueoCard(bl));
-    $('#xlsxBtn').disabled = $('#pdfBtn').disabled = !ui.res || bl.length > 0;
-    for (const id of ['xlsxBtn', 'pdfBtn']) $('#' + id).title = bl.length ? 'Corrige primero lo que no cuadra' : '';
+    $('#xlsxBtn').disabled = $('#pdfBtn').disabled = !ui.res;
+    for (const id of ['xlsxBtn', 'pdfBtn']) $('#' + id).title = bl.length ? 'Hay datos que no cuadran: las cifras no son fiables' : '';
     window.scrollTo(0, sx);
   }
   function goField(id) {
@@ -392,7 +392,7 @@
   }
   function bloqueoCard(bl) {
     const ul = h('ul'); for (const [id, t] of bl) ul.append(h('li', {}, id ? h('a', { onclick: () => goField(id) }, t) : t));
-    return h('div', { class: 'alert bad' }, h('b', {}, 'Este resultado no es válido: hay datos que no cuadran'), 'Hasta corregirlo, las cifras no son fiables y no se pueden descargar.', ul);
+    return h('div', { class: 'alert bad' }, h('b', {}, 'Este resultado no es válido: hay datos que no cuadran'), 'Hasta corregirlo, las cifras no son fiables. Puedes descargarlo igualmente.', ul);
   }
   function warnBox(limit) {
     const w = ui.check.warn; if (!w.length) return null;
@@ -619,7 +619,6 @@
   const VER = { nueva: ['Nueva versión', 'nueva-version'], imp1: ['Imprimir (1)', 'imprimir-1'], imp2: ['Imprimir (2)', 'imprimir-2'] };
   async function exportar(fmt, ver) {
     if (!ui.res) return;
-    if (CALC.bloqueos(ui.check, ui.res).length) { toast('Corrige primero lo que no cuadra'); return; }
     const btn = $('#' + fmt + 'Btn'); btn.disabled = true;
     const name = slug(promo().nombre) + '-' + VER[ver][1] + '.' + fmt;
     try {
