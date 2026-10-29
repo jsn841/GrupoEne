@@ -74,12 +74,15 @@
       const used = c.slice(0, Number(v.meses_obra));
       if (!near(sum(used), 1)) warn.push(['curva_obra', 'La curva de obra tiene que sumar el 100 % en los ' + v.meses_obra + ' meses de obra (ahora suma ' + (sum(used) * 100).toFixed(1).replace('.', ',') + ' %).']);
     }
+    // Locales con metros y precio pero sin unidades: los ingresos se cuentan, pero sin calendario de ventas no se cobran nunca y el préstamo promotor se dispara
+    if (!Number(v.n_locales) && Number(v.sup_locales_venta) * Number(v.precio_m2_local) > 0) warn.push(['n_locales', 'Hay metros y precio de locales a la venta pero el número de locales es 0: los ingresos se cuentan pero no se cobran (no hay calendario de ventas) y el préstamo promotor se dispara. Pon el número de locales y su calendario de ventas.']);
     const plan = v.plan_ventas || {};
     const salesRows = SCHEMA.fields.find((f) => f.type === 'salesplan').rows;
         for (const [key, label, , unitsField] of salesRows) {
       const total = (Number(v[unitsField]) || 0) - (permuta && v.forma_pago_suelo === 'a' ? permuta[key] || 0 : 0);
       const list = plan[key] || [];
       const sold = sum(list);
+      if (!total && sold) { warn.push(['plan_ventas', `${label}: el calendario vende ${fmtInt(sold)} pero el número de unidades es 0.`]); continue; }
       if (total && !near(sold, total)) warn.push(['plan_ventas', `${label}: el calendario vende ${fmtInt(sold)} y hay ${fmtInt(total)} a la venta${permuta && v.forma_pago_suelo === 'a' && permuta[key] ? ' (las otras ' + fmtInt(permuta[key]) + ' van a la permuta)' : ''}.`]);
     }
     return { missing, warn };
@@ -120,7 +123,7 @@
   }
 
   // Problemas que hacen que el resultado NO sea válido: el reparto no suma el total o la caja no cuadra con los costes.
-  const BLOQUEAN = ['plan_ventas', 'forma_pago_suelo', 'cobro_contrato', 'pct_com_contrato', 'arq_anteproyecto', 'curva_obra'];
+  const BLOQUEAN = ['plan_ventas', 'n_locales', 'forma_pago_suelo', 'cobro_contrato', 'pct_com_contrato', 'arq_anteproyecto', 'curva_obra'];
   const fmtE = (x) => Math.round(x).toLocaleString('es-ES') + ' €';
   function bloqueos(chk, res) {
     const out = (chk ? chk.warn : []).filter((w) => BLOQUEAN.includes(w[0]));
