@@ -93,8 +93,8 @@
     { id: 'n_aportacion', label: 'Viviendas en aportación', type: 'int', cell: 'Resumen!K9', def: 0, help: 'Viviendas con un precio fijo por unidad, aparte de las demás (por ejemplo, las comprometidas con quien aporta el suelo). Cuentan como ingresos.' },
     { id: 'precio_aportacion', label: 'Precio de cada vivienda en aportación', type: 'eur', cell: 'Resumen!N9', def: 0, help: 'Precio fijo de cada vivienda en aportación, sin IVA.' },
     { id: 'n_locales', label: 'Número de locales', type: 'int', cell: 'Resumen!K10', def: 0, help: 'Locales comerciales a la venta.' },
-    { id: 'sup_locales_venta', label: 'Superficie de los locales a la venta', type: 'm2', cell: 'Resumen!N10', def: 0, help: 'Metros de locales que se venden; se multiplican por el precio por m².' },
-    { id: 'precio_m2_local', label: 'Precio de venta de los locales', type: 'eur_m2', cell: 'Resumen!M10', def: 0, help: 'Precio por m² de los locales, sin IVA.' },
+    { id: 'sup_locales_venta', label: 'Superficie de los locales a la venta', type: 'm2', cell: 'Resumen!N10', def: 0, reqIf: 'n_locales', help: 'Metros de locales que se venden; se multiplican por el precio por m².' },
+    { id: 'precio_m2_local', label: 'Precio de venta de los locales', type: 'eur_m2', cell: 'Resumen!M10', def: 0, reqIf: 'n_locales', help: 'Precio por m² de los locales, sin IVA.' },
   ]);
   add('cobros', 'Resumen', [
     { id: 'cobro_contrato', label: 'Se cobra al firmar el contrato', type: 'pct', cell: 'Resumen!P5', def: 0.1, revisar: true, help: 'Entrega a cuenta que paga el comprador al firmar el contrato privado, en el mes en que compra. Los tres porcentajes de cobro tienen que sumar el 100 %.' },

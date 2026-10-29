@@ -55,6 +55,8 @@
   function check(data, permuta) {
     const v = withDefaults(data);
     const missing = SCHEMA.fields.filter((f) => f.def === null && !f.calc && !f.sync && f.type !== 'salesplan' && f.type !== 'curve' && (v[f.id] === null || v[f.id] === undefined || v[f.id] === '') && visible(f, v));
+    // Dependencias: si hay locales, los metros y el precio por m² son obligatorios
+    for (const f of SCHEMA.fields) if (f.reqIf && Number(v[f.reqIf]) > 0 && !(Number(v[f.id]) > 0) && !missing.includes(f)) missing.push(f);
     const warn = [];
     const sum = (a) => a.reduce((s, x) => s + (Number(x) || 0), 0);
     const near = (a, b) => Math.abs(a - b) < 1e-6;
